@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>films</title>
+
+    <style>
+        @font-face {
+            font-family: 'SymbolsNerdFont';
+            src: url('files/font/SymbolsNerdFont-Regular.woff2') format('woff2'),
+                 url('files/font/SymbolsNerdFont-Regular.woff') format('woff');
+            font-display: swap;
+        }
+
+        #bg-text-canvas {
+            position: fixed;
+            top: -20%; 
+            left: -20%;
+            width: 140vw;
+            height: 140vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            font-family: 'GGX88 Book', sans-serif;
+            font-size: 28vw;
+            font-weight: 900;
+            color: black;
+            line-height: 0.8; 
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            user-select: none;
+            will-change: transform; 
+            padding: 10vw;
+            box-sizing: border-box;
+        }
+
+        .back-to-index {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: 'SymbolsNerdFont', sans-serif;
+            font-size: 12px;
+            text-decoration: none;
+            color: black;
+            z-index: 10;
+        }
+
+        .help-icon {
+            position: absolute;
+            top: 30px;
+            left: 10px;
+            font-family: 'SymbolsNerdFont', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            color: black;
+            z-index: 10;
+        }
+
+        body {
+            font-family: 'GGX88 Book', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            background-color: white;
+        }
+
+        video {
+            position: absolute;
+            object-fit: cover;
+            cursor: grab;
+            z-index: 2;
+            transition: width 0.2s ease-in-out, height 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .dragging { 
+            cursor: grabbing; 
+            z-index: 100; 
+            transition: none !important; 
+        }
+
+        .custom-cursor {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1000;
+            color: white;
+            font-size: 13px;
+            white-space: nowrap;
+            display: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+
+<div id="bg-text-canvas"></div>
+
+<a href="index.html" class="back-to-index"><</a>
+<div id="help-icon" class="help-icon">?</div>
+<div id="help-tooltip" class="custom-cursor"></div>
+
+<video id="video10" autoplay muted loop playsinline><source src="files/mov/nthng.mp4"></video>
+<video id="video11" autoplay muted loop playsinline><source src="files/mov/tricky.mp4"></video>
+<video id="video12" autoplay muted loop playsinline><source src="files/mov/mmxgm.mp4"></video>
+<video id="video1" autoplay muted loop playsinline><source src="files/mov/acne1.mp4"></video>
+<video id="video13" autoplay muted loop playsinline><source src="files/mov/gstar1.mp4"></video>
+<video id="video14" autoplay muted loop playsinline><source src="files/mov/gstar2.mp4"></video>
+<video id="video2" autoplay muted loop playsinline><source src="files/mov/acne2.mp4"></video>
+<video id="video3" autoplay muted loop playsinline><source src="files/mov/acne3.mp4"></video>
+<video id="video4" autoplay muted loop playsinline><source src="files/mov/acne4.mp4"></video>
+<video id="video5" autoplay muted loop playsinline><source src="files/mov/camper1.mp4"></video>
+<video id="video15" autoplay muted loop playsinline><source src="files/mov/gstar3.mp4"></video>
+<video id="video16" autoplay muted loop playsinline><source src="files/mov/gstar4.mp4"></video>
+<video id="video6" autoplay muted loop playsinline><source src="files/mov/camper2.mp4"></video>
+<video id="video7" autoplay muted loop playsinline><source src="files/mov/camper3.mp4"></video>
+<video id="video8" autoplay muted loop playsinline><source src="files/mov/marg1.mp4"></video>
+<video id="video9" autoplay muted loop playsinline><source src="files/mov/marg2.mp4"></video>
+<video id="videoR1" autoplay muted loop playsinline><source src="files/mov/compreelnu1.mp4"></video>
+<video id="videoR2" autoplay muted loop playsinline><source src="files/mov/compreelnu2.mp4"></video>
+
+<div id="custom-cursor" class="custom-cursor"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const videos = document.querySelectorAll('video');
+    const customCursor = document.getElementById('custom-cursor');
+    const bgCanvas = document.getElementById('bg-text-canvas');
+    const helpIcon = document.getElementById('help-icon');
+    const helpTooltip = document.getElementById('help-tooltip');
+
+    const columnPattern = [4, 2, 4, 2, 4];
+    const gstarIds = new Set(['video13','video14','video15','video16']);
+    const reelIds = new Set(['videoR1','videoR2']);
+
+    const videoDetails = {
+        video13: "G-Star Raw<br>Directed by Jordan Hemingway<br>2025",
+        video14: "G-Star Raw<br>Directed by Jordan Hemingway<br>2025",
+        video15: "G-Star Raw<br>Directed by Jordan Hemingway<br>2025",
+        video16: "G-Star Raw<br>Directed by Jordan Hemingway<br>2025",
+        video10: "Nothing<br>Directed by Jordan Hemingway<br>2025",
+        video11: "Acne Studios X Kappa<br>Directed by Jordan Hemingway<br>2025",
+        video12: "Maison Margiela x Gentle Monsters<br>Directed by Jordan Hemingway<br>2025",
+        video1: "Acne Studios<br>Directed by Jordan Hemingway<br>2024",
+        video2: "Acne Studios<br>Directed by Jordan Hemingway<br>2024",
+        video3: "Acne Studios<br>Directed by Jordan Hemingway<br>2024",
+        video4: "Acne Studios<br>Directed by Jordan Hemingway<br>2024",
+        video5: "Camperlab<br>Directed by Jordan Hemingway<br>2024",
+        video6: "Camperlab<br>Directed by Jordan Hemingway<br>2024",
+        video7: "Camperlab<br>Directed by Jordan Hemingway<br>2024",
+        video8: "Maison Margiela<br>Directed by Jordan Hemingway<br>2025",
+        video9: "Maison Margiela<br>Directed by Jordan Hemingway<br>2025",
+        videoR1: "Compliance (Original Score)<br>Directed by Kyle Mangione-Smith<br>2026",
+        videoR2: "Compliance (Original Score)<br>Directed by Kyle Mangione-Smith<br>2026"
+    };
+
+    function updateGrid() {
+        const videoSize = Math.min(window.innerWidth, window.innerHeight) / 8.2;
+        const gap = videoSize * 0.08;
+        const totalCols = columnPattern.length;
+        const gridWidth = totalCols * videoSize + (totalCols - 1) * gap;
+        const startX = (window.innerWidth - gridWidth) / 2;
+        let index = 0;
+        const gridVideos = Array.from(videos).filter(v => !reelIds.has(v.id));
+        
+        columnPattern.forEach((rowsInCol, colIndex) => {
+            const colX = startX + colIndex * (videoSize + gap);
+            let colHeight = 0;
+            for (let i = 0; i < rowsInCol && index + i < gridVideos.length; i++) {
+                const v = gridVideos[index + i];
+                colHeight += gstarIds.has(v.id) ? (videoSize * 2 + gap) : videoSize;
+                if (i < rowsInCol - 1) colHeight += gap;
+            }
+            let y = (window.innerHeight * 0.38) - (colHeight / 2); 
+            for (let row = 0; row < rowsInCol && index < gridVideos.length; row++) {
+                const video = gridVideos[index];
+                const h = gstarIds.has(video.id) ? (videoSize * 2 + gap) : videoSize;
+                video.style.width = `${videoSize}px`;
+                video.style.height = `${h}px`;
+                video.style.left = `${colX}px`;
+                video.style.top = `${y}px`;
+                video.dataset.vcol = colIndex === 0 ? 0 : (colIndex === totalCols - 1 ? 2 : 1);
+                y += h + gap;
+                index++;
+            }
+        });
+        
+        const reelVideos = Array.from(videos).filter(v => reelIds.has(v.id));
+        const reelWidth = (gridWidth / 2) - (gap / 2);
+        let gridBottom = 0;
+        gridVideos.forEach(v => {
+            const b = parseFloat(v.style.top) + parseFloat(v.style.height);
+            if (b > gridBottom) gridBottom = b;
+        });
+        const reelY = gridBottom + gap; 
+        reelVideos.forEach((v, i) => {
+            v.style.width = `${reelWidth}px`;
+            v.style.height = `${reelWidth * 0.5625}px`; 
+            v.style.left = `${startX + (i * (reelWidth + gap))}px`;
+            v.style.top = `${reelY}px`;
+            v.dataset.vcol = 1; // Center for Compliance videos
+        });
+    }
+
+    updateGrid();
+    window.addEventListener('resize', updateGrid);
+
+    document.addEventListener('mousemove', e => {
+        const moveX = (e.clientX - window.innerWidth / 2) * -0.2;
+        const moveY = (e.clientY - window.innerHeight / 2) * -0.2;
+        bgCanvas.style.transform = `translate(${moveX}px, ${moveY}px)`;
+    });
+
+    videos.forEach(video => {
+        let isDragging = false, offsetX, offsetY;
+
+        video.addEventListener('mousedown', e => {
+            isDragging = true;
+            offsetX = e.clientX - video.getBoundingClientRect().left;
+            offsetY = e.clientY - video.getBoundingClientRect().top;
+            video.classList.add('dragging');
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (isDragging) {
+                video.style.left = `${e.clientX - offsetX}px`;
+                video.style.top = `${e.clientY - offsetY}px`;
+                bgCanvas.innerHTML = ""; 
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                video.classList.remove('dragging');
+            }
+        });
+
+        video.addEventListener('mouseenter', () => {
+            if (isDragging) return;
+            const detail = videoDetails[video.id] || "";
+            const col = Number(video.dataset.vcol);
+
+            // Apply background alignment based on data-vcol
+            if (col === 0) {
+                bgCanvas.style.alignItems = 'flex-start';
+                bgCanvas.style.textAlign = 'left';
+            } else if (col === 1) {
+                bgCanvas.style.alignItems = 'center';
+                bgCanvas.style.textAlign = 'center';
+            } else {
+                bgCanvas.style.alignItems = 'flex-end';
+                bgCanvas.style.textAlign = 'right';
+            }
+
+            customCursor.innerHTML = detail;
+            customCursor.style.display = 'block';
+            bgCanvas.innerHTML = detail;
+            
+            video.muted = false;
+            video.play().catch(() => {});
+        });
+
+        video.addEventListener('mousemove', e => {
+            if (isDragging) return;
+            const col = Number(video.dataset.vcol);
+            customCursor.style.top = `${e.clientY - (customCursor.offsetHeight / 2)}px`;
+            
+            // Cursor horizontal alignment logic
+            if (col === 0) {
+                customCursor.style.left = `${e.clientX + 15}px`;
+            } else if (col === 1) {
+                // Now centers for Compliance too
+                customCursor.style.left = `${e.clientX - (customCursor.offsetWidth / 2)}px`;
+            } else {
+                customCursor.style.left = `${e.clientX - customCursor.offsetWidth - 15}px`;
+            }
+        });
+
+        video.addEventListener('mouseleave', () => {
+            if (isDragging) return;
+            customCursor.style.display = 'none';
+            bgCanvas.innerHTML = ""; 
+            video.muted = true;
+        });
+    });
+});
+</script>
+
+</body>
+</html2

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>audio</title>
+
+<style>
+  
+  .back-to-index, .help-icon {
+    position:absolute; left:10px; font-family:'SymbolsNerdFont', sans-serif;
+    font-size:12px; text-decoration:none; color:#000; user-select:none;
+    z-index:2; 
+  }
+  .back-to-index{ top:10px; }
+  .help-icon{ top:30px; cursor:pointer; }
+  .back-to-index:hover, .help-icon:hover{ color:#666; }
+
+  
+  :root { --fg:#000; --muted:#666; --item-size:12px; --track-gap:8px; }
+  html,body{height:100%}
+  body{
+    margin:0; background:#fff; color:var(--fg);
+    font-family:'GGX88 Book', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+
+  
+  #bgCanvas{
+    position:fixed; inset:0; pointer-events:none;
+    opacity:0; transition:opacity .25s ease;
+    z-index:0; 
+  }
+
+  
+  .page-title{
+    position:fixed; top:70px; left:50%; transform:translateX(-50%);
+    z-index:1; 
+    font-weight:400;
+    font-size:18px;            
+    letter-spacing:.45em;
+    text-transform:uppercase;
+    white-space:nowrap;
+    color:#000;
+    pointer-events:none;       
+  }
+
+  
+  .list{
+    position:relative; z-index:1;       
+    display:flex; flex-direction:column; align-items:center;
+    max-width:min(60ch, 90vw);
+    transform: translateY(2vh);         
+  }
+  .track{
+    background:none; border:0; color:var(--fg); cursor:pointer;
+    font: 400 var(--item-size)/1.6 'GGX88 Book', ui-monospace, Menlo, monospace;
+    letter-spacing:.35em; text-transform:uppercase; white-space:nowrap;
+    padding:2px 0; margin: var(--track-gap) 0;
+  }
+  .track:hover{ color:var(--muted); }
+  .track.is-playing{ text-decoration:underline; }
+
+  
+  .tooltip{
+    position:absolute; pointer-events:none; display:none;
+    background:rgba(255,255,255,.9); border:1px solid rgba(0,0,0,.15);
+    border-radius:6px; padding:4px 6px; font-size:12px; color:#000; z-index:10;
+  }
+
+  
+  body.visualizer-active { color:#fff; }
+  body.visualizer-active .track { color:#fff; }
+  body.visualizer-active .track:hover { color:#ccc; }
+  body.visualizer-active .page-title { color:#fff; }
+  body.visualizer-active .back-to-index,
+  body.visualizer-active .help-icon { color:#fff; }
+  body.visualizer-active .back-to-index:hover,
+  body.visualizer-active .help-icon:hover { color:#ccc; }
+</style>
+</head>
+
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <a href="index.html" class="back-to-index" aria-label="Back">&lt;</a>
+  <div id="help" class="help-icon" aria-label="Help" title="Help">?</div>
+  <div id="tip" class="tooltip">click text to play / click again to pause</div>
+
+  <h1 class="page-title">COMMERCIAL AUDIO SAMPLES</h1>
+
+
+  <main class="list" aria-label="Audio playlist">
+    
+    <button class="track" data-src="files/aud/TRAP_FRAGMENT.m4a">AUDIO:001::N1:25</button>
+    <button class="track" data-src="files/aud/POP_PUNK_CLIP.m4a">AUDIO:002::N1:25</button>
+    <button class="track" data-src="files/aud/GABBER_CLIP.m4a">AUDIO:003::N1.25</button>
+<br>
+    <button class="track" data-src="files/aud/NIKE-3.m4a">AUDIO:001::N2:25</button>
+    <button class="track" data-src="files/aud/NIKE-2.m4a">AUDIO:002::N2:24</button>
+    <button class="track" data-src="files/aud/NIKE-1x.m4a">AUDIO:003::N2:25</button>
+<br>
+
+    <button class="track" data-src="files/aud/MARGIELA_V2.0.m4a">AUDIO:001::MM:24</button>
+    <button class="track" data-src="files/aud/MARGIELA_V1.0.m4a">AUDIO:002::MM:24</button>
+<br>
+
+    <button class="track" data-src="files/aud/OP3-v2dubbed.m4a">AUDIO:001::AS:24</button>
+    <button class="track" data-src="files/aud/ACNE_COATEDDENIM_CUT4.m4a">AUDIO:002::AS:24</button>
+    <button class="track" data-src="files/aud/ACNE_TEASER_CUT1.m4a">AUDIO:001::AS:24</button>
+    <button class="track" data-src="files/aud/OP3-v1.m4a">AUDIO:002::AS:24</button>
+    <button class="track" data-src="files/aud/ACNE_SHERLING_CUT3.m4a">AUDIO:003::AS:24</button>
+    <button class="track" data-src="files/aud/ACNE_SHERLING_CUT2.m4a">AUDIO:004::AS:24</button>
+    <button class="track" data-src="files/aud/ACNE_DARKSIDE_CUT5V2.m4a">AUDIO:005::AS:24</button>
+
+    
+    <audio id="player" preload="metadata" crossorigin="anonymous"></audio>
+  </main>
+
+  
+  <script src="lodash.js"></script>
+  <script src="butterchurn.js"></script>
+  <script src="butterchurnPresets.min.js"></script>
+
+<script>
+(() => {
+  
+  const tip  = document.getElementById('tip');
+  const help = document.getElementById('help');
+  help.addEventListener('mouseenter', e => { tip.style.display='block'; tip.style.left=(e.clientX+10)+'px'; tip.style.top=(e.clientY+10)+'px'; });
+  help.addEventListener('mousemove',  e => { tip.style.left=(e.clientX+10)+'px'; tip.style.top=(e.clientY+10)+'px'; });
+  help.addEventListener('mouseleave', () => tip.style.display='none');
+
+  
+  const canvas  = document.getElementById('bgCanvas');
+  const player  = document.getElementById('player');
+  const buttons = [...document.querySelectorAll('.track')];
+
+  
+  player.loop = true;
+
+  
+  let audioCtx   = null;
+  let visualizer = null;
+  let mediaNode  = null;
+  let presets    = null, presetKeys = null, presetTimer = null;
+
+  
+  function fit() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width  = Math.floor(innerWidth * dpr);
+    canvas.height = Math.floor(innerHeight * dpr);
+    canvas.style.width  = innerWidth  + 'px';
+    canvas.style.height = innerHeight + 'px';
+    if (visualizer) visualizer.setRendererSize(canvas.width, canvas.height);
+  }
+  addEventListener('resize', fit);
+  fit();
+
+  
+  function ensureVisualizer() {
+    if (visualizer) return;
+
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    visualizer = butterchurn.createVisualizer(audioCtx, canvas, {
+      width: canvas.width,
+      height: canvas.height,
+      pixelRatio: Math.max(1, window.devicePixelRatio || 1),
+      textureRatio: 1
+    });
+
+    
+    mediaNode = audioCtx.createMediaElementSource(player);
+    visualizer.connectAudio(mediaNode);
+    mediaNode.connect(audioCtx.destination);
+
+    
+    const render = () => { visualizer.render(); requestAnimationFrame(render); };
+    requestAnimationFrame(render);
+
+    
+    presets = butterchurnPresets.getPresets();
+    presetKeys = Object.keys(presets);
+  }
+
+  function randomPreset() {
+    if (!visualizer || !presetKeys?.length) return;
+    const key = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+    visualizer.loadPreset(presets[key], 0.0);
+  }
+  function startPresetCycle() {
+    stopPresetCycle();
+    randomPreset();
+    presetTimer = setInterval(randomPreset, 15000);
+  }
+  function stopPresetCycle() {
+    if (presetTimer) { clearInterval(presetTimer); presetTimer = null; }
+  }
+
+  
+  let currentBtn = null;
+
+  function playSrc(btn) {
+    ensureVisualizer();  
+
+    const same = (currentBtn === btn);
+    if (same && !player.paused) { player.pause(); return; }
+
+    player.src = btn.dataset.src;
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+    player.play().catch(err => console.warn('play() failed:', err));
+    buttons.forEach(b => b.classList.toggle('is-playing', b === btn));
+    currentBtn = btn;
+  }
+
+  
+  buttons.forEach(b => {
+    b.addEventListener('click', (e) => { e.stopPropagation(); playSrc(b); });
+    b.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playSrc(b); }
+    });
+  });
+
+  
+  document.addEventListener('click', () => { player.pause(); });
+
+  
+  player.addEventListener('play', () => {
+    canvas.style.opacity = '1';
+    document.body.classList.add('visualizer-active');       
+    document.body.style.backgroundColor = 'transparent';
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    startPresetCycle();
+  });
+
+  player.addEventListener('pause', () => {
+    canvas.style.opacity = '0';
+    document.body.classList.remove('visualizer-active');
+    document.body.style.backgroundColor = '#fff';
+    stopPresetCycle();
+  });
+
+  player.addEventListener('ended', () => {
+    canvas.style.opacity = '0';
+    document.body.classList.remove('visualizer-active');
+    document.body.style.backgroundColor = '#fff';
+    stopPresetCycle();
+    buttons.forEach(b => b.classList.remove('is-playing'));
+    currentBtn = null;
+  });
+})();
+</script>
+</body>
+</html>

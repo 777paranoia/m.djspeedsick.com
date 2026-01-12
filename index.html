@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DJSPEEDSICK</title>
+    <style>
+        body, html { margin: 0; padding: 0; background: transparent; overflow-x: hidden; height: 100%; }
+        #bg-video { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -1; }
+
+        /* CONKY SIDEBAR - LOCKED TO CANVAS */
+        #conky-sidebar {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            z-index: 10000; 
+            color: #00ff00; 
+            font-family: monospace; 
+            font-size: 9px; 
+            padding: 60px 10px 15px 10px; 
+            box-sizing: border-box; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            display: none; 
+            line-height: 1.0; 
+            text-shadow: 1px 1px 1px #000; 
+            pointer-events: none;
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            word-break: break-all; 
+        }
+        #conky-sidebar * { pointer-events: auto; }
+        .conky-line { margin: 0; padding: 0; }
+        .separator { color: #00ff00; opacity: 0.4; margin: 1px 0; }
+        
+        .conky-invert { background: #00ff00; color: #000; padding: 0 2px; display: inline-block; }
+        .conky-link { color: #00ff00; text-decoration: none; border-bottom: 1px dotted #00ff00; display: inline-block; }
+
+        /* GRIDS */
+        .grid-header { display: block; width: 90%; max-width: 350px; margin: 4vh auto 10px auto; position: relative; z-index: 1; }
+        #image-grid { display: grid; grid-template-columns: repeat(3, 1fr); width: 90%; max-width: 350px; margin: 0 auto; gap: 12px; position: relative; z-index: 10; }
+        #video-section { display: grid; grid-template-columns: repeat(2, 1fr); width: 85%; max-width: 310px; margin: 20px auto 0 auto; padding-bottom: 80px; gap: 0; position: relative; z-index: 10; }
+        #hands-reveal { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 80px); object-fit: fill; z-index: -1; pointer-events: none; }
+        .grid-item-wrap { position: relative; user-select: none; }
+        .video-move { cursor: grab; touch-action: none; }
+        .grid-item { width: 100%; height: auto; display: block; pointer-events: none; }
+        #image-grid .grid-item-wrap { aspect-ratio: 1/1; }
+        #image-grid .grid-item { height: 100%; object-fit: cover; }
+        #custom-cursor { position: fixed; pointer-events: none; z-index: 9999; color: #fff; font-family: monospace; font-size: 10px; display: none; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+<img src="files/img/buttin.png" id="conky-toggle" onclick="toggleConky()" style="
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: 30px; /* Reduced from 35px */
+    z-index: 11000;
+    cursor: pointer;
+    opacity: 0.7; /* Slight transparency */
+    filter: drop-shadow(0px 0px 5px #000);
+    transition: opacity 0.2s; /* Smooth hover transition */
+">
+<div id="conky-sidebar">
+<div class="conky-line" id="coords-val">LOC: SEARCHING...</div>
+<div class="conky-line" id="system-ip">IP: fetching...</div>
+<div class="separator">-----------------------</div>
+<div class="conky-line">NEAREST PLACE TO BUY CIGARETTES:</div>
+<div id="cig-display" class="conky-invert">SCANNING...</div>
+<div id="cig-link" class="conky-line"></div>
+<div class="separator">-----------------------</div>
+<div class="conky-line">UPCOMING SHOWS: <br>
+(n/a)</div>
+<div class="separator">-----------------------</div>
+<div class="conky-line">CONTACT</div>
+<div class="separator">-----------------------</div>
+<div class="conky-line"><a href="mailto:boettke@gdjspeedsick.com" class="conky-link">>> BOOKING</a></div>
+<div class="conky-line"><a href="mailto:dj@djspeedsick.com" class="conky-link">>> PRESS</a></div>
+<div class="conky-line"><a href="mailto:777paranoia@gmail.com" class="conky-link">>> COMMISSIONS</a></div>
+<br>
+<div class="separator">-----------------------</div>
+<div class="conky-line"><a href="http://djspeedsick.com/3dcd.html" class="conky-link">>> ESCALATIONIST</a></div>
+<div class="conky-line"><a href="https://adhd.djspeedsick.com" class="conky-link">>> PORTFOLIO</a></div>
+<div class="separator">-----------------------</div>
+<div class="conky-line">EXTERNAL LINKS</div>
+<div class="separator">-----------------------</div>
+<div class="conky-line"><a href="https://soundcloud.com/speedsick" class="conky-link">> SOUNDCLOUD</a></div>
+<div class="conky-line"><a href="https://djspeedsick.bandcamp.com" class="conky-link">> BANDCAMP</a></div>
+<div class="conky-line"><a href="https://instagram.com/djspeedsick" class="conky-link">> INSTAGRAM</a></div>
+<div class="conky-line"><a href="https://en.wikipedia.org/wiki/DJ_Speedsick" class="conky-link">> WIKIPEDIA</a></div>
+<div class="conky-line"><a href="https://discogs.com/artist/5782732-DJ-Speedsick" class="conky-link">> DISCOGS</a></div>
+<div class="separator">------------------------</div>
+<div class="conky-link" style="cursor: pointer;" onclick="toggleConky()">CLOSE</div>
+<div class="separator">------------------------</div>
+</div>
+
+<img id="bg-video" src="files/mov/indexmov.gif">
+<img src="files/img/djssdc.png" class="grid-header">
+
+<div id="image-grid">
+    <div class="grid-item-wrap" id="grid1"><img class="grid-item" src="files/img/unix666-18.jpg"></div>
+    <div class="grid-item-wrap" id="grid2"><img class="grid-item" src="files/img/na.jpg"></div>
+    <div class="grid-item-wrap" id="grid3"><img class="grid-item" src="files/img/bpp-6004.jpg"></div>
+    <div class="grid-item-wrap" id="grid4"><img class="grid-item" src="files/img/unix666-17.jpg"></div>
+    <div class="grid-item-wrap" id="grid5"><img class="grid-item" src="files/img/unix666-16.jpg"></div>
+    <div class="grid-item-wrap" id="grid6"><img class="grid-item" src="files/img/unix666-14.jpg"></div>
+    <div class="grid-item-wrap" id="grid7"><img class="grid-item" src="files/img/unix666-13.jpg"></div>
+    <div class="grid-item-wrap" id="grid8"><img class="grid-item" src="files/img/unix666-12.jpg"></div>
+    <div class="grid-item-wrap" id="grid9"><img class="grid-item" src="files/img/recycled.jpg"></div>
+</div>
+
+<div id="video-section">
+    <img src="files/img/hands.png" id="hands-reveal">
+    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/smtiaie.gif"></div>
+    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/forcedenlightenment.gif"></div>
+    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/yfpmms.gif"></div>
+    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/chemlove.gif"></div>
+</div>
+
+<div id="custom-cursor"></div>
+
+<script>
+    function toggleConky() {
+        const c = document.getElementById('conky-sidebar');
+        c.style.display = (c.style.display === 'block') ? 'none' : 'block';
+    }
+
+    // IP & LOCATION FETCH (No Permissions Required)
+    fetch('https://ipinfo.io/json')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('system-ip').innerText = "IP: " + data.ip;
+            const loc = data.loc.split(',');
+            document.getElementById('coords-val').innerText = `LAT: ${parseFloat(loc[0]).toFixed(4)} LON: ${parseFloat(loc[1]).toFixed(4)}`;
+        })
+        .catch(() => {
+            document.getElementById('coords-val').innerText = "LOC: OFFLINE";
+            document.getElementById('system-ip').innerText = "IP: 127.0.0.1";
+        });
+
+    const imageDetails = {
+        grid1: "UNIX666-18\nSelbstentfremdungsbewusstsein\nEscalationist\nCD-R",
+        grid2: "INTERDEPRAVITY\n2025 Sampler\nSelf-Released",
+        grid3: "BPP-6004\nScant/DJ Speedsick Split\nBreathing Problem Productions\n12in Vinyl",
+        grid4: "UNIX666-17\ndjss250417-dj.sbd\nEscalationist\nCD-R",
+        grid5: "UNIX666-16\nNothing Is Original\nBootleg Remixes And Edits 2017-2025\nEscalationist\nCD-R",
+        grid6: "UNIX666-14\nNon-Diegetic Instrumentals Vol. 1\nEscalationist\nCD-R",
+        grid7: "UNIX666-13\nHead Crash\nEscalationist\nMP3-CD",
+        grid8: "UNIX666-12\nChoke Out\nEscalationist\n2x Mini-CDr",
+        grid9: "RECYCLED\nRecycled Music\nRRRecords\nCassette"
+    };
+
+    const cursor = document.getElementById('custom-cursor');
+    let activeItem = null, startX, startY, zIndexCounter = 100;
+
+    function updateCursor(e, text) {
+        if (!text) { cursor.style.display = 'none'; return; }
+        cursor.innerText = text;
+        cursor.style.display = 'block';
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        cursor.style.left = (x + 15) + 'px';
+        cursor.style.top = (y - 60) + 'px';
+    }
+
+    document.querySelectorAll('#image-grid .grid-item-wrap').forEach(item => {
+        const info = imageDetails[item.id] || "";
+        ['touchstart', 'touchmove', 'mouseenter', 'mousemove'].forEach(ev => {
+            item.addEventListener(ev, (e) => updateCursor(e, info));
+        });
+        ['touchend', 'mouseleave'].forEach(ev => {
+            item.addEventListener(ev, () => cursor.style.display = 'none');
+        });
+    });
+
+    document.querySelectorAll('.video-move').forEach(item => {
+        item.dataset.x = 0; item.dataset.y = 0;
+        const onStart = (e) => {
+            activeItem = item; zIndexCounter++; item.style.zIndex = zIndexCounter;
+            const evt = e.touches ? e.touches[0] : e;
+            startX = evt.clientX - parseFloat(item.dataset.x);
+            startY = evt.clientY - parseFloat(item.dataset.y);
+        };
+        item.addEventListener('mousedown', onStart);
+        item.addEventListener('touchstart', onStart, {passive: false});
+    });
+
+    const onMove = (e) => {
+        if (!activeItem) return;
+        e.preventDefault();
+        const evt = e.touches ? e.touches[0] : e;
+        const x = evt.clientX - startX, y = evt.clientY - startY;
+        activeItem.dataset.x = x; activeItem.dataset.y = y;
+        activeItem.style.transform = `translate(${x}px, ${y}px)`;
+    };
+
+    const onEnd = () => { activeItem = null; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, {passive: false});
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+    
+    // 1. FETCH IP & LOCATION (ip-api.com is free and CORS-friendly)
+function initCigaretteLocator() {
+    fetch('http://ip-api.com/json/')
+        .then(res => res.json())
+        .then(data => {
+            // Update Conky Sidebar
+            if (document.getElementById('system-ip')) {
+                document.getElementById('system-ip').innerText = "IP: " + data.query;
+            }
+            if (document.getElementById('host-val')) {
+                document.getElementById('host-val').innerText = `LAT: ${data.lat.toFixed(4)} LON: ${data.lon.toFixed(4)}`;
+            }
+
+            // Start scanning for cigarettes
+            findNearestCigarettes(data.lat, data.lon);
+        })
+        .catch(err => {
+            console.error("Geo-fetch failed:", err);
+            document.getElementById('cig-display').innerText = "OFFLINE";
+        });
+}
+
+// 2. OVERPASS QUERY (Same logic, but triggered by the clean IP fetch)
+function findNearestCigarettes(lat, lon) {
+    const radius = 3000; 
+    const query = `[out:json];(node["shop"~"convenience|kiosk"](around:${radius},${lat},${lon});node["amenity"="fuel"](around:${radius},${lat},${lon}););out body;`;
+    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            const display = document.getElementById('cig-display');
+            const linkDiv = document.getElementById('cig-link');
+
+            if (data.elements && data.elements.length > 0) {
+                const shop = data.elements[0];
+                const name = (shop.tags.name || shop.tags.brand || "UNNAMED SHOP").toUpperCase();
+                
+                display.innerText = name;
+                
+                // Map link
+                const mapUrl = `https://www.google.com/maps?q=${shop.lat},${shop.lon}`;
+                linkDiv.innerHTML = `<a href="${mapUrl}" class="conky-link" target="_blank">>> VIEW ON MAP</a>`;
+            } else {
+                display.innerText = "NONE NEARBY";
+            }
+        })
+        .catch(() => {
+            document.getElementById('cig-display').innerText = "SCAN FAILED";
+        });
+}
+
+// Call this when the "Enter" button is clicked or page loads
+initCigaretteLocator();
+</script>
+</body>
+</html>

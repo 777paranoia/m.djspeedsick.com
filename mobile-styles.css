@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DJSPEEDSICK MOBILE</title>
+    <style>
+        /* CRITICAL RESET */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+S            overflow: hidden;
+        }
+
+        /* BACKGROUND VIDEO - FORCED STRETCH */
+        #master-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* 'fill' forces it to stretch to corners (warped) if aspect ratio differs */
+            /* 'cover' would crop it. Based on "unwarped is wrong", we use fill to force fit. */
+            object-fit: cover; 
+            z-index: -999;
+            pointer-events: none;
+        }
+
+        /* UI LAYER */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="master-bg" autoplay muted loop playsinline webkit-playsinline>
+        <source src="files/mov/indexmov.mp4" type="video/mp4">
+    </video>
+
+    <div id="ui-layer">
+        </div>
+
+    <script>
+        window.addEventListener('load', function() {
+            var bg = document.getElementById('master-bg');
+            // Ensure play on load
+            var promise = bg.play();
+            if (promise !== undefined) {
+                promise.catch(error => {
+                    // Auto-play was prevented; play on first touch
+                    document.body.addEventListener('touchstart', function() {
+                        bg.play();
+                    }, { once: true });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
