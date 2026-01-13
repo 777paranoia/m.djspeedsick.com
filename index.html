@@ -8,37 +8,20 @@
         body, html { margin: 0; padding: 0; background: transparent; overflow-x: hidden; height: 100%; }
         #bg-video { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -1; }
 
-        /* CONKY SIDEBAR - LOCKED TO CANVAS */
         #conky-sidebar {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            z-index: 10000; 
-            color: #00ff00; 
-            font-family: monospace; 
-            font-size: 9px; 
-            padding: 60px 10px 15px 10px; 
-            box-sizing: border-box; 
-            overflow-y: auto; 
-            overflow-x: hidden; 
-            display: none; 
-            line-height: 1.0; 
-            text-shadow: 1px 1px 1px #000; 
-            pointer-events: none;
-            white-space: pre-wrap; 
-            word-wrap: break-word; 
-            word-break: break-all; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10000; color: #00ff00; font-family: monospace; font-size: 9px;
+            padding: 60px 10px 15px 10px; box-sizing: border-box;
+            overflow-y: auto; overflow-x: hidden; display: none; line-height: 1.0;
+            text-shadow: 1px 1px 1px #000; pointer-events: none;
+            white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
         }
         #conky-sidebar * { pointer-events: auto; }
         .conky-line { margin: 0; padding: 0; }
         .separator { color: #00ff00; opacity: 0.4; margin: 1px 0; }
-        
         .conky-invert { background: #00ff00; color: #000; padding: 0 2px; display: inline-block; }
         .conky-link { color: #00ff00; text-decoration: none; border-bottom: 1px dotted #00ff00; display: inline-block; }
 
-        /* GRIDS */
         .grid-header { display: block; width: 90%; max-width: 350px; margin: 4vh auto 10px auto; position: relative; z-index: 1; }
         #image-grid { display: grid; grid-template-columns: repeat(3, 1fr); width: 90%; max-width: 350px; margin: 0 auto; gap: 12px; position: relative; z-index: 10; }
         #video-section { display: grid; grid-template-columns: repeat(2, 1fr); width: 85%; max-width: 310px; margin: 20px auto 0 auto; padding-bottom: 80px; gap: 0; position: relative; z-index: 10; }
@@ -53,48 +36,38 @@
 </head>
 <body>
 
-<img src="files/img/buttin.png" id="conky-toggle" onclick="toggleConky()" style="
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    width: 30px; /* Reduced from 35px */
-    z-index: 11000;
-    cursor: pointer;
-    opacity: 0.7; /* Slight transparency */
-    filter: drop-shadow(0px 0px 5px #000);
-    transition: opacity 0.2s; /* Smooth hover transition */
-">
+<img src="files/img/buttin.png" id="conky-toggle" onclick="toggleConky()" style="position: fixed; top: 12px; left: 12px; width: 30px; z-index: 11000; cursor: pointer; opacity: 0.7; filter: drop-shadow(0px 0px 5px #000); transition: opacity 0.2s;">
+
 <div id="conky-sidebar">
-<div class="conky-line" id="coords-val">LOC: SEARCHING...</div>
-<div class="conky-line" id="system-ip">IP: fetching...</div>
-<div class="separator">-----------------------</div>
-<div class="conky-line">NEAREST PLACE TO BUY CIGARETTES:</div>
-<div id="cig-display" class="conky-invert">SCANNING...</div>
-<div id="cig-link" class="conky-line"></div>
-<div class="separator">-----------------------</div>
-<div class="conky-line">UPCOMING SHOWS: <br>
-(n/a)</div>
-<div class="separator">-----------------------</div>
-<div class="conky-line">CONTACT</div>
-<div class="separator">-----------------------</div>
-<div class="conky-line"><a href="mailto:boettke@gdjspeedsick.com" class="conky-link">>> BOOKING</a></div>
-<div class="conky-line"><a href="mailto:dj@djspeedsick.com" class="conky-link">>> PRESS</a></div>
-<div class="conky-line"><a href="mailto:777paranoia@gmail.com" class="conky-link">>> COMMISSIONS</a></div>
-<br>
-<div class="separator">-----------------------</div>
-<div class="conky-line"><a href="http://djspeedsick.com/3dcd.html" class="conky-link">>> ESCALATIONIST</a></div>
-<div class="conky-line"><a href="https://adhd.djspeedsick.com" class="conky-link">>> PORTFOLIO</a></div>
-<div class="separator">-----------------------</div>
-<div class="conky-line">EXTERNAL LINKS</div>
-<div class="separator">-----------------------</div>
-<div class="conky-line"><a href="https://soundcloud.com/speedsick" class="conky-link">> SOUNDCLOUD</a></div>
-<div class="conky-line"><a href="https://djspeedsick.bandcamp.com" class="conky-link">> BANDCAMP</a></div>
-<div class="conky-line"><a href="https://instagram.com/djspeedsick" class="conky-link">> INSTAGRAM</a></div>
-<div class="conky-line"><a href="https://en.wikipedia.org/wiki/DJ_Speedsick" class="conky-link">> WIKIPEDIA</a></div>
-<div class="conky-line"><a href="https://discogs.com/artist/5782732-DJ-Speedsick" class="conky-link">> DISCOGS</a></div>
-<div class="separator">------------------------</div>
-<div class="conky-link" style="cursor: pointer;" onclick="toggleConky()">CLOSE</div>
-<div class="separator">------------------------</div>
+    <div class="conky-line" id="coords-val">LOC: SEARCHING...</div>
+    <div class="conky-line" id="system-ip">IP: fetching...</div>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line">NEAREST PLACE TO BUY CIGARETTES:</div>
+    <div id="cig-display" class="conky-invert">SCANNING...</div>
+    <div id="cig-link" class="conky-line"></div>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line">UPCOMING SHOWS: <br>(n/a)</div>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line">CONTACT</div>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line"><a href="mailto:boettke@gdjspeedsick.com" class="conky-link">>> BOOKING</a></div>
+    <div class="conky-line"><a href="mailto:dj@djspeedsick.com" class="conky-link">>> PRESS</a></div>
+    <div class="conky-line"><a href="mailto:777paranoia@gmail.com" class="conky-link">>> COMMISSIONS</a></div>
+    <br>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line"><a href="http://escalation.ist" class="conky-link">>> ESCALATIONIST</a></div>
+    <div class="conky-line"><a href="https://adhd.djspeedsick.com" class="conky-link">>> PORTFOLIO</a></div>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line">EXTERNAL LINKS</div>
+    <div class="separator">-----------------------</div>
+    <div class="conky-line"><a href="https://soundcloud.com/speedsick" class="conky-link">> SOUNDCLOUD</a></div>
+    <div class="conky-line"><a href="https://djspeedsick.bandcamp.com" class="conky-link">> BANDCAMP</a></div>
+    <div class="conky-line"><a href="https://instagram.com/djspeedsick" class="conky-link">> INSTAGRAM</a></div>
+    <div class="conky-line"><a href="https://en.wikipedia.org/wiki/DJ_Speedsick" class="conky-link">> WIKIPEDIA</a></div>
+    <div class="conky-line"><a href="https://discogs.com/artist/5782732-DJ-Speedsick" class="conky-link">> DISCOGS</a></div>
+    <div class="separator">------------------------</div>
+    <div class="conky-link" style="cursor: pointer;" onclick="toggleConky()">CLOSE</div>
+    <div class="separator">------------------------</div>
 </div>
 
 <img id="bg-video" src="files/mov/indexmov.gif">
@@ -128,20 +101,45 @@
         c.style.display = (c.style.display === 'block') ? 'none' : 'block';
     }
 
-    // IP & LOCATION FETCH (No Permissions Required)
-    fetch('https://ipinfo.io/json')
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('system-ip').innerText = "IP: " + data.ip;
-            const loc = data.loc.split(',');
-            document.getElementById('coords-val').innerText = `LAT: ${parseFloat(loc[0]).toFixed(4)} LON: ${parseFloat(loc[1]).toFixed(4)}`;
-        })
-        .catch(() => {
-            document.getElementById('coords-val').innerText = "LOC: OFFLINE";
-            document.getElementById('system-ip').innerText = "IP: 127.0.0.1";
-        });
+       function initCigaretteLocator() {
+        fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('system-ip').innerText = "IP: " + data.ip;
+                document.getElementById('coords-val').innerText = `LAT: ${data.latitude.toFixed(4)} LON: ${data.longitude.toFixed(4)}`;
+                findNearestCigarettes(data.latitude, data.longitude);
+            })
+            .catch(err => {
+                document.getElementById('cig-display').innerText = "GEO ERROR";
+            });
+    }
 
-    const imageDetails = {
+       function findNearestCigarettes(lat, lon) {
+        const radius = 3000; 
+        const query = `[out:json];(node["shop"~"convenience|kiosk"](around:${radius},${lat},${lon});node["amenity"="fuel"](around:${radius},${lat},${lon}););out body;`;
+        const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                const display = document.getElementById('cig-display');
+                const linkDiv = document.getElementById('cig-link');
+                if (data.elements && data.elements.length > 0) {
+                    const shop = data.elements[0];
+                    const name = (shop.tags.name || shop.tags.brand || "UNNAMED SHOP").toUpperCase();
+                    display.innerText = name;
+                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${shop.lat},${shop.lon}`;
+                    linkDiv.innerHTML = `<a href="${mapUrl}" class="conky-link" target="_blank">>> VIEW ON MAP</a>`;
+                } else {
+                    display.innerText = "NONE NEARBY";
+                }
+            })
+            .catch(() => {
+                document.getElementById('cig-display').innerText = "SCAN FAILED";
+            });
+    }
+
+        const imageDetails = {
         grid1: "UNIX666-18\nSelbstentfremdungsbewusstsein\nEscalationist\nCD-R",
         grid2: "INTERDEPRAVITY\n2025 Sampler\nSelf-Released",
         grid3: "BPP-6004\nScant/DJ Speedsick Split\nBreathing Problem Productions\n12in Vinyl",
@@ -190,73 +188,18 @@
 
     const onMove = (e) => {
         if (!activeItem) return;
-        e.preventDefault();
         const evt = e.touches ? e.touches[0] : e;
         const x = evt.clientX - startX, y = evt.clientY - startY;
         activeItem.dataset.x = x; activeItem.dataset.y = y;
         activeItem.style.transform = `translate(${x}px, ${y}px)`;
     };
 
-    const onEnd = () => { activeItem = null; };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('touchmove', onMove, {passive: false});
-    window.addEventListener('mouseup', onEnd);
-    window.addEventListener('touchend', onEnd);
-    
-    // 1. FETCH IP & LOCATION (ip-api.com is free and CORS-friendly)
-function initCigaretteLocator() {
-    fetch('http://ip-api.com/json/')
-        .then(res => res.json())
-        .then(data => {
-            // Update Conky Sidebar
-            if (document.getElementById('system-ip')) {
-                document.getElementById('system-ip').innerText = "IP: " + data.query;
-            }
-            if (document.getElementById('host-val')) {
-                document.getElementById('host-val').innerText = `LAT: ${data.lat.toFixed(4)} LON: ${data.lon.toFixed(4)}`;
-            }
+    window.addEventListener('mouseup', () => activeItem = null);
+    window.addEventListener('touchend', () => activeItem = null);
 
-            // Start scanning for cigarettes
-            findNearestCigarettes(data.lat, data.lon);
-        })
-        .catch(err => {
-            console.error("Geo-fetch failed:", err);
-            document.getElementById('cig-display').innerText = "OFFLINE";
-        });
-}
-
-// 2. OVERPASS QUERY (Same logic, but triggered by the clean IP fetch)
-function findNearestCigarettes(lat, lon) {
-    const radius = 3000; 
-    const query = `[out:json];(node["shop"~"convenience|kiosk"](around:${radius},${lat},${lon});node["amenity"="fuel"](around:${radius},${lat},${lon}););out body;`;
-    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
-
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            const display = document.getElementById('cig-display');
-            const linkDiv = document.getElementById('cig-link');
-
-            if (data.elements && data.elements.length > 0) {
-                const shop = data.elements[0];
-                const name = (shop.tags.name || shop.tags.brand || "UNNAMED SHOP").toUpperCase();
-                
-                display.innerText = name;
-                
-                // Map link
-                const mapUrl = `https://www.google.com/maps?q=${shop.lat},${shop.lon}`;
-                linkDiv.innerHTML = `<a href="${mapUrl}" class="conky-link" target="_blank">>> VIEW ON MAP</a>`;
-            } else {
-                display.innerText = "NONE NEARBY";
-            }
-        })
-        .catch(() => {
-            document.getElementById('cig-display').innerText = "SCAN FAILED";
-        });
-}
-
-// Call this when the "Enter" button is clicked or page loads
-initCigaretteLocator();
+    initCigaretteLocator();
 </script>
 </body>
 </html>
