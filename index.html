@@ -13,14 +13,13 @@
     inset: 0;
     display: block;
     width: 100vw;
-    height: 100dvh; /* Fixes the mobile URL bar crop */
+    height: 100dvh;
   }
   
  #splash-screen {
     position: fixed;
     top: 50%;
     left: 50%;
-    /* Swap viewport units because the div is rotated */
     width: 100dvh; 
     height: 100vw;
     transform: translate(-50%, -50%) rotate(90deg);
@@ -34,7 +33,7 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Forces the image to wrap and fill the space */
+    object-fit: cover;
   }
 
  #enter-button {
@@ -44,13 +43,11 @@
     transform: translate(-50%, -50%);
     cursor: pointer;
     z-index: 2;
-
-    /* Constrain the button strictly to the phone's viewport boundaries */
-    max-width: 80dvh;  /* Limits the button's length against the phone's height */
-    max-height: 80vw;  /* Limits the button's height against the phone's width */
+    max-width: 80dvh;
+    max-height: 80vw;
     width: auto;
     height: auto;
-    object-fit: contain; /* Keeps the text aspect ratio perfectly intact */
+    object-fit: contain;
   }
   
   #loading-screen {
@@ -66,12 +63,11 @@
     touch-action: none;
   }
 
-  #loading-strobe {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Swaps to 'contain' if you don't want them cropped */
+ #loading-strobe {
+    width: 100vw;
+    height: auto;
   }
-    </style>
+</style>
 </head>
 <body>
 <div id="loading-screen">
@@ -87,26 +83,22 @@
 </div>
 <canvas id="c"></canvas>
 
-<script>
+<audio id="audioPlayer"></audio>
+<script src="player.js"></script>
 
-// --- STROBE PRELOADER ---
-const totalFrames = 7; // UPDATE THIS to match your actual number of loading*.jpg files
+<script>
+const totalFrames = 7;
 const loadingImg = document.getElementById("loading-strobe");
 
-// 50ms interval = a violent 20 frames per second strobe
 const strobeInterval = setInterval(() => {
   if (loadingImg) {
-    // Pick a random number between 1 and totalFrames
     const randomFrame = Math.floor(Math.random() * totalFrames) + 1;
     loadingImg.src = `files/img/load/loading${randomFrame}.jpg`;
   }
 }, 50);
 
 window.addEventListener('load', () => {
-  // Kill the strobe loop
   clearInterval(strobeInterval);
-  
-  // Hide the loading screen, revealing the splash screen
   const loader = document.getElementById("loading-screen");
   if (loader) {
     loader.style.display = "none";
@@ -119,7 +111,17 @@ function enterSite(){
   _entered = true;
   const splash = document.getElementById("splash-screen");
   const audio = document.getElementById("audioPlayer");
-  if (audio) audio.play().catch(()=>{});
+  
+  if (audio && typeof audioTracks !== 'undefined') {
+    const playRandomTrack = () => {
+      const randomIndex = Math.floor(Math.random() * audioTracks.length);
+      audio.src = audioTracks[randomIndex];
+      audio.play().catch(()=>{});
+    };
+    playRandomTrack();
+    audio.addEventListener('ended', playRandomTrack);
+  }
+
   splash.style.display = "none";
   window.startWakeSequence = true;
 }
@@ -127,73 +129,56 @@ function enterSite(){
 
 <script id="simFrag" type="x-shader/x-fragment">
 precision highp float;
-
-/* Water ripple simulation pass.
-   r = current height, g = previous height.
-   Outputs new (r=height, g=prev) each frame for ping-pong.
-   Drops of rain are seeded randomly via u_time.
-   The window mask (u_window) restricts water to glass panes only. */
-
 uniform sampler2D u_prev;
 uniform sampler2D u_window;
-uniform vec2      u_resolution;
-uniform float     u_time;
-uniform float     u_dt;
+uniform vec2  u_resolution;
+uniform float u_time;
+uniform float u_dt;
 
-float hash1(float x){ return fract(sin(x * 127.1 + 1.9898) * 43758.5); }
-float hash2f(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float hash1(float x){ return fract(sin(x*127.1)*43758.5); }
 
 void main(){
-  vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-  vec2 texel = 1.0 / u_resolution.xy;
+  vec2 uv = gl_FragCoord.xy / u_resolution;
+  vec4 win = texture2D(u_window, uv);
+  float isGlass = 1.0 - clamp(win.a, 0.0, 1.0);
+  if(isGlass < 0.1){ gl_FragColor = vec4(0.0); return; }
 
-  /* Only simulate on the glass area of the window mask.
-     Alpha < 0.5 = glass (transparent frame slot). */
-  float maskAlpha = texture2D(u_window, uv).a;
-  bool isGlass = maskAlpha < 0.5;
+  vec2 texel = 1.0 / u_resolution;
+  vec4 prev = texture2D(u_prev, uv);
+  float h = prev.r;
 
-  if(!isGlass){
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    return;
-  }
+  float band = floor(uv.x * 12.0);
+  float depthRd = hash1(band * 9.17);
+  float speedMul = mix(0.55, 1.55, depthRd);
+  float thickMul = mix(0.65, 1.85, depthRd);
 
-  /* Read neighbours — clamp to glass mask edges */
-  float cur  = texture2D(u_prev, uv).r;
-  float prev = texture2D(u_prev, uv).g;
+  float cols = 36.0 + depthRd * 56.0;
+  float colId = floor(uv.x * cols);
+  float colRnd = hash1(colId * 3.7 + 1.3);
+  float colRnd2 = hash1(colId * 7.1 + 5.9);
 
-  float n = texture2D(u_prev, uv + vec2(0.0,  texel.y)).r;
-  float s = texture2D(u_prev, uv + vec2(0.0, -texel.y)).r;
-  float e = texture2D(u_prev, uv + vec2( texel.x, 0.0)).r;
-  float w = texture2D(u_prev, uv + vec2(-texel.x, 0.0)).r;
+  float spawnT1 = step(0.935, fract(u_time * (0.12 + colRnd * 0.16) * speedMul + colRnd2 * 13.7));
+  float spawnT2 = step(0.965, fract(u_time * (0.08 + colRnd2 * 0.11) * speedMul + colRnd * 7.3));
+  float spawnRnd = hash(uv * vec2(1.0, 2.2) + vec2(floor(u_time * (1.7 + colRnd * 1.9)), band * 11.0));
 
-  /* 2D wave equation: next = 2*cur - prev + c^2*(lap) */
-  float c = 0.3;
-  float lap = (n + s + e + w) * 0.25 - cur;
-  float next = 2.0 * cur - prev + c * c * lap * u_dt * 60.0;
+  float spawnCol = (spawnT1 + spawnT2) * step(0.62, spawnRnd) * step(0.5, isGlass);
+  float newDrop = spawnCol * (0.85 + 1.35 * depthRd);
 
-  /* Damping — slightly faster near edges */
-  next *= 0.985;
+  vec4 above = texture2D(u_prev, uv - vec2(0.0, texel.y * (2.0 + depthRd * 2.0)));
+  float flowIn = above.r * (0.22 + 0.38 * depthRd);
 
-  /* Seed random raindrops */
-  float dropRate = 24.0;
-  float tick     = floor(u_time * dropRate);
-  for(int i = 0; i < 4; i++){
-    float fi = float(i);
-    float dx = hash1(tick * 7.3 + fi * 13.1);
-    float dy = hash1(tick * 11.7 + fi * 5.9);
-    vec2  dc = vec2(dx, dy);
-    float dist = length(uv - dc);
-    float strength = hash1(tick * 3.7 + fi * 19.3);
-    if(dist < 0.008 && strength > 0.55){
-      next += (1.0 - dist / 0.008) * 0.6;
-    }
-  }
+  float breakup = mix(0.985, 0.965, hash(vec2(colId, floor(u_time*1.2 + depthRd*9.0))));
+  float dryPulse = mix(0.00, 0.08, step(0.992, hash(vec2(colId*2.3, floor(u_time*0.8)))));
 
-  /* Clamp to prevent blow-up */
-  next = clamp(next, -1.0, 1.0);
+  h = h * (0.92 * breakup) + flowIn + newDrop * (0.045 * thickMul);
+  h = clamp(h, 0.0, 1.0);
+  h *= (0.989 - dryPulse*0.25);
+  float flowOut = smoothstep(0.18, 0.88, h) * (0.20 + 0.22 * depthRd);
+  h = clamp(h - flowOut, 0.0, 1.0);
+  h *= isGlass;
 
-  /* Pack: r = new height (mapped 0-1), g = old height */
-  gl_FragColor = vec4(next * 0.5 + 0.5, cur * 0.5 + 0.5, 0.0, 1.0);
+  gl_FragColor = vec4(h, 0.0, depthRd, 1.0);
 }
 </script>
 
@@ -208,6 +193,7 @@ uniform int   u_mode;
 uniform float u_flash;
 uniform float u_shake;
 uniform float u_wake;
+uniform float u_modeSeed;
 uniform sampler2D u_texB1,u_texB2,u_texB3,u_texB4,u_texB5,u_texB6;
 uniform sampler2D u_texSkyline,u_texWindow,u_texOOB;
 uniform sampler2D u_texBH;
@@ -225,31 +211,23 @@ float sdBox(vec3 p,vec3 b){
   return length(max(q,0.0))+min(max(q.x,max(q.y,q.z)),0.0);
 }
 
-/* --- Fast KIFS Fractal DE --- */
 float sdFractal(vec3 p, float power, float rotA, float rotB){
   vec3 z = p;
-  
-  // Rotate the entire shape slowly over time
   z.xz *= rot(u_time * rotA);
   z.yz *= rot(u_time * rotB);
-  
   float scale = 1.0;
-  // Animate the folding structure so it constantly shifts and evolves
   vec3 foldOffset = vec3(0.6, 0.6, 0.6) + vec3(0.15) * sin(u_time * 0.15 + power);
-  
-  // 8 iterations of pure geometry folding (no trig = incredibly fast)
   for(int i = 0; i < 8; i++){
-    z = abs(z); // Mirroring space
+    z = abs(z); 
     if (z.x < z.y) z.xy = z.yx;
     if (z.x < z.z) z.xz = z.zx;
     if (z.y < z.z) z.yz = z.zy;
-    
     z = z * 2.0 - foldOffset;
     scale *= 2.0;
   }
-  // Return the exact geometric distance
   return (length(z) - 0.2) / scale;
-}/* --- Shared color palette --- */
+}
+
 vec3 neonPalette(float t) {
   vec3 a = vec3(0.5, 0.5, 0.5);
   vec3 b = vec3(0.5, 0.5, 0.5);
@@ -258,7 +236,6 @@ vec3 neonPalette(float t) {
   return a + b * cos(6.28318 * (c * t + d));
 }
 
-/* --- Mode 1: Pickover Stalks --- */
 vec3 colorPickover(vec3 p) {
   vec2 c = vec2(p.x * 0.4 + sin(u_time * 0.07) * 0.3,
                 p.y * 0.4 + cos(u_time * 0.05) * 0.3);
@@ -276,7 +253,6 @@ vec3 colorPickover(vec3 p) {
   return neonPalette(hue) * (0.4 + 0.6 * (1.0 - trap));
 }
 
-/* --- Mode 2: Clifford Attractor --- */
 vec3 colorClifford(vec3 p) {
   float a  =  1.5 + sin(u_time * 0.11) * 0.4;
   float b  = -1.8 + cos(u_time * 0.07) * 0.3;
@@ -304,12 +280,10 @@ vec3 fractalAnchor(float id){
   float z = mix( 0.0,  3.5,  hash1(id * 11.7 + 0.41)); 
   return vec3(x, y, z);
 }
-float fractalPower(float id){
-  return mix(6.0, 10.0, hash1(id * 5.3)) + sin(u_time * mix(0.03, 0.08, hash1(id * 2.1))) * 1.5;
-}
+float fractalPower(float id){ return mix(6.0, 10.0, hash1(id * 5.3)) + sin(u_time * mix(0.03, 0.08, hash1(id * 2.1))) * 1.5; }
 float fractalRotA(float id){ return mix(0.05, 0.18, hash1(id * 9.7))  * (hash1(id * 4.1) > 0.5 ? 1.0 : -1.0); }
 float fractalRotB(float id){ return mix(0.04, 0.14, hash1(id * 6.3))  * (hash1(id * 8.9) > 0.5 ? 1.0 : -1.0); }
-float fractalScale(float id){ return mix(0.7, 1.4, hash1(id * 13.1)); }
+float fractalScale(float id){ return mix(0.7, 1.2, hash1(id * 13.1)); }
 float fractalFogDensity(float id){ return mix(0.006, 0.03, hash1(id * 17.3)); }
 
 float snow(vec2 uv,float size,float speed,float opacity){
@@ -321,7 +295,6 @@ float snow(vec2 uv,float size,float speed,float opacity){
   return smoothstep(.05,0.0,length(f))*hash2(id)*opacity;
 }
 
-/* --- WORLD RAIN --- */
 float worldRainLayer(vec2 uv, float t, float scale, float speed, float thickness, float density, float slant){
   vec2 u = uv;
   u.x *= u_resolution.x / u_resolution.y;
@@ -346,7 +319,6 @@ float worldRain(vec2 uv, float t){
   return clamp(r, 0.0, 1.0);
 }
 
-/* --- Scene --- */
 vec2 mapScene(vec3 p){
   vec2 res=vec2(1000.0,-1.0);
   float d1=sdBox(p-vec3(-3.0,0.0,2.0), vec3(1.2,12.0,1.5)); if(d1<res.x) res=vec2(d1,1.0);
@@ -355,41 +327,29 @@ vec2 mapScene(vec3 p){
   float d4=sdBox(p-vec3( 3.0,0.0,2.5), vec3(1.2,12.0,1.5)); if(d4<res.x) res=vec2(d4,4.0);
   float d5=sdBox(p-vec3( 4.2,0.0,7.5), vec3(1.2,12.0,1.5)); if(d5<res.x) res=vec2(d5,5.0);
   float d6=sdBox(p-vec3( 5.4,0.0,12.5),vec3(1.2,12.0,1.5)); if(d6<res.x) res=vec2(d6,6.0);
-
   if(u_mode == 1 || u_mode == 2){
-    float seed = floor(u_time * 0.015);
-    float num  = floor(hash1(seed * 31.1) * 3.0) + 1.0; 
-
-    float id0 = seed * 7.0;
-    float sc0 = fractalScale(id0);
-    vec3  fp0 = (p - fractalAnchor(id0)) / sc0;
-    float bound0 = length(fp0) - 3.0;
-    float df0 = bound0;
-    // Only run the trig math if the ray is physically near the fractal
-    if(bound0 < 0.1) df0 = max(bound0, sdFractal(fp0, fractalPower(id0), fractalRotA(id0), fractalRotB(id0)));
-    if(df0 / sc0 < res.x) res = vec2(df0 / sc0, 10.0);
-
+    float seed = u_modeSeed; 
+    float num = floor(hash1(seed * 31.1) * 3.0) + 1.0; 
+    float id0 = seed * 7.0; float sc0 = fractalScale(id0) * 0.7;
+    vec3 fp0 = p - fractalAnchor(id0);
+    float bound0 = length(fp0) - (sc0 * 1.5); float df0 = bound0;
+    if(bound0 < 0.2) df0 = max(bound0, sdFractal(fp0 / sc0, fractalPower(id0), fractalRotA(id0), fractalRotB(id0)) * sc0);
+    if(df0 < res.x) res = vec2(df0, 10.0);
     if(num >= 2.0){
-      float id1 = seed * 7.0 + 1.0;
-      float sc1 = fractalScale(id1);
-      vec3  fp1 = (p - fractalAnchor(id1)) / sc1;
-      float bound1 = length(fp1) - 3.0;
-      float df1 = bound1;
-      if(bound1 < 0.1) df1 = max(bound1, sdFractal(fp1, fractalPower(id1), fractalRotA(id1), fractalRotB(id1)));
-      if(df1 / sc1 < res.x) res = vec2(df1 / sc1, 10.0);
+      float id1 = seed * 7.0 + 1.0; float sc1 = fractalScale(id1) * 0.7;
+      vec3 fp1 = p - fractalAnchor(id1);
+      float bound1 = length(fp1) - (sc1 * 1.5); float df1 = bound1;
+      if(bound1 < 0.2) df1 = max(bound1, sdFractal(fp1 / sc1, fractalPower(id1), fractalRotA(id1), fractalRotB(id1)) * sc1);
+      if(df1 < res.x) res = vec2(df1, 10.0);
     }
-
     if(num >= 3.0){
-      float id2 = seed * 7.0 + 2.0;
-      float sc2 = fractalScale(id2);
-      vec3  fp2 = (p - fractalAnchor(id2)) / sc2;
-      float bound2 = length(fp2) - 3.0;
-      float df2 = bound2;
-      if(bound2 < 0.1) df2 = max(bound2, sdFractal(fp2, fractalPower(id2), fractalRotA(id2), fractalRotB(id2)));
-      if(df2 / sc2 < res.x) res = vec2(df2 / sc2, 10.0);
+      float id2 = seed * 7.0 + 2.0; float sc2 = fractalScale(id2) * 0.7;
+      vec3 fp2 = p - fractalAnchor(id2);
+      float bound2 = length(fp2) - (sc2 * 1.5); float df2 = bound2;
+      if(bound2 < 0.2) df2 = max(bound2, sdFractal(fp2 / sc2, fractalPower(id2), fractalRotA(id2), fractalRotB(id2)) * sc2);
+      if(df2 < res.x) res = vec2(df2, 10.0);
     }
   }
-
   return res;
 }
 
@@ -406,54 +366,53 @@ vec3 sampleBuilding(float id,vec2 texUV){
 
 vec2 waterNormal(vec2 uv){
   vec2 texel = 1.0 / u_resolution;
-  float hL = texture2D(u_water, uv - vec2(texel.x, 0.0)).r * 2.0 - 1.0;
-  float hR = texture2D(u_water, uv + vec2(texel.x, 0.0)).r * 2.0 - 1.0;
-  float hD = texture2D(u_water, uv - vec2(0.0, texel.y)).r * 2.0 - 1.0;
-  float hU = texture2D(u_water, uv + vec2(0.0, texel.y)).r * 2.0 - 1.0;
+  float hL = texture2D(u_water, uv - vec2(texel.x, 0.0)).r;
+  float hR = texture2D(u_water, uv + vec2(texel.x, 0.0)).r;
+  float hD = texture2D(u_water, uv - vec2(0.0, texel.y)).r;
+  float hU = texture2D(u_water, uv + vec2(0.0, texel.y)).r;
   return vec2(hL - hR, hD - hU) * 7.0;
 }
 
 void main(){
   vec2 uv=(gl_FragCoord.xy-0.5*u_resolution.xy)/u_resolution.y;
-
-  // --- INTERMITTENT DIGITAL GLITCH ---
-  float gTick = floor(u_time * 24.0); 
-  float isGlitch = step(0.97, hash1(gTick * 13.37)); 
+  float gTick = floor(u_time * 16.0); 
+  float isGlitch = step(0.979, hash1(gTick * 133.77)); 
   if (isGlitch > 0.0) {
-    float sliceY = floor(uv.y * mix(15.0, 50.0, hash1(gTick * 2.1)));
-    uv.x += (hash1(sliceY + gTick) - 0.5) * 0.18;
+    float sliceY = floor(uv.y * mix(10.0, 30.0, hash1(gTick * 2.1)));
+    uv.x += (hash1(sliceY + gTick) - 0.5) * 0.21; 
   }
-
-  vec2 screenUV=gl_FragCoord.xy/u_resolution.xy;
-  vec2 m=u_mouse*0.7;
-
+  vec2 m=u_mouse*0.35;
   vec3 ro=vec3(0.0,0.0,-4.5);
   vec3 rd=normalize(vec3(uv,1.4));
-
   float groggy = 1.0 - u_wake;
   ro.y -= groggy * 1.2;
   rd.yz *= rot(groggy * 0.4);
   rd.xz *= rot(groggy * -0.3); 
   rd.xy *= rot(groggy * 0.2);
-
   rd.yz*=rot(-m.y*0.5);
   rd.xz*=rot(-m.x*0.6);
-
-  // --- GRAVITATIONAL LENSING FOR MODE 3 ---
-  if(u_mode == 3){
-    float d = length(rd.xy);
-    float warp = 0.06 / (d + 0.05); // Hyperbolic gravity curve
-    rd.xy *= rot(warp * 1.5);       // Twist space around the center
-    rd.xy -= normalize(rd.xy) * (warp * 0.4); // Suck space inward
-    rd = normalize(rd); // Re-stabilize the camera ray
-  }
 
   if(u_mode==3){
     float sx=(hash2(vec2(floor(u_time*40.0),1.7))-0.5)*0.020*u_shake;
     float sy=(hash2(vec2(floor(u_time*40.0),8.3))-0.5)*0.016*u_shake;
+    if (u_shake > 0.7 && hash1(u_time * 20.0) > 0.5) {
+        sx += (hash1(u_time * 12.0) - 0.5) * 0.08;
+        sy += (hash1(u_time * 22.0) - 0.5) * 0.08;
+    }
     rd.xz*=rot(sx); rd.yz*=rot(sy);
   }
 
+  vec3 clean_rd = rd;
+
+  if(u_mode == 3){
+    float d = length(rd.xy);
+    float instability = hash1(u_time * 50.0) * u_shake * 0.08; 
+    float warp = (0.06 + instability) / (d + 0.05); 
+    rd.xy *= rot(warp * (1.5 + u_shake * 0.5)); 
+    rd.xy -= normalize(rd.xy) * (warp * (0.4 + u_shake * 0.3)); 
+    rd = normalize(rd); 
+  }
+  
   float t=0.0; vec2 hit=vec2(0.0);
   for(int i=0;i<90;i++){
     hit=mapScene(ro+rd*t);
@@ -461,18 +420,14 @@ void main(){
     t+=hit.x;
   }
   bool isSky=(t>=70.0);
-
-  vec3 colorStorm=vec3(0.008,0.018,0.040);
   vec3 skyTone=(u_mode==3)
-    ? mix(colorStorm,vec3(0.015,0.030,0.060),exp(-max(rd.y,0.0)*3.5))
+    ? mix(vec3(0.008,0.018,0.040),vec3(0.015,0.030,0.060),exp(-max(rd.y,0.0)*3.5))
     : mix(vec3(0.01,0.02,0.04),vec3(0.35,0.20,0.08),exp(-max(rd.y,0.0)*4.0));
 
   vec3 sceneCol=vec3(0.0);
-
   if(!isSky){
     vec3 p=ro+rd*t;
     float fogAmt = (u_mode == 3) ? (1.0-exp(-0.004*t*t)) : (1.0-exp(-0.015*t*t));
-
     if(hit.y <= 9.0){
       vec3 n=normalize(vec3(
         mapScene(p+vec3(0.01,0,0)).x-mapScene(p-vec3(0.01,0,0)).x,
@@ -480,116 +435,81 @@ void main(){
         mapScene(p+vec3(0,0,0.01)).x-mapScene(p-vec3(0,0,0.01)).x
       ));
       vec2 texUV=(abs(n.x)>abs(n.y))?p.zy:p.xy;
-      float buildAmt = (u_mode == 3) ? 0.08 : 0.09;
-      sceneCol=mix(sampleBuilding(hit.y,texUV)*buildAmt, skyTone, fogAmt);
+      sceneCol=mix(sampleBuilding(hit.y,texUV)*((u_mode==3)?0.08:0.09), skyTone, fogAmt);
     }
-
     if(hit.y > 9.0){
-      vec3 p2 = p; 
-
-      float seed = floor(u_time * 0.015);
-      float num  = floor(hash1(seed * 31.1) * 3.0) + 1.0;      
-      float closestDist = 1e10;
-      float closestFogD = 0.015;
-
-      vec3 a0 = fractalAnchor(seed * 7.0);
-      float dist0 = length(p2 - a0);
+      vec3 p2 = p; float seed = u_modeSeed;
+      float num = floor(hash1(seed * 31.1) * 3.0) + 1.0; float closestDist = 1e10; float closestFogD = 0.015;
+      vec3 a0 = fractalAnchor(seed * 7.0); float dist0 = length(p2 - a0);
       if(dist0 < closestDist){ closestDist = dist0; closestFogD = fractalFogDensity(seed * 7.0); }
-
       if(num >= 2.0){
-        vec3 a1 = fractalAnchor(seed * 7.0 + 1.0);
-        float dist1 = length(p2 - a1);
+        vec3 a1 = fractalAnchor(seed * 7.0 + 1.0); float dist1 = length(p2 - a1);
         if(dist1 < closestDist){ closestDist = dist1; closestFogD = fractalFogDensity(seed * 7.0 + 1.0); }
       }
       if(num >= 3.0){
-        vec3 a2 = fractalAnchor(seed * 7.0 + 2.0);
-        float dist2 = length(p2 - a2);
+        vec3 a2 = fractalAnchor(seed * 7.0 + 2.0); float dist2 = length(p2 - a2);
         if(dist2 < closestDist){ closestDist = dist2; closestFogD = fractalFogDensity(seed * 7.0 + 2.0); }
       }
-
       float inner = max(closestDist - 0.8, 0.0);
-      float fractalFog = 1.0 - exp(-closestFogD * inner * inner);
-
-      vec3 fractalCol;
-      if(u_mode == 1){
-        fractalCol = colorPickover(p2);
-      } else {
-        fractalCol = colorClifford(p2);
-      }
-      sceneCol = mix(fractalCol, skyTone * 0.12, fractalFog);
+      sceneCol = mix((u_mode == 1) ? colorPickover(p2) : colorClifford(p2), skyTone * 0.12, 1.0 - exp(-closestFogD * inner * inner));
     }
-
+    if(u_mode == 0 || u_mode == 5) {
+      sceneCol += vec3(1.0, 0.5, 0.2) * max(0.0, sin(p.x * 3.0 + u_time * 4.0) * cos(p.z * 2.0 - u_time * 3.0)) * smoothstep(-0.1, -1.5, rd.y) * 0.12;
+    }
     if(u_mode==3) sceneCol+=vec3(0.55,0.78,1.0)*u_flash*0.35;
-
   } else {
     if(u_mode==3){
       vec2 bhUV = rd.xy * 1.2 + vec2(0.5, 0.5);
-      bhUV = clamp(bhUV, 0.001, 0.999);
-      sceneCol=texture2D(u_texBH, bhUV).rgb;
+      float split = u_shake * 0.025;
+      float r = texture2D(u_texBH, clamp(bhUV + vec2(split, -split*0.5), 0.001, 0.999)).r;
+      float g = texture2D(u_texBH, clamp(bhUV, 0.001, 0.999)).g;
+      float b = texture2D(u_texBH, clamp(bhUV - vec2(split, -split*0.5), 0.001, 0.999)).b;
+      sceneCol = vec3(r, g, b) + vec3(0.8, 0.9, 1.0) * u_flash * smoothstep(0.3, 0.0, length(rd.xy)) * 1.5;
     } else {
-      vec2 skyUV=fract(rd.xy*0.5+0.5+vec2(u_time*0.002,0.0));
-      sceneCol=texture2D(u_texSkyline,skyUV).rgb*0.3+skyTone*0.5;
+      sceneCol=texture2D(u_texSkyline,fract(rd.xy*0.5+0.5+vec2(u_time*0.002,0.0))).rgb*0.3+skyTone*0.5;
     }
   }
 
-  // Draw snow over EVERYTHING
-  if(u_mode != 3 && u_mode != 4){
-    sceneCol += snow(vec2(atan(rd.z,rd.x)*2.0,rd.y*2.0), 15.0, 0.3, 0.3);
-  }
-
+  if(u_mode != 3 && u_mode != 4) sceneCol += snow(vec2(atan(rd.z,rd.x)*2.0,rd.y*2.0), 15.0, 0.3, 0.3);
   if(u_mode==3){
-    float wr = worldRain(uv, u_time);
-    wr *= isSky ? 1.0 : 0.0;
-    sceneCol += vec3(0.62,0.72,0.85) * wr * 0.65;
+    float wr = worldRain(gl_FragCoord.xy/u_resolution.xy, u_time);
+    sceneCol += vec3(0.62,0.72,0.85) * wr * (isSky ? 0.65 : 0.0);
   }
-
   if(u_mode==4){
-    vec2 suv = gl_FragCoord.xy / u_resolution.xy;
-    sceneCol = texture2D(u_texMirror, vec2(suv.x, 1.0 - suv.y)).rgb;
+    sceneCol = texture2D(u_texMirror, clamp(vec2(0.5) + vec2(-rd.x, rd.y) * 1.5, 0.0, 1.0)).rgb;
+    float h = hash2(gl_FragCoord.xy/u_resolution.xy * 50.0 + u_time * 2.0) * 0.15;
+    sceneCol = mix(sceneCol, vec3(0.05, 0.05, 0.06), 0.3 + h);
+    sceneCol *= mix(0.1, 1.0, sin(u_time * 0.5) * 0.5 + 0.5);
   }
 
-  float dWin=(-1.5-ro.z)/rd.z;
+  float dWin=(-1.5-ro.z)/clean_rd.z;
   if(dWin>0.0){
-    vec3 pW=ro+rd*dWin;
+    vec3 pW=ro+clean_rd*dWin;
     if(abs(pW.x)<4.0&&abs(pW.y)<3.0){
       vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
-      
-      // Mode 5 mask swap
-      vec4 txW = (u_mode == 5) ? texture2D(u_texOOB, wuv) : texture2D(u_texWindow, wuv);
-      
-      float frameA=clamp(txW.a,0.0,1.0);
-      float isGlass=1.0-frameA;
-
-      if(isGlass>0.1 && u_mode==3){
-        float waterH = texture2D(u_water, wuv).r * 2.0 - 1.0;
-        waterH = max(waterH, 0.0);
-        vec2  wNorm  = waterNormal(wuv);
-        float highlight = clamp(dot(normalize(wNorm), normalize(vec2(0.25,0.85))), 0.0, 1.0);
-        highlight = pow(highlight, 7.0) * waterH * 1.6;
-        float wetness = clamp(waterH * 2.6, 0.0, 0.38);
-        float useBH = isSky ? 1.0 : 0.0;
-        vec2 bhUV = rd.xy * 1.2 + vec2(0.5, 0.5);
-        vec2 refractUV = bhUV + wNorm * 0.020;
-        refractUV = clamp(refractUV, 0.001, 0.999);
-        vec3 refracted = texture2D(u_texBH, refractUV).rgb;
-        float refractAmt = clamp((waterH - 0.12) * 7.0, 0.0, 0.65) * useBH;
-        sceneCol = mix(sceneCol, refracted, refractAmt);
-        sceneCol += vec3(0.62,0.78,1.0) * highlight;
-        sceneCol = mix(sceneCol, sceneCol * 0.72, wetness);
-      } else if(isGlass>0.1 && u_mode!=3){
-        float frost = hash2(wuv*80.0)*0.04;
-        sceneCol = mix(sceneCol, vec3(0.6,0.7,0.8), frost*0.3);
+      if(u_mode == 5) {
+        float pin = sin(wuv.x * PI) * sin(wuv.y * PI);
+        float zm = mix(1.0, 1.05, u_wake);
+        wuv = (wuv - 0.5) * zm + 0.5;
+        wuv.x += sin(wuv.y * 6.0 + u_time * 0.5) * 0.005 * pin;
+        wuv.y += cos(wuv.x * 6.0 - u_time * 0.4) * 0.005 * pin;
       }
-
-      vec3 frameCol=txW.rgb*0.50;
-      if(u_mode==3) frameCol+=vec3(0.55,0.78,1.0)*u_flash*0.55;
-      sceneCol=mix(sceneCol,frameCol,frameA);
+      vec4 txW = (u_mode == 5) ? texture2D(u_texOOB, wuv) : texture2D(u_texWindow, wuv);
+      float isGlass=1.0-clamp(txW.a,0.0,1.0);
+      if(isGlass>0.1 && u_mode==3){
+        float waterH = texture2D(u_water, wuv).r; vec2 wNorm = waterNormal(wuv);
+        float highlight = pow(clamp(dot(normalize(wNorm), normalize(vec2(0.25,0.85))), 0.0, 1.0), 7.0) * waterH * 1.6;
+        vec2 bhUV = clamp(rd.xy * 1.2 + vec2(0.5, 0.5) + wNorm * (0.020 + u_shake * 0.02), 0.001, 0.999);
+        sceneCol = mix(sceneCol, texture2D(u_texBH, bhUV).rgb, clamp((waterH - 0.12) * 7.0, 0.0, 0.65) * (isSky ? 1.0 : 0.0));
+        sceneCol = mix(sceneCol + vec3(0.62,0.78,1.0) * highlight, sceneCol * 0.72, clamp(waterH * 2.6, 0.0, 0.38));
+      } else if(isGlass>0.1 && u_mode!=3) sceneCol = mix(sceneCol, vec3(0.6,0.7,0.8), hash2(wuv*80.0)*0.012);
+      vec3 fCol = txW.rgb * 0.50 + ((u_mode==3)?vec3(0.55,0.78,1.0)*u_flash*0.55 : vec3(0.0));
+      sceneCol=mix(sceneCol,fCol,txW.a);
     }
   }
 
-  float dimmer = (u_mode == 3) ? 1.0 : 0.55;
-  float wakeFade = smoothstep(0.0, 0.8, u_wake); 
-  gl_FragColor=vec4(sceneCol * (1.0 - u_blink) * dimmer * wakeFade, 1.0);
+  if (u_mode == 3 && u_flash > 1.2) sceneCol = 1.0 - sceneCol;
+  gl_FragColor=vec4(sceneCol * (1.0 - u_blink) * ((u_mode == 3) ? 1.0 : 0.55) * smoothstep(0.0, 0.8, u_wake), 1.0);
 }
 </script>
 
@@ -599,22 +519,18 @@ const gl = canvas.getContext("webgl", { antialias:false, alpha:false });
 gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
 
 const fit = () => {
-  // Locked to 1.0 for better mobile performance and that crunchy 90s/2000s aesthetic
   const dpr = 1.0; 
-  canvas.width  = Math.floor(innerWidth  * dpr);
+  canvas.width = Math.floor(innerWidth * dpr);
   canvas.height = Math.floor(innerHeight * dpr);
   gl.viewport(0, 0, canvas.width, canvas.height);
 };
 
 let lastWidth = innerWidth;
 addEventListener("resize", () => { 
-  // Only nuke and rebuild the textures if the phone's physical width changes
   if (innerWidth !== lastWidth) {
     lastWidth = innerWidth;
-    fit(); 
-    rebuildFBOs(); 
+    fit(); rebuildFBOs(); 
   } else {
-    // Otherwise, just resize the canvas (handles the URL bar popping in and out)
     fit();
   }
 }); 
@@ -639,7 +555,6 @@ const prog = gl.createProgram();
 gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsrc));
 gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById("frag").textContent));
 gl.linkProgram(prog);
-if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog));
 
 const buf = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -744,6 +659,7 @@ const U = {
   flash: gl.getUniformLocation(prog,"u_flash"),
   shake: gl.getUniformLocation(prog,"u_shake"),
   wake:  gl.getUniformLocation(prog,"u_wake"),
+  modeSeed: gl.getUniformLocation(prog,"u_modeSeed"),
 };
 const SU = {
   res:  gl.getUniformLocation(simProg,"u_resolution"),
@@ -753,25 +669,30 @@ const SU = {
 
 let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0,
     phase="sleeping",timer=-9999,start=0,lastNow=0,loopCount=0,
-    blinkCount=0,targetBlinks=2;
-// --- CAMERA RESTRICTION LIMITS ---
-// 1.0 is full rotation, 0.0 is completely locked.
-const limitX = 0.35; // Restrict left/right panning
-const limitY = 0.35; // Tightly restrict up/down tilting
+    blinkCount=0,targetBlinks=1, modeSeed=0;
+const limitX = -0.35;
+const limitY = -0.20;
 
 addEventListener("mousemove", e => {
   mx = ((e.clientX / innerWidth) * 2 - 1) * limitX;
   my = (-(e.clientY / innerHeight) * 2 + 1) * limitY;
 });
-
 addEventListener("click", () => {
   video.play().catch(()=>{});
 });
-
+addEventListener("mouseup", () => {
+  mx = 0; my = 0;
+});
+addEventListener("mouseleave", () => {
+  mx = 0; my = 0;
+});
 addEventListener("touchmove", e => {
   const t = e.touches[0];
   mx = ((t.clientX / innerWidth) * 2 - 1) * limitX;
   my = (-(t.clientY / innerHeight) * 2 + 1) * limitY;
+});
+addEventListener("touchend", () => {
+  mx = 0; my = 0;
 });
 
 function simStep(now){
@@ -797,10 +718,13 @@ function advanceMode(){
     nextMode = Math.floor(Math.random() * 6);
   }
   mode = nextMode;
-  if(mode >= 3){
+  modeSeed++;
+  if (mode == 1 || mode == 2) {
+    targetBlinks = 2 + Math.floor(Math.random() * 3);
+  } else {
     targetBlinks = 1;
-    blinkCount = 0;
   }
+  blinkCount = 0;
 }
 
 function render(now){
@@ -808,27 +732,23 @@ function render(now){
   if(phase === "sleeping"){
     wakeVal = 0.0;
     if(window.startWakeSequence){
-      phase = "waking";
-      start = now;
+      phase = "waking"; start = now;
     }
   } else if(phase === "waking"){
     let t = Math.min((now - start) / 3000, 1.0); 
     wakeVal = 1.0 - Math.pow(1.0 - t, 3); 
     if(t >= 1.0){
-      phase = "open";
-      timer = now;
+      phase = "open"; timer = now;
     }
   }
 
   if(phase==="open" && now-timer>9000){
     blinkCount++;
     if(blinkCount >= targetBlinks){
-      targetBlinks = 2 + Math.floor(Math.random() * 5);
-      blinkCount = 0;
       phase="closing_switch"; start=now; timer=now;
     } else {
       phase="closing_blink"; start=now; timer=now;
-  }
+    }
   }
   else if(phase==="closing_blink"){
     blink=Math.min((now-start)/160,1);
@@ -859,9 +779,9 @@ function render(now){
   cx+=(mx-cx)*0.12; cy+=(my-cy)*0.12;
 
   if(mode===3){
-    if(Math.random()<0.018) flash=1.0;
+    if(Math.random() < 0.08) flash = 1.0 + Math.random() * 0.5;
     flash*=0.86;
-    shake=Math.max(flash,0.10*Math.sin(now*0.02)+0.06*Math.sin(now*0.06));
+    shake = Math.max(flash, 0.15 * Math.random() + 0.10 * Math.sin(now * 0.05));
     uploadVideoTexture();
     simStep(now);
   } else {
@@ -881,6 +801,7 @@ function render(now){
   gl.uniform1f(U.flash,flash);
   gl.uniform1f(U.shake,shake);
   gl.uniform1f(U.wake, wakeVal);
+  gl.uniform1f(U.modeSeed, modeSeed);
   gl.drawArrays(gl.TRIANGLES,0,3);
 
   lastNow = now;
