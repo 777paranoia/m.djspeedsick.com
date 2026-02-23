@@ -691,59 +691,11 @@ addEventListener("click",()=>{
   video.play().catch(()=>{});
 });
 
-// --- DEBUG OVERLAY ---
-const dbg = document.createElement('div');
-dbg.style.cssText = 'position:fixed;top:10px;left:10px;color:#0f0;font:16px monospace;z-index:9999;pointer-events:none;background:rgba(0,0,0,0.5);padding:4px 8px;';
-document.body.appendChild(dbg);
-
-// --- TOUCH SUPPORT (mobile) ---
-let touchActive = false;
-let touchStartX = 0, touchStartY = 0;
-let touchCamX = 0, touchCamY = 0;
-let touchVelX = 0, touchVelY = 0;
-let lastTouchX = 0, lastTouchY = 0;
-
-canvas.addEventListener("touchstart", e => {
-  e.preventDefault();
+addEventListener("touchmove", e => {
   const t = e.touches[0];
-  touchStartX = lastTouchX = t.clientX;
-  touchStartY = lastTouchY = t.clientY;
-  touchCamX = mx;
-  touchCamY = my;
-  touchVelX = touchVelY = 0;
-  touchActive = true;
-  dbg.textContent = 'TOUCH START';
-  video.play().catch(()=>{});
-}, { passive: false });
-
-canvas.addEventListener("touchmove", e => {
-  e.preventDefault();
-  if (!touchActive) return;
-  const t = e.touches[0];
-  touchVelX = t.clientX - lastTouchX;
-  touchVelY = t.clientY - lastTouchY;
-  lastTouchX = t.clientX;
-  lastTouchY = t.clientY;
-  const dx = (t.clientX - touchStartX) / innerWidth;
-  const dy = (t.clientY - touchStartY) / innerHeight;
-  mx = Math.max(-1, Math.min(1, touchCamX + dx * 3.0));
-  my = Math.max(-1, Math.min(1, touchCamY - dy * 3.0));
-  dbg.textContent = `mx:${mx.toFixed(2)} my:${my.toFixed(2)} cx:${cx.toFixed(2)}`;
-}, { passive: false });
-
-canvas.addEventListener("touchend", e => {
-  e.preventDefault();
-  touchActive = false;
-  dbg.textContent = `END mx:${mx.toFixed(2)} my:${my.toFixed(2)}`;
-  (function coast(){
-    if(Math.abs(touchVelX) < 0.5 && Math.abs(touchVelY) < 0.5) return;
-    touchVelX *= 0.88;
-    touchVelY *= 0.88;
-    mx = Math.max(-1, Math.min(1, mx + touchVelX / innerWidth * 3.0));
-    my = Math.max(-1, Math.min(1, my - touchVelY / innerHeight * 3.0));
-    requestAnimationFrame(coast);
-  })();
-}, { passive: false });
+  mx = (t.clientX / innerWidth) * 2 - 1;
+  my = -(t.clientY / innerHeight) * 2 + 1;
+});
 
 function simStep(now){
   const dt = Math.min((now - lastNow) * 0.001, 0.05);
