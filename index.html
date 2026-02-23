@@ -104,20 +104,71 @@ window.addEventListener('load', () => {
     loader.style.display = "none";
   }
 });
-
 let _entered = false;
-function enterSite(){
-  if(_entered) return;
+
+function enterSite() {
+  if (_entered) return;
   _entered = true;
+
   const splash = document.getElementById("splash-screen");
   const audio = document.getElementById("audioPlayer");
-  
+
   if (audio && typeof audioTracks !== 'undefined') {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaElementSource(audio);
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 520;
+
+    const reverb = audioCtx.createConvolver();
+    const rate = audioCtx.sampleRate;
+    const len = rate * 2.0;
+    const buffer = audioCtx.createBuffer(2, len, rate);
+    
+    for (let channel = 0; channel < 2; channel++) {
+      let data = buffer.getChannelData(channel);
+      for (let i = 0; i < len; i++) {
+        let noise1 = Math.random() * 2 - 1;
+        let noise2 = Math.random() * 2 - 1;
+        let combinedNoise = (noise1 * 0.7 + noise2 * 0.3);
+        let mod = Math.sin(i * 0.005);
+        data[i] = combinedNoise * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * mod);
+      }
+    }
+    reverb.buffer = buffer;
+
+    const dryGain = audioCtx.createGain();
+    const wetGain = audioCtx.createGain();
+    dryGain.gain.value = 0.3;
+    wetGain.gain.value = 0.7;
+
+    source.connect(filter);
+    filter.connect(dryGain);
+    filter.connect(reverb);
+    reverb.connect(wetGain);
+    
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    window.audioAnalyser = analyser;
+    window.audioData = dataArray;
+    
+    dryGain.connect(audioCtx.destination);
+    wetGain.connect(audioCtx.destination);
+
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
     const playRandomTrack = () => {
       const randomIndex = Math.floor(Math.random() * audioTracks.length);
       audio.src = audioTracks[randomIndex];
-      audio.play().catch(()=>{});
+      audio.play().catch(() => {});
     };
+
     playRandomTrack();
     audio.addEventListener('ended', playRandomTrack);
   }
@@ -185,6 +236,7 @@ void main(){
 <script id="frag" type="x-shader/x-fragment">
 precision highp float;
 
+uniform float u_audio;
 uniform vec2  u_resolution;
 uniform float u_time;
 uniform vec2  u_mouse;
@@ -216,7 +268,8 @@ float sdFractal(vec3 p, float power, float rotA, float rotB){
   z.xz *= rot(u_time * rotA);
   z.yz *= rot(u_time * rotB);
   float scale = 1.0;
-  vec3 foldOffset = vec3(0.6, 0.6, 0.6) + vec3(0.15) * sin(u_time * 0.15 + power);
+  vec3 foldOffset = vec3(0.6, 0.6, 0.6) + (vec3(0.15) * sin(u_time * 0.15 + power));
+  foldOffset += u_audio * 0.2;
   for(int i = 0; i < 8; i++){
     z = abs(z); 
     if (z.x < z.y) z.xy = z.yx;
@@ -515,7 +568,7 @@ void main(){
 
 <script>
 const canvas = document.getElementById("c");
-const gl = canvas.getContext("webgl", { antialias:false, alpha:false });
+const gl = canvas.getContext("webgl", { antialias:false, alpha:true });
 gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
 
 const fit = () => {
@@ -651,15 +704,16 @@ function uploadVideoTexture(){
 }
 
 const U = {
-  res:   gl.getUniformLocation(prog,"u_resolution"),
-  time:  gl.getUniformLocation(prog,"u_time"),
-  mouse: gl.getUniformLocation(prog,"u_mouse"),
-  mode:  gl.getUniformLocation(prog,"u_mode"),
-  blink: gl.getUniformLocation(prog,"u_blink"),
-  flash: gl.getUniformLocation(prog,"u_flash"),
-  shake: gl.getUniformLocation(prog,"u_shake"),
-  wake:  gl.getUniformLocation(prog,"u_wake"),
+  res:      gl.getUniformLocation(prog,"u_resolution"),
+  time:     gl.getUniformLocation(prog,"u_time"),
+  mouse:    gl.getUniformLocation(prog,"u_mouse"),
+  mode:     gl.getUniformLocation(prog,"u_mode"),
+  blink:    gl.getUniformLocation(prog,"u_blink"),
+  flash:    gl.getUniformLocation(prog,"u_flash"),
+  shake:    gl.getUniformLocation(prog,"u_shake"),
+  wake:     gl.getUniformLocation(prog,"u_wake"),
   modeSeed: gl.getUniformLocation(prog,"u_modeSeed"),
+  audio:    gl.getUniformLocation(prog,"u_audio"),
 };
 const SU = {
   res:  gl.getUniformLocation(simProg,"u_resolution"),
@@ -671,7 +725,7 @@ let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0,
     phase="sleeping",timer=-9999,start=0,lastNow=0,loopCount=0,
     blinkCount=0,targetBlinks=1, modeSeed=0;
 const limitX = -0.35;
-const limitY = -0.20;
+const limitY = -0.35;
 
 addEventListener("mousemove", e => {
   mx = ((e.clientX / innerWidth) * 2 - 1) * limitX;
@@ -727,19 +781,33 @@ function advanceMode(){
   blinkCount = 0;
 }
 
+const trailIntensity = 0.85; 
+
+function drawFadeQuad() {
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0, 0, 0, 1.0 - trailIntensity); 
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.disable(gl.BLEND);
+}
+
 function render(now){
+  let audioIntensity = 0;
+  if (window.audioAnalyser) {
+    window.audioAnalyser.getByteFrequencyData(window.audioData);
+    let sum = 0;
+    for (let i = 0; i < 6; i++) { sum += window.audioData[i]; }
+    audioIntensity = sum / (6 * 255);
+  }
+
   let wakeVal = 1.0; 
   if(phase === "sleeping"){
     wakeVal = 0.0;
-    if(window.startWakeSequence){
-      phase = "waking"; start = now;
-    }
+    if(window.startWakeSequence){ phase = "waking"; start = now; }
   } else if(phase === "waking"){
     let t = Math.min((now - start) / 3000, 1.0); 
     wakeVal = 1.0 - Math.pow(1.0 - t, 3); 
-    if(t >= 1.0){
-      phase = "open"; timer = now;
-    }
+    if(t >= 1.0){ phase = "open"; timer = now; }
   }
 
   if(phase==="open" && now-timer>9000){
@@ -751,62 +819,68 @@ function render(now){
     }
   }
   else if(phase==="closing_blink"){
-    blink=Math.min((now-start)/160,1);
+    blink=Math.min((now-start)/160, 1);
     if(blink>=1){ phase="black_blink"; start=now; }
   }
   else if(phase==="black_blink" && now-start>120){
     phase="opening_blink"; start=now;
   }
   else if(phase==="opening_blink"){
-    blink=1.0-Math.min((now-start)/160,1);
+    blink=1.0-Math.min((now-start)/160, 1);
     if(blink<=0){ phase="open"; timer=now; blink=0; }
   }
   else if(phase==="closing_switch"){
-    blink=Math.min((now-start)/160,1);
-    if(blink>=1){
-      phase="black_switch"; start=now;
-      advanceMode();
-    }
+    blink=Math.min((now-start)/160, 1);
+    if(blink>=1){ phase="black_switch"; start=now; advanceMode(); }
   }
   else if(phase==="black_switch" && now-start>200){
     phase="opening_switch"; start=now;
   }
   else if(phase==="opening_switch"){
-    blink=1.0-Math.min((now-start)/160,1);
+    blink=1.0-Math.min((now-start)/160, 1);
     if(blink<=0){ phase="open"; timer=now; blink=0; }
   }
 
-  cx+=(mx-cx)*0.12; cy+=(my-cy)*0.12;
+  let camKick = audioIntensity * 0.05;
+  cx += (mx - cx) * (0.12 + camKick); 
+  cy += (my - cy) * (0.12 + camKick);
+
+  drawFadeQuad();
 
   if(mode===3){
     if(Math.random() < 0.08) flash = 1.0 + Math.random() * 0.5;
-    flash*=0.86;
-    shake = Math.max(flash, 0.15 * Math.random() + 0.10 * Math.sin(now * 0.05));
+    flash *= 0.86;
+    shake = Math.max(flash, (0.15 * Math.random() + audioIntensity * 0.4));
     uploadVideoTexture();
     simStep(now);
   } else {
-    flash*=0.80; shake*=0.80;
+    flash *= 0.80; 
+    shake = audioIntensity * 0.1; 
   }
 
   gl.activeTexture(gl.TEXTURE0+9);
   gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
-  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.viewport(0, 0, canvas.width, canvas.height);
   gl.useProgram(prog);
   bindVAO(prog);
-  gl.uniform2f(U.res,  canvas.width,canvas.height);
+
+  gl.uniform1f(U.audio, audioIntensity);
+  gl.uniform2f(U.res, canvas.width, canvas.height);
   gl.uniform1f(U.time, now*0.001);
-  gl.uniform2f(U.mouse,cx,cy);
+  gl.uniform2f(U.mouse, cx, cy);
   gl.uniform1i(U.mode, mode);
-  gl.uniform1f(U.blink,blink);
-  gl.uniform1f(U.flash,flash);
-  gl.uniform1f(U.shake,shake);
+  gl.uniform1f(U.blink, blink);
+  gl.uniform1f(U.flash, flash);
+  gl.uniform1f(U.shake, shake);
   gl.uniform1f(U.wake, wakeVal);
   gl.uniform1f(U.modeSeed, modeSeed);
-  gl.drawArrays(gl.TRIANGLES,0,3);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
 
   lastNow = now;
   requestAnimationFrame(render);
 }
+
 requestAnimationFrame(render);
 </script>
 </body>
