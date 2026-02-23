@@ -8,39 +8,51 @@
 <title>DJSPEEDSICK.COM</title>
 <style>
   html,body{margin:0;padding:0;overflow:hidden;background:#000;touch-action:none;}
-  canvas#c{position:fixed;inset:0;display:block;width:100vw;height:100vh;}
-
-  #splash-screen{
+  canvas#c {
     position: fixed;
     inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100dvh; /* Fixes the mobile URL bar crop */
+  }
+  
+ #splash-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* Swap viewport units because the div is rotated */
+    width: 100dvh; 
+    height: 100vw;
+    transform: translate(-50%, -50%) rotate(90deg);
     z-index: 9999;
     background: #000;
-    transform: rotate(90deg);
-    transform-origin: center center;
-    width: 100vw;
-    height: 100vh;
+    overflow: hidden;
   }
 
-  #background-overlay{
+  #background-overlay {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; /* Forces the image to wrap and fill the space */
   }
 
-  #enter-button{
+ #enter-button {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     cursor: pointer;
     z-index: 2;
-    /* Make tap target larger on mobile */
-    min-width: 80px;
-    min-height: 80px;
+
+    /* Constrain the button strictly to the phone's viewport boundaries */
+    max-width: 80dvh;  /* Limits the button's length against the phone's height */
+    max-height: 80vw;  /* Limits the button's height against the phone's width */
+    width: auto;
+    height: auto;
+    object-fit: contain; /* Keeps the text aspect ratio perfectly intact */
   }
-</style>
+    </style>
 </head>
 <body>
 
@@ -540,12 +552,26 @@ const gl = canvas.getContext("webgl", { antialias:false, alpha:false });
 gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
 
 const fit = () => {
-  const dpr = Math.min(2, devicePixelRatio||1);
+  // Locked to 1.0 for better mobile performance and that crunchy 90s/2000s aesthetic
+  const dpr = 1.0; 
   canvas.width  = Math.floor(innerWidth  * dpr);
   canvas.height = Math.floor(innerHeight * dpr);
-  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.viewport(0, 0, canvas.width, canvas.height);
 };
-addEventListener("resize", () => { fit(); rebuildFBOs(); }); fit();
+
+let lastWidth = innerWidth;
+addEventListener("resize", () => { 
+  // Only nuke and rebuild the textures if the phone's physical width changes
+  if (innerWidth !== lastWidth) {
+    lastWidth = innerWidth;
+    fit(); 
+    rebuildFBOs(); 
+  } else {
+    // Otherwise, just resize the canvas (handles the URL bar popping in and out)
+    fit();
+  }
+}); 
+fit();
 
 const compile = (type, src) => {
   const sh = gl.createShader(type);
@@ -681,20 +707,24 @@ const SU = {
 let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0,
     phase="sleeping",timer=-9999,start=0,lastNow=0,loopCount=0,
     blinkCount=0,targetBlinks=2;
+// --- CAMERA RESTRICTION LIMITS ---
+// 1.0 is full rotation, 0.0 is completely locked.
+const limitX = 0.35; // Restrict left/right panning
+const limitY = 0.35; // Tightly restrict up/down tilting
 
-// --- MOUSE SUPPORT (desktop) ---
-addEventListener("mousemove",e=>{
-  mx=(e.clientX/innerWidth)*2-1;
-  my=-(e.clientY/innerHeight)*2+1;
+addEventListener("mousemove", e => {
+  mx = ((e.clientX / innerWidth) * 2 - 1) * limitX;
+  my = (-(e.clientY / innerHeight) * 2 + 1) * limitY;
 });
-addEventListener("click",()=>{
+
+addEventListener("click", () => {
   video.play().catch(()=>{});
 });
 
 addEventListener("touchmove", e => {
   const t = e.touches[0];
-  mx = (t.clientX / innerWidth) * 2 - 1;
-  my = -(t.clientY / innerHeight) * 2 + 1;
+  mx = ((t.clientX / innerWidth) * 2 - 1) * limitX;
+  my = (-(t.clientY / innerHeight) * 2 + 1) * limitY;
 });
 
 function simStep(now){
@@ -743,7 +773,7 @@ function render(now){
     }
   }
 
-  if(phase==="open" && now-timer>4500){
+  if(phase==="open" && now-timer>9000){
     blinkCount++;
     if(blinkCount >= targetBlinks){
       targetBlinks = 2 + Math.floor(Math.random() * 5);
