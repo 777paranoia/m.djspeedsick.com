@@ -568,7 +568,12 @@ void main(){
 
 <script>
 const canvas = document.getElementById("c");
-const gl = canvas.getContext("webgl", { antialias:false, alpha:true });
+// preserveDrawingBuffer is the "secret sauce" for trails; it stops the GPU from auto-clearing
+const gl = canvas.getContext("webgl", { 
+  antialias: false, 
+  alpha: false, 
+  preserveDrawingBuffer: true 
+});
 gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
 
 const fit = () => {
@@ -725,7 +730,7 @@ let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0,
     phase="sleeping",timer=-9999,start=0,lastNow=0,loopCount=0,
     blinkCount=0,targetBlinks=1, modeSeed=0;
 const limitX = -0.35;
-const limitY = -0.35;
+const limitY = -0.20;
 
 addEventListener("mousemove", e => {
   mx = ((e.clientX / innerWidth) * 2 - 1) * limitX;
