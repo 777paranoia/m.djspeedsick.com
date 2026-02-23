@@ -693,14 +693,17 @@ addEventListener("click",()=>{
 let touchActive = false;
 let touchStartX = 0, touchStartY = 0;
 let touchCamX = 0, touchCamY = 0;
+let touchVelX = 0, touchVelY = 0;
+let lastTouchX = 0, lastTouchY = 0;
 
 canvas.addEventListener("touchstart", e => {
   e.preventDefault();
   const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
+  touchStartX = lastTouchX = t.clientX;
+  touchStartY = lastTouchY = t.clientY;
   touchCamX = mx;
   touchCamY = my;
+  touchVelX = touchVelY = 0;
   touchActive = true;
   video.play().catch(()=>{});
 }, { passive: false });
@@ -709,16 +712,28 @@ canvas.addEventListener("touchmove", e => {
   e.preventDefault();
   if (!touchActive) return;
   const t = e.touches[0];
-  const dx = (t.clientX - touchStartX) / innerWidth  * 2;
-  const dy = (t.clientY - touchStartY) / innerHeight * 2;
-  // Drag feel: moving finger right pans camera right, etc.
-  mx = Math.max(-1, Math.min(1, touchCamX + dx * 2.5));
-  my = Math.max(-1, Math.min(1, touchCamY - dy * 2.5));
+  touchVelX = t.clientX - lastTouchX;
+  touchVelY = t.clientY - lastTouchY;
+  lastTouchX = t.clientX;
+  lastTouchY = t.clientY;
+  const dx = (t.clientX - touchStartX) / innerWidth;
+  const dy = (t.clientY - touchStartY) / innerHeight;
+  mx = Math.max(-1, Math.min(1, touchCamX + dx * 3.0));
+  my = Math.max(-1, Math.min(1, touchCamY - dy * 3.0));
 }, { passive: false });
 
 canvas.addEventListener("touchend", e => {
   e.preventDefault();
   touchActive = false;
+  // coast with momentum after release
+  (function coast(){
+    if(Math.abs(touchVelX) < 0.5 && Math.abs(touchVelY) < 0.5) return;
+    touchVelX *= 0.88;
+    touchVelY *= 0.88;
+    mx = Math.max(-1, Math.min(1, mx + touchVelX / innerWidth * 3.0));
+    my = Math.max(-1, Math.min(1, my - touchVelY / innerHeight * 3.0));
+    requestAnimationFrame(coast);
+  })();
 }, { passive: false });
 
 function simStep(now){
