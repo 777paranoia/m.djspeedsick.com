@@ -15,7 +15,6 @@
     inset: 0;
     z-index: 9999;
     background: #000;
-    touch-action: none;
   }
 
   #background-overlay{
@@ -47,18 +46,21 @@
   <img id="background-overlay" src="files/img/aerial.png">
   <img id="enter-button"
        src="files/img/enter button.png"
-       onclick="enterSite()">
+       onclick="enterSite()"
+       ontouchend="enterSite();event.preventDefault();">
 </div>
 <canvas id="c"></canvas>
 
 <script>
+let _entered = false;
 function enterSite(){
+  if(_entered) return;
+  _entered = true;
   const splash = document.getElementById("splash-screen");
   const audio = document.getElementById("audioPlayer");
   if (audio) audio.play().catch(()=>{});
-  
-  splash.style.display = "none"; // Instant cut
-  window.startWakeSequence = true; // Trigger the camera sequence
+  splash.style.display = "none";
+  window.startWakeSequence = true;
 }
 </script>
 
