@@ -1,0 +1,406 @@
+.
+├── A
+├── adhd.html
+├── audio.html
+├── butterchurn-presets
+│   └── lib
+│       ├── butterchurnPresetsExtra.min.js
+│       └── webpaack.config.js
+├── butterchurn.js
+├── ButterchurnPresets.min.js
+├── CNAME
+├── files
+│   ├── aud
+│   │   ├── 03E3691536C6BA48AF8DFCC98E2F86B5.mp3
+│   │   ├── 0483134AF52BA2620ACEBB15DB3A915C.mp3
+│   │   ├── 064EBB45E969268D1D565945FD30349E.mp3
+│   │   ├── 07DEB83DB6B0B0A8D8D68A8E59997FBE.mp3
+│   │   ├── 08AD2547744653E97D82E9C817DE5743.mp3
+│   │   ├── 0AA968CC9BD87190A5B9B68B785D2279.mp3
+│   │   ├── 0ABFAF89FA92B3BB033896DE4E7FCA0D.mp3
+│   │   ├── 0DDE9002290A4E4B24ED7A3762742882.mp3
+│   │   ├── 0FC3589586CCC0BF1801003DA500D379.mp3
+│   │   ├── 11087AC44773380786D4C743B9A16255.mp3
+│   │   ├── 16D2D7DDC50EEA8DE22BC558FE94CA7C.mp3
+│   │   ├── 17928CB3FCBF55F83A4A8357997CFD86.mp3
+│   │   ├── 18487DFF8C4C2634163E432841DB0465.mp3
+│   │   ├── 18BE5DD7A3F6377EFBFC17C69B9B2D01.mp3
+│   │   ├── 1AE89282F333F68DE3E6E1E060267354.mp3
+│   │   ├── 20866A99F01106A03D3233F9C05D95A9.mp3
+│   │   ├── 243298B4071340A943CB0E7D017EA6C9.mp3
+│   │   ├── 247EE96D14D10CA14943FA7E4EEED939.mp3
+│   │   ├── 26980531EFFFF7ABD7AFDFE810F0FD82.mp3
+│   │   ├── 27A1B7EAFD0C4E57E3C40768BB650D9F.mp3
+│   │   ├── 27E4BEA66F762A27DE57848805EE54C7.mp3
+│   │   ├── 27F631709AB5D4B98EFEB2F2123B480E.mp3
+│   │   ├── 29673E60F28FEE11FDEF7CFD0649B322.mp3
+│   │   ├── 2A46CD871B3981D295AEC54A89510D1B.mp3
+│   │   ├── 2AA6F4B8AB6BB06453130DF8CBA94DA2.mp3
+│   │   ├── 2AE5178DB148A0BC8B526AF58DC01CE1.mp3
+│   │   ├── 2FA5970034ACE456608F2F131D294997.mp3
+│   │   ├── 310EE418F2292D7FD44699BFA2268F64.mp3
+│   │   ├── 317D2E7B4AC8260CC6C619AC1FF3608C.mp3
+│   │   ├── 318B51064AFC6C0670AD1763E03AD8F0.mp3
+│   │   ├── 33A5872F03C9054F4CEEA4AA4DBF521B.mp3
+│   │   ├── 33B7DD40813B21DD0EA08BBE9BF922A3.mp3
+│   │   ├── 35B0A8FA3022F14B19593E81836B46F9.mp3
+│   │   ├── 3602C77742718963398198A053F611ED.mp3
+│   │   ├── 36CE8795F7535025C147D1AE2E7BC797.mp3
+│   │   ├── 36F828D41D92B132B01A9040EE5F4BD8.mp3
+│   │   ├── 383D1BE8FB94587FB5E78769FFA91920.mp3
+│   │   ├── 39AAC690F5D2A33F910EEFCD1F45DECC.mp3
+│   │   ├── 39E0EE37FA1E5C181E12A468DE1FCBF3.mp3
+│   │   ├── 3BF8831733B842D93AE7D3AC005914AF.mp3
+│   │   ├── 3DC04F68AA24852F850E99253C107C87.mp3
+│   │   ├── 3E6ABE35DF44BD5379A027B14611B892.mp3
+│   │   ├── 3F53B00F9D7C777C854B87DF0DBE8763.mp3
+│   │   ├── 41620FFDDC404A9962F4FCBD731629DE.mp3
+│   │   ├── 44D0F06CA9A7920591A56CEB9357BE93.mp3
+│   │   ├── 45DDCD3C199CEE7B7895CE42B005AF7E.mp3
+│   │   ├── 45DE0E0F869545D7ACCC5962F37EC4ED.mp3
+│   │   ├── 45F757303B512D0F5F8FE7F4A45301A4.mp3
+│   │   ├── 46DE77E391118E57584A1DA6E9958D26.mp3
+│   │   ├── 4918199D0DD98EA88A451374A35FF02E.mp3
+│   │   ├── 49451AF9739EA82CA89B82DA9813F664.mp3
+│   │   ├── 4ABE709D3D395A34A5BEABB3DD9502C5.mp3
+│   │   ├── 4B728F3BB5865F52379DADAA48C05A6B.mp3
+│   │   ├── 4C7F53B035D9C03BA0ECEF1384815D66.mp3
+│   │   ├── 4DEB3179BC24D20C751AC18E9701A89F.mp3
+│   │   ├── 4F9087DF4AF056BE34FAC03C5AF429DD.mp3
+│   │   ├── 5073A74FCB39AD8C70E05761DC0C5D4A.mp3
+│   │   ├── 50B13137C26D06A5BDE0E3949508A48B.mp3
+│   │   ├── 5304069DE9E031CBFFCF66988EAEF9A5.mp3
+│   │   ├── 536145E15D9D84BC8DA695A54BD7AADF.mp3
+│   │   ├── 57CD756692E1C3D8EC7D58D0561F4D57.mp3
+│   │   ├── 580BF7E11A76214A6EC18D19E8999358.mp3
+│   │   ├── 58B5AD1EBFAC1AC6D5C89D7601658BAD.mp3
+│   │   ├── 592DF673F62D2DB2739ACAD11CB4EE21.mp3
+│   │   ├── 5978BEEB0C05AB4BB95EF6D516582E7E.mp3
+│   │   ├── 606A2DDFC6009B4BBA8EC1F5CFA59F58.mp3
+│   │   ├── 6079450EC8B657B581FFAD9E6ED59805.mp3
+│   │   ├── 6463294F3707080DE8A0017E5405C1DC.mp3
+│   │   ├── 658119A498E107B76B899DB21BEDEE39.mp3
+│   │   ├── 66CF005781CC5028B7EAA90E6473944A.mp3
+│   │   ├── 68351EAB435ECCD04176CE819578B4F8.mp3
+│   │   ├── 69E8FAAD90E6D164367FF0A4B338EA72.mp3
+│   │   ├── 6ADD2F809E6430AFD07C77642ABCB0F1.mp3
+│   │   ├── 6E1B9287B01F96CFBD0695F8FF817A3B.mp3
+│   │   ├── 71BDD33125193A99F82CAE0E36C4DB9A.mp3
+│   │   ├── 798D5D4408E516A2BC2448FD17B04133.mp3
+│   │   ├── 7B1B519AF556B05F264968E28F6F0216.mp3
+│   │   ├── 7BE3A354CA509ACF10C8E3DD66C0083D.mp3
+│   │   ├── 7D0115E171D0091A56726E3A8B48B20F.mp3
+│   │   ├── 7FF2C0B5099003B7B5A33DFF3C6CF173.mp3
+│   │   ├── 84027A903956724A5651D39835072C18.mp3
+│   │   ├── 852B5DD09E041D31A9BAD05DE613B0D3.mp3
+│   │   ├── 86A0763644FADACCD0ACE940FDC857A9.mp3
+│   │   ├── 87D11F507509CDCD6510E9B4EB36D766.mp3
+│   │   ├── 8945F0A3756272267754771554554B34.mp3
+│   │   ├── 894E931B2B56F0C9376E163D2F75F729.mp3
+│   │   ├── 8E4D1BC45A0BCC05E87D9C36A8E79920.mp3
+│   │   ├── 92CA78BF53C61B648E29C7BDDE5B87D3.mp3
+│   │   ├── 950B4C997A71FCB7277210530A0E3FA3.mp3
+│   │   ├── 9607A8A32512A63B537219951FF54E01.mp3
+│   │   ├── 97BEBB8CF7A87669D088FFEB5716E5BC.mp3
+│   │   ├── 986C35305171DCF5A5C5FD9C7EBD53CA.mp3
+│   │   ├── 98752B0343A31FB430B5801A29109D11.mp3
+│   │   ├── 9BEBE2CEE7580C18835DE13E3076C8AC.mp3
+│   │   ├── 9D6AF0426F8C4A4E2BF7ADC86098739B.mp3
+│   │   ├── 9F1540711B6930B1192C45480087020F.mp3
+│   │   ├── A16EAA32BE2AFAC1ADFE0610990BEFF1.mp3
+│   │   ├── A4201865185110C75FD3FCF5DB4EF6C5.mp3
+│   │   ├── A441328B6F4C0EB0119F4F3D7497A002.mp3
+│   │   ├── A582DC5DD937E6DC0467BA640F20ADE9.mp3
+│   │   ├── ABAF59CC8FE88766AE1A09408BB8E0E6.mp3
+│   │   ├── ACEE449D4A3802F6B6CA78323DE93F81.mp3
+│   │   ├── ACNE_COATEDDENIM_CUT4.m4a
+│   │   ├── ACNE_DARKSIDE_CUT5V2.m4a
+│   │   ├── ACNE_SHERLING_CUT2.m4a
+│   │   ├── ACNE_SHERLING_CUT3.m4a
+│   │   ├── ACNE_TEASER_CUT1.m4a
+│   │   ├── AD5EAB71FC2017FDD3D4CB0BB127637D.mp3
+│   │   ├── AF7B79C1ED865E92E6F00DE6D043B72B.mp3
+│   │   ├── audio.txt
+│   │   ├── B06E0D03F4A18158C1A0A49C765DB3F4.mp3
+│   │   ├── B07202F69BAF3D0B6A393851400FE363.mp3
+│   │   ├── B1B6C3D02B454C96C26497A7021F2B38.mp3
+│   │   ├── B1D9EF2694B6B789FFD09529FF5DCA66.mp3
+│   │   ├── B25914335C15F242C4848CFD373F5108.mp3
+│   │   ├── B53CA04AE89538F8DA6D4304C27631C1.mp3
+│   │   ├── B55448D07B81CEB64624EDDE9D0C09B3.mp3
+│   │   ├── B7653D0543717E91971119FF899358A6.mp3
+│   │   ├── B834C893DC001DEDD88F98388BE98240.mp3
+│   │   ├── B9CF83C6B45D311908F303B6F8847BC8.mp3
+│   │   ├── BB4C7A5591802B4A22F8C48610B55D9E.mp3
+│   │   ├── BF9721AD910D20E777CD1D02280CEB99.mp3
+│   │   ├── C0919F3C7A7793289C84D4A7D025A65A.mp3
+│   │   ├── C0F75F93B9167870E9A9E91F27D6D8A2.mp3
+│   │   ├── C2B01E11AF2143A1E7D6924E7798357D.mp3
+│   │   ├── CE7E562CC8AE07796DF24DBEA80FFC8B.mp3
+│   │   ├── CFA3A3216F9E2814585A7D133F44F80C.mp3
+│   │   ├── D00235E5178CF482DDC0EF2EF3F8DF5D.mp3
+│   │   ├── D0B4E5FB6DBB45CEF4185F1928299F65.mp3
+│   │   ├── D25018ABDAC29E99948B33EE90BD4A25.mp3
+│   │   ├── D31410554C0EA38E4BD658AEA406752E.mp3
+│   │   ├── D66F22E8249C653DAB514FC1B99CB812.mp3
+│   │   ├── D730DC33143113BCDB943E23290D287F.mp3
+│   │   ├── DBA7B9853DCDCB3B78547B621A3BFC94.mp3
+│   │   ├── DC02F0B59DA4B9BBC6741B7C7BC5E0F9.mp3
+│   │   ├── DD7982EC064DFA0D0D56F777356563C8.mp3
+│   │   ├── DF4FB1E4144CF5BCE22D34B702C3A624.mp3
+│   │   ├── DF630276A33CB1FDE3E88099334444A6.mp3
+│   │   ├── E083277213AC239C15C30DC9EEAFA239.mp3
+│   │   ├── E2EECFB5DC17ADA9ADFB58FD98008A15.mp3
+│   │   ├── E7B8C874C5A8ADC357A6CC35DD363F47.mp3
+│   │   ├── E873A48981FB615E15E13F05602CE3F4.mp3
+│   │   ├── E8AAA8E839EAAB0C05B531F517521726.mp3
+│   │   ├── EE500C3F7134F2CD1E5B6CB00C964FAC.mp3
+│   │   ├── EEBD631AAAA8C8C9B3DD09DA1A4FD837.mp3
+│   │   ├── exif.aud.log
+│   │   ├── exiftool.aud.log
+│   │   ├── F51FF77FF3BBB4010BA767C5F55834DB.mp3
+│   │   ├── F5771CE81AA3E10A269575B79EF66944.mp3
+│   │   ├── F68EF9FCC92808BC50D293B2642824E4.mp3
+│   │   ├── F7548A5B5BABA9243DE25A998500951B.mp3
+│   │   ├── F7DCFAFC92AF08EBCC4BADA650126654.mp3
+│   │   ├── FB23415943B1729A5BC85D52F05E2DEE.mp3
+│   │   ├── FB543724C87E3692B510C82A3385AC44.mp3
+│   │   ├── FCCA915F20E7312DA37F901D3492E9B8.mp3
+│   │   ├── FCF058FAF0C222B57D8284AD3E4B29F5.mp3
+│   │   ├── FE739E5D62BBEE2652FA0B53231AA333.mp3
+│   │   ├── FF3292518DB2E5ADE279029997865575.mp3
+│   │   ├── FFC7E7F97F2936636B268947653D9068.mp3
+│   │   ├── GABBER_CLIP.m4a
+│   │   ├── MARGIELA_V1.0.m4a
+│   │   ├── MARGIELA_V2.0.m4a
+│   │   ├── NIKE-1x.m4a
+│   │   ├── NIKE-2.m4a
+│   │   ├── NIKE-3.m4a
+│   │   ├── old
+│   │   │   ├── a_cut_001.mp3
+│   │   │   ├── a_cut_002.mp3
+│   │   │   ├── a_cut_003.mp3
+│   │   │   ├── a_cut_004.mp3
+│   │   │   ├── cl_sample_001.mp3
+│   │   │   ├── exif.old.log
+│   │   │   ├── m-audio-001.mp3
+│   │   │   ├── m-audio-002.mp3
+│   │   │   ├── m-audio-003.mp3
+│   │   │   ├── m-audio-004.mp3
+│   │   │   ├── m-audio-005.mp3
+│   │   │   ├── m-audio-006.mp3
+│   │   │   ├── misc_unreleased_full_001.mp3
+│   │   │   ├── misc_unreleased_full_002.mp3
+│   │   │   ├── misc_unreleased_full_003.mp3
+│   │   │   ├── misc_unreleased_full_004.mp3
+│   │   │   ├── misc_unreleased_full_005.mp3
+│   │   │   ├── r&r_001.mp3
+│   │   │   ├── r&r_002.mp3
+│   │   │   └── r&r_003.mp3
+│   │   ├── OP3-v1.m4a
+│   │   ├── OP3-v2dubbed.m4a
+│   │   ├── POP_PUNK_CLIP.m4a
+│   │   ├── tracks.txt
+│   │   └── TRAP_FRAGMENT.m4a
+│   ├── font
+│   │   ├── exif.font.log
+│   │   ├── GGX88Bk-Italic.woff
+│   │   ├── GGX88Bk-Italic.woff2
+│   │   ├── GGX88Bk-Regular.woff
+│   │   ├── GGX88Bk-Regular.woff2
+│   │   ├── GGX88El-Italic.woff
+│   │   ├── GGX88El-Italic.woff2
+│   │   ├── GGX88El-Regular.woff
+│   │   ├── GGX88El-Regular.woff2
+│   │   ├── GGX88Hv-Italic.woff
+│   │   ├── GGX88Hv-Italic.woff2
+│   │   ├── GGX88Hv-Regular.woff
+│   │   ├── GGX88Hv-Regular.woff2
+│   │   ├── GGX88Lt-Italic.woff
+│   │   ├── GGX88Lt-Italic.woff2
+│   │   ├── GGX88Lt-Regular.woff
+│   │   ├── GGX88Lt-Regular.woff2
+│   │   ├── GGX88Rg-Bold.woff
+│   │   ├── GGX88Rg-Bold.woff2
+│   │   ├── GGX88Rg-BoldItalic.woff
+│   │   ├── GGX88Rg-BoldItalic.woff2
+│   │   ├── GGX88Rg-Italic.woff
+│   │   ├── GGX88Rg-Italic.woff2
+│   │   ├── GGX88Rg-Regular.woff
+│   │   ├── GGX88Rg-Regular.woff2
+│   │   ├── GGX88Ul-Italic.woff
+│   │   ├── GGX88Ul-Italic.woff2
+│   │   ├── GGX88Ul-Regular.woff
+│   │   ├── GGX88Ul-Regular.woff2
+│   │   ├── SymbolsNerdFont-Regular.woff
+│   │   ├── SymbolsNerdFont-Regular.woff2
+│   │   ├── SymbolsNerdFontMono-Regular.woff
+│   │   └── SymbolsNerdFontMono-Regular.woff2
+│   ├── gif
+│   │   ├── 1.gif
+│   │   ├── 10.gif
+│   │   ├── 11.gif
+│   │   ├── 2.gif
+│   │   ├── 3.gif
+│   │   ├── 4.gif
+│   │   ├── 5.gif
+│   │   ├── 7.gif
+│   │   ├── 8.gif
+│   │   ├── 9.gif
+│   │   ├── chemlove.gif
+│   │   ├── chemlove.mp4
+│   │   ├── exif.gif.log
+│   │   ├── forcedenlightenment.gif
+│   │   ├── forcedenlightenment.mp4
+│   │   ├── manifest.json
+│   │   ├── smtiaie.gif
+│   │   ├── smtiaie.mp4
+│   │   ├── yfpmms.gif
+│   │   └── yfpmms.mp4
+│   ├── img
+│   │   ├── attn.png
+│   │   ├── bpp-6004.jpg
+│   │   ├── buttin.png
+│   │   ├── djssdc.png
+│   │   ├── enter-transparency2.png
+│   │   ├── escbannerclick.png
+│   │   ├── exif.img.log
+│   │   ├── exiftool.img.log
+│   │   ├── gallery
+│   │   │   ├── 58dbd800-7ccf-408a-a2bb-d45ad8cf391b.webp
+│   │   │   ├── 76cfba80-e2b9-4c69-92ae-4c681e946c15.webp
+│   │   │   ├── alexshowprev1.webp
+│   │   │   ├── bootcampfix_e1.webp
+│   │   │   ├── bsc-1.webp
+│   │   │   ├── buy.webp
+│   │   │   ├── candyv4.1prev.webp
+│   │   │   ├── cd_12e2.webp
+│   │   │   ├── cd_5.webp
+│   │   │   ├── cd_9.webp
+│   │   │   ├── djss_2.webp
+│   │   │   ├── djssgfkpost.webp
+│   │   │   ├── down3.webp
+│   │   │   ├── exif.gallery.log
+│   │   │   ├── exiftool.gallery.log
+│   │   │   ├── fc5934bd-87c1-4f45-8606-2275317b23f6.webp
+│   │   │   ├── fg_3.webp
+│   │   │   ├── fistmixfront1.webp
+│   │   │   ├── fodcd.webp
+│   │   │   ├── forever_v4edit.webp
+│   │   │   ├── gs.webp
+│   │   │   ├── img_2192.webp
+│   │   │   ├── img_5507.webp
+│   │   │   ├── img_8106.webp
+│   │   │   ├── main-alt-text.webp
+│   │   │   ├── mitb2.webp
+│   │   │   ├── nl_3.webp
+│   │   │   ├── nl_8edit.webp
+│   │   │   ├── nlposter1.webp
+│   │   │   ├── oct7-flyerv1.webp
+│   │   │   ├── orchadsvf11.webp
+│   │   │   ├── pog_new2.webp
+│   │   │   ├── poster.webp
+│   │   │   ├── scan_1011.webp
+│   │   │   ├── scan_104.webp
+│   │   │   ├── scan_107.webp
+│   │   │   ├── scan_111.webp
+│   │   │   ├── scan_118.webp
+│   │   │   ├── scan_12.webp
+│   │   │   ├── scan_120-recovered.webp
+│   │   │   ├── scan_133e2.webp
+│   │   │   ├── scan_14b.webp
+│   │   │   ├── scan_221.webp
+│   │   │   ├── scan_226_copy.webp
+│   │   │   ├── scan_41.webp
+│   │   │   ├── scan_46e.webp
+│   │   │   ├── scan_5.webp
+│   │   │   ├── scan_60.webp
+│   │   │   ├── scan_7.webp
+│   │   │   ├── sd_0913.webp
+│   │   │   ├── sd_7.webp
+│   │   │   ├── sp-str-back.webp
+│   │   │   ├── unix666-01a.webp
+│   │   │   ├── unix666-01b.webp
+│   │   │   ├── unix666-02a.webp
+│   │   │   ├── unix666-02b.webp
+│   │   │   ├── unix666-03a.webp
+│   │   │   ├── unix666-03b.webp
+│   │   │   ├── unix666-04a.webp
+│   │   │   ├── unix666-04b.webp
+│   │   │   ├── unix666-05a.webp
+│   │   │   ├── unix666-05b.webp
+│   │   │   ├── unix666-06a.webp
+│   │   │   ├── unix666-06b.webp
+│   │   │   ├── xerox_74_2.webp
+│   │   │   └── xxx_5.webp
+│   │   ├── hands.png
+│   │   ├── img_8106 copy.jpg
+│   │   ├── index-inv.png
+│   │   ├── index.png
+│   │   ├── itp.jpg
+│   │   ├── key008.jpg
+│   │   ├── mansoncave.jpg
+│   │   ├── me.jpg
+│   │   ├── minicdr-small.png
+│   │   ├── na.jpg
+│   │   ├── ph008.jpg
+│   │   ├── preview.png
+│   │   ├── recycled.jpg
+│   │   ├── tb207.jpg
+│   │   ├── unix666-12.jpg
+│   │   ├── unix666-13.jpg
+│   │   ├── unix666-14.jpg
+│   │   ├── unix666-16.jpg
+│   │   ├── unix666-17.jpg
+│   │   ├── unix666-18.jpg
+│   │   ├── unix66605.jpg
+│   │   ├── unix66606.jpeg
+│   │   └── unix66620.jpg
+│   └── mov
+│       ├── acne1.mp4
+│       ├── acne2.mp4
+│       ├── acne3.mp4
+│       ├── acne4.mp4
+│       ├── camper1.mp4
+│       ├── camper2.mp4
+│       ├── camper3.mp4
+│       ├── chemlove.mp4
+│       ├── compreelnu1.mp4
+│       ├── compreelnu2.mp4
+│       ├── exif.mov.log
+│       ├── exiftool.mov.log
+│       ├── forcedenlightenment.mp4
+│       ├── grate.mp4
+│       ├── gstar1.mp4
+│       ├── gstar2.mp4
+│       ├── gstar3.mp4
+│       ├── gstar4.mp4
+│       ├── indexmov.gif
+│       ├── lotusmotel.mp4
+│       ├── marg1.mp4
+│       ├── marg2.mp4
+│       ├── mmxgm.mp4
+│       ├── nthng.mp4
+│       ├── RESCALED
+│       │   ├── chemlove.mp4
+│       │   └── forcedenlightenment.mp4
+│       ├── smtiaie.mp4
+│       ├── tricky.mp4
+│       ├── untitled.mp4
+│       └── yfpmms.mp4
+├── films.html
+├── gallery.js
+├── grid-data.js
+├── index.html
+├── index.test.html
+├── jquery-3.1.1.min.js
+├── lib
+│   └── butterchurn.js
+├── lodash.js
+├── mobile-script.js
+├── mobile-styles.css
+├── player.js
+├── test.html
+└── tree
+
+13 directories, 391 files

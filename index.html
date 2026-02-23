@@ -1,205 +1,837 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DJSPEEDSICK</title>
-    <style>
-        body, html { margin: 0; padding: 0; background: transparent; overflow-x: hidden; height: 100%; }
-        #bg-video { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -1; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<title>DJSPEEDSICK.COM</title>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#000;touch-action:none;}
+  canvas#c{position:fixed;inset:0;display:block;width:100vw;height:100vh;}
 
-        #conky-sidebar {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 10000; color: #00ff00; font-family: monospace; font-size: 9px;
-            padding: 60px 10px 15px 10px; box-sizing: border-box;
-            overflow-y: auto; overflow-x: hidden; display: none; line-height: 1.0;
-            text-shadow: 1px 1px 1px #000; pointer-events: none;
-            white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
-        }
-        #conky-sidebar * { pointer-events: auto; }
-        .conky-line { margin: 0; padding: 0; }
-        .separator { color: #00ff00; opacity: 0.4; margin: 1px 0; }
-        .conky-invert { background: #00ff00; color: #000; padding: 0 2px; display: inline-block; }
-        .conky-link { color: #00ff00; text-decoration: none; border-bottom: 1px dotted #00ff00; display: inline-block; }
+  #splash-screen{
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    touch-action: none;
+  }
 
-        .grid-header { display: block; width: 90%; max-width: 350px; margin: 4vh auto 10px auto; position: relative; z-index: 1; }
-        #image-grid { display: grid; grid-template-columns: repeat(3, 1fr); width: 90%; max-width: 350px; margin: 0 auto; gap: 12px; position: relative; z-index: 10; }
-        #video-section { display: grid; grid-template-columns: repeat(2, 1fr); width: 85%; max-width: 310px; margin: 20px auto 0 auto; padding-bottom: 80px; gap: 0; position: relative; z-index: 10; }
-        #hands-reveal { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 80px); object-fit: fill; z-index: -1; pointer-events: none; }
-        .grid-item-wrap { position: relative; user-select: none; }
-        .video-move { cursor: grab; touch-action: none; }
-        .grid-item { width: 100%; height: auto; display: block; pointer-events: none; }
-        #image-grid .grid-item-wrap { aspect-ratio: 1/1; }
-        #image-grid .grid-item { height: 100%; object-fit: cover; }
-        #custom-cursor { position: fixed; pointer-events: none; z-index: 9999; color: #fff; font-family: monospace; font-size: 10px; display: none; white-space: pre-wrap; }
-    </style>
+  #background-overlay{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: rotate(90deg);
+    transform-origin: center center;
+  }
+
+  #enter-button{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    z-index: 2;
+    /* Make tap target larger on mobile */
+    min-width: 80px;
+    min-height: 80px;
+  }
+</style>
 </head>
 <body>
 
-<img src="files/img/buttin.png" id="conky-toggle" onclick="toggleConky()" style="position: fixed; top: 12px; left: 12px; width: 30px; z-index: 11000; cursor: pointer; opacity: 0.7; filter: drop-shadow(0px 0px 5px #000); transition: opacity 0.2s;">
-
-<div id="conky-sidebar">
-    <div class="conky-line" id="coords-val">LOC: SEARCHING...</div>
-    <div class="conky-line" id="system-ip">IP: fetching...</div>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line">NEAREST PLACE TO BUY CIGARETTES:</div>
-    <div id="cig-display" class="conky-invert">SCANNING...</div>
-    <div id="cig-link" class="conky-line"></div>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line">UPCOMING SHOWS: <br>(n/a)</div>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line">CONTACT</div>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line"><a href="mailto:boettke@gdjspeedsick.com" class="conky-link">>> BOOKING</a></div>
-    <div class="conky-line"><a href="mailto:dj@djspeedsick.com" class="conky-link">>> PRESS</a></div>
-    <div class="conky-line"><a href="mailto:777paranoia@gmail.com" class="conky-link">>> COMMISSIONS</a></div>
-    <br>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line"><a href="http://escalation.ist" class="conky-link">>> ESCALATIONIST</a></div>
-    <div class="conky-line"><a href="https://adhd.djspeedsick.com" class="conky-link">>> PORTFOLIO</a></div>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line">EXTERNAL LINKS</div>
-    <div class="separator">-----------------------</div>
-    <div class="conky-line"><a href="https://soundcloud.com/speedsick" class="conky-link">> SOUNDCLOUD</a></div>
-    <div class="conky-line"><a href="https://djspeedsick.bandcamp.com" class="conky-link">> BANDCAMP</a></div>
-    <div class="conky-line"><a href="https://instagram.com/djspeedsick" class="conky-link">> INSTAGRAM</a></div>
-    <div class="conky-line"><a href="https://en.wikipedia.org/wiki/DJ_Speedsick" class="conky-link">> WIKIPEDIA</a></div>
-    <div class="conky-line"><a href="https://discogs.com/artist/5782732-DJ-Speedsick" class="conky-link">> DISCOGS</a></div>
-    <div class="separator">------------------------</div>
-    <div class="conky-link" style="cursor: pointer;" onclick="toggleConky()">CLOSE</div>
-    <div class="separator">------------------------</div>
+<div id="splash-screen">
+  <img id="background-overlay" src="files/img/aerial.png">
+  <img id="enter-button"
+       src="files/img/enter button.png"
+       onclick="enterSite()">
 </div>
-
-<img id="bg-video" src="files/mov/indexmov.gif">
-<img src="files/img/djssdc.png" class="grid-header">
-
-<div id="image-grid">
-    <div class="grid-item-wrap" id="grid1"><img class="grid-item" src="files/img/unix666-18.jpg"></div>
-    <div class="grid-item-wrap" id="grid2"><img class="grid-item" src="files/img/na.jpg"></div>
-    <div class="grid-item-wrap" id="grid3"><img class="grid-item" src="files/img/bpp-6004.jpg"></div>
-    <div class="grid-item-wrap" id="grid4"><img class="grid-item" src="files/img/unix666-17.jpg"></div>
-    <div class="grid-item-wrap" id="grid5"><img class="grid-item" src="files/img/unix666-16.jpg"></div>
-    <div class="grid-item-wrap" id="grid6"><img class="grid-item" src="files/img/unix666-14.jpg"></div>
-    <div class="grid-item-wrap" id="grid7"><img class="grid-item" src="files/img/unix666-13.jpg"></div>
-    <div class="grid-item-wrap" id="grid8"><img class="grid-item" src="files/img/unix666-12.jpg"></div>
-    <div class="grid-item-wrap" id="grid9"><img class="grid-item" src="files/img/recycled.jpg"></div>
-</div>
-
-<div id="video-section">
-    <img src="files/img/hands.png" id="hands-reveal">
-    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/smtiaie.gif"></div>
-    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/forcedenlightenment.gif"></div>
-    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/yfpmms.gif"></div>
-    <div class="grid-item-wrap video-move"><img class="grid-item" src="files/gif/chemlove.gif"></div>
-</div>
-
-<div id="custom-cursor"></div>
+<canvas id="c"></canvas>
 
 <script>
-    function toggleConky() {
-        const c = document.getElementById('conky-sidebar');
-        c.style.display = (c.style.display === 'block') ? 'none' : 'block';
+function enterSite(){
+  const splash = document.getElementById("splash-screen");
+  const audio = document.getElementById("audioPlayer");
+  if (audio) audio.play().catch(()=>{});
+  
+  splash.style.display = "none"; // Instant cut
+  window.startWakeSequence = true; // Trigger the camera sequence
+}
+</script>
+
+<script id="simFrag" type="x-shader/x-fragment">
+precision highp float;
+
+/* Water ripple simulation pass.
+   r = current height, g = previous height.
+   Outputs new (r=height, g=prev) each frame for ping-pong.
+   Drops of rain are seeded randomly via u_time.
+   The window mask (u_window) restricts water to glass panes only. */
+
+uniform sampler2D u_prev;
+uniform sampler2D u_window;
+uniform vec2      u_resolution;
+uniform float     u_time;
+uniform float     u_dt;
+
+float hash1(float x){ return fract(sin(x * 127.1 + 1.9898) * 43758.5); }
+float hash2f(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+  vec2 texel = 1.0 / u_resolution.xy;
+
+  /* Only simulate on the glass area of the window mask.
+     Alpha < 0.5 = glass (transparent frame slot). */
+  float maskAlpha = texture2D(u_window, uv).a;
+  bool isGlass = maskAlpha < 0.5;
+
+  if(!isGlass){
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  /* Read neighbours — clamp to glass mask edges */
+  float cur  = texture2D(u_prev, uv).r;
+  float prev = texture2D(u_prev, uv).g;
+
+  float n = texture2D(u_prev, uv + vec2(0.0,  texel.y)).r;
+  float s = texture2D(u_prev, uv + vec2(0.0, -texel.y)).r;
+  float e = texture2D(u_prev, uv + vec2( texel.x, 0.0)).r;
+  float w = texture2D(u_prev, uv + vec2(-texel.x, 0.0)).r;
+
+  /* 2D wave equation: next = 2*cur - prev + c^2*(lap) */
+  float c = 0.3;
+  float lap = (n + s + e + w) * 0.25 - cur;
+  float next = 2.0 * cur - prev + c * c * lap * u_dt * 60.0;
+
+  /* Damping — slightly faster near edges */
+  next *= 0.985;
+
+  /* Seed random raindrops */
+  float dropRate = 24.0;
+  float tick     = floor(u_time * dropRate);
+  for(int i = 0; i < 4; i++){
+    float fi = float(i);
+    float dx = hash1(tick * 7.3 + fi * 13.1);
+    float dy = hash1(tick * 11.7 + fi * 5.9);
+    vec2  dc = vec2(dx, dy);
+    float dist = length(uv - dc);
+    float strength = hash1(tick * 3.7 + fi * 19.3);
+    if(dist < 0.008 && strength > 0.55){
+      next += (1.0 - dist / 0.008) * 0.6;
+    }
+  }
+
+  /* Clamp to prevent blow-up */
+  next = clamp(next, -1.0, 1.0);
+
+  /* Pack: r = new height (mapped 0-1), g = old height */
+  gl_FragColor = vec4(next * 0.5 + 0.5, cur * 0.5 + 0.5, 0.0, 1.0);
+}
+</script>
+
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+
+uniform vec2  u_resolution;
+uniform float u_time;
+uniform vec2  u_mouse;
+uniform float u_blink;
+uniform int   u_mode;
+uniform float u_flash;
+uniform float u_shake;
+uniform float u_wake;
+uniform sampler2D u_texB1,u_texB2,u_texB3,u_texB4,u_texB5,u_texB6;
+uniform sampler2D u_texSkyline,u_texWindow,u_texOOB;
+uniform sampler2D u_texBH;
+uniform sampler2D u_water;
+uniform sampler2D u_texMirror;
+
+#define PI 3.14159265359
+
+float hash2(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+float hash1(float x){ return fract(sin(x*127.1 + 1.9898)*43758.5); }
+mat2 rot(float a){ float s=sin(a),c=cos(a); return mat2(c,-s,s,c); }
+
+float sdBox(vec3 p,vec3 b){
+  vec3 q=abs(p)-b;
+  return length(max(q,0.0))+min(max(q.x,max(q.y,q.z)),0.0);
+}
+
+/* --- Fast KIFS Fractal DE --- */
+float sdFractal(vec3 p, float power, float rotA, float rotB){
+  vec3 z = p;
+  
+  // Rotate the entire shape slowly over time
+  z.xz *= rot(u_time * rotA);
+  z.yz *= rot(u_time * rotB);
+  
+  float scale = 1.0;
+  // Animate the folding structure so it constantly shifts and evolves
+  vec3 foldOffset = vec3(0.6, 0.6, 0.6) + vec3(0.15) * sin(u_time * 0.15 + power);
+  
+  // 8 iterations of pure geometry folding (no trig = incredibly fast)
+  for(int i = 0; i < 8; i++){
+    z = abs(z); // Mirroring space
+    if (z.x < z.y) z.xy = z.yx;
+    if (z.x < z.z) z.xz = z.zx;
+    if (z.y < z.z) z.yz = z.zy;
+    
+    z = z * 2.0 - foldOffset;
+    scale *= 2.0;
+  }
+  // Return the exact geometric distance
+  return (length(z) - 0.2) / scale;
+}/* --- Shared color palette --- */
+vec3 neonPalette(float t) {
+  vec3 a = vec3(0.5, 0.5, 0.5);
+  vec3 b = vec3(0.5, 0.5, 0.5);
+  vec3 c = vec3(1.0, 1.0, 1.0);
+  vec3 d = vec3(0.00, 0.33, 0.67);
+  return a + b * cos(6.28318 * (c * t + d));
+}
+
+/* --- Mode 1: Pickover Stalks --- */
+vec3 colorPickover(vec3 p) {
+  vec2 c = vec2(p.x * 0.4 + sin(u_time * 0.07) * 0.3,
+                p.y * 0.4 + cos(u_time * 0.05) * 0.3);
+  vec2 z = vec2(0.0);
+  float minDist = 1e10;
+  float escapeI = 0.0;
+  for(int i = 0; i < 80; i++) {
+    z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+    float d = min(abs(z.x), abs(z.y));
+    if(d < minDist) minDist = d;
+    if(dot(z,z) > 100.0){ escapeI = float(i); break; }
+  }
+  float trap = clamp(minDist * 8.0, 0.0, 1.0);
+  float hue = fract(trap * 2.0 + u_time * 0.15 + escapeI * 0.01);
+  return neonPalette(hue) * (0.4 + 0.6 * (1.0 - trap));
+}
+
+/* --- Mode 2: Clifford Attractor --- */
+vec3 colorClifford(vec3 p) {
+  float a  =  1.5 + sin(u_time * 0.11) * 0.4;
+  float b  = -1.8 + cos(u_time * 0.07) * 0.3;
+  float c2 = -1.9 + sin(u_time * 0.09) * 0.3;
+  float d  =  0.4 + cos(u_time * 0.13) * 0.4;
+  float x = p.x * 0.5 + p.z * 0.2;
+  float y = p.y * 0.5 + p.z * 0.1;
+  float density = 0.0;
+  float hueAcc = 0.0;
+  for(int i = 0; i < 48; i++){
+    float nx = sin(a * y) + c2 * cos(a * x);
+    float ny = sin(b * x) + d  * cos(b * y);
+    x = nx; y = ny;
+    density += exp(-length(vec2(x, y)) * 0.5);
+    hueAcc  += atan(y, x);
+  }
+  density = clamp(density * 0.06, 0.0, 1.0);
+  float hue = fract(hueAcc * 0.05 + u_time * 0.12);
+  return neonPalette(hue) * (0.3 + 0.7 * density);
+}
+
+vec3 fractalAnchor(float id){
+  float x = mix(-1.4,  1.4,  hash1(id * 3.1 + 0.13)); 
+  float y = mix( 0.0,  1.6,  hash1(id * 7.3 + 0.27)); 
+  float z = mix( 0.0,  3.5,  hash1(id * 11.7 + 0.41)); 
+  return vec3(x, y, z);
+}
+float fractalPower(float id){
+  return mix(6.0, 10.0, hash1(id * 5.3)) + sin(u_time * mix(0.03, 0.08, hash1(id * 2.1))) * 1.5;
+}
+float fractalRotA(float id){ return mix(0.05, 0.18, hash1(id * 9.7))  * (hash1(id * 4.1) > 0.5 ? 1.0 : -1.0); }
+float fractalRotB(float id){ return mix(0.04, 0.14, hash1(id * 6.3))  * (hash1(id * 8.9) > 0.5 ? 1.0 : -1.0); }
+float fractalScale(float id){ return mix(0.7, 1.4, hash1(id * 13.1)); }
+float fractalFogDensity(float id){ return mix(0.006, 0.03, hash1(id * 17.3)); }
+
+float snow(vec2 uv,float size,float speed,float opacity){
+  vec2 grid=uv*size;
+  vec2 id=floor(grid);
+  vec2 f=fract(grid)-0.5;
+  f.y+=fract(u_time*speed+hash2(id)*15.0)-0.5;
+  f.x+=sin(u_time*0.5+hash2(id)*6.2831)*0.2;
+  return smoothstep(.05,0.0,length(f))*hash2(id)*opacity;
+}
+
+/* --- WORLD RAIN --- */
+float worldRainLayer(vec2 uv, float t, float scale, float speed, float thickness, float density, float slant){
+  vec2 u = uv;
+  u.x *= u_resolution.x / u_resolution.y;
+  u *= scale;
+  u += vec2(slant, 1.0) * t * speed;
+  vec2 id = floor(u);
+  vec2 f  = fract(u);
+  float n = hash2(id);
+  float on = step(1.0 - density, n);
+  float x = f.x - (0.5 + (n - 0.5) * 0.18);
+  float streak = smoothstep(thickness, 0.0, abs(x));
+  float seg = hash2(id + 19.17);
+  float gate = smoothstep(0.15, 0.95, fract(f.y + seg));
+  return on * streak * gate;
+}
+
+float worldRain(vec2 uv, float t){
+  float r = 0.0;
+  r += worldRainLayer(uv, t, 18.0, 1.8, 0.003, 0.10, 0.06);
+  r += worldRainLayer(uv, t, 28.0, 2.4, 0.002, 0.13, 0.08);
+  r += worldRainLayer(uv, t, 44.0, 3.2, 0.001, 0.16, 0.10);
+  return clamp(r, 0.0, 1.0);
+}
+
+/* --- Scene --- */
+vec2 mapScene(vec3 p){
+  vec2 res=vec2(1000.0,-1.0);
+  float d1=sdBox(p-vec3(-3.0,0.0,2.0), vec3(1.2,12.0,1.5)); if(d1<res.x) res=vec2(d1,1.0);
+  float d2=sdBox(p-vec3(-4.2,0.0,7.0), vec3(1.2,12.0,1.5)); if(d2<res.x) res=vec2(d2,2.0);
+  float d3=sdBox(p-vec3(-5.4,0.0,12.0),vec3(1.2,12.0,1.5)); if(d3<res.x) res=vec2(d3,3.0);
+  float d4=sdBox(p-vec3( 3.0,0.0,2.5), vec3(1.2,12.0,1.5)); if(d4<res.x) res=vec2(d4,4.0);
+  float d5=sdBox(p-vec3( 4.2,0.0,7.5), vec3(1.2,12.0,1.5)); if(d5<res.x) res=vec2(d5,5.0);
+  float d6=sdBox(p-vec3( 5.4,0.0,12.5),vec3(1.2,12.0,1.5)); if(d6<res.x) res=vec2(d6,6.0);
+
+  if(u_mode == 1 || u_mode == 2){
+    float seed = floor(u_time * 0.015);
+    float num  = floor(hash1(seed * 31.1) * 3.0) + 1.0; 
+
+    float id0 = seed * 7.0;
+    float sc0 = fractalScale(id0);
+    vec3  fp0 = (p - fractalAnchor(id0)) / sc0;
+    float bound0 = length(fp0) - 3.0;
+    float df0 = bound0;
+    // Only run the trig math if the ray is physically near the fractal
+    if(bound0 < 0.1) df0 = max(bound0, sdFractal(fp0, fractalPower(id0), fractalRotA(id0), fractalRotB(id0)));
+    if(df0 / sc0 < res.x) res = vec2(df0 / sc0, 10.0);
+
+    if(num >= 2.0){
+      float id1 = seed * 7.0 + 1.0;
+      float sc1 = fractalScale(id1);
+      vec3  fp1 = (p - fractalAnchor(id1)) / sc1;
+      float bound1 = length(fp1) - 3.0;
+      float df1 = bound1;
+      if(bound1 < 0.1) df1 = max(bound1, sdFractal(fp1, fractalPower(id1), fractalRotA(id1), fractalRotB(id1)));
+      if(df1 / sc1 < res.x) res = vec2(df1 / sc1, 10.0);
     }
 
-       function initCigaretteLocator() {
-        fetch('https://ipapi.co/json/')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('system-ip').innerText = "IP: " + data.ip;
-                document.getElementById('coords-val').innerText = `LAT: ${data.latitude.toFixed(4)} LON: ${data.longitude.toFixed(4)}`;
-                findNearestCigarettes(data.latitude, data.longitude);
-            })
-            .catch(err => {
-                document.getElementById('cig-display').innerText = "GEO ERROR";
-            });
+    if(num >= 3.0){
+      float id2 = seed * 7.0 + 2.0;
+      float sc2 = fractalScale(id2);
+      vec3  fp2 = (p - fractalAnchor(id2)) / sc2;
+      float bound2 = length(fp2) - 3.0;
+      float df2 = bound2;
+      if(bound2 < 0.1) df2 = max(bound2, sdFractal(fp2, fractalPower(id2), fractalRotA(id2), fractalRotB(id2)));
+      if(df2 / sc2 < res.x) res = vec2(df2 / sc2, 10.0);
+    }
+  }
+
+  return res;
+}
+
+vec3 sampleBuilding(float id,vec2 texUV){
+  if(id > 9.0) return vec3(1.0);
+  vec2 uv=abs(fract(texUV*0.25)*2.0-1.0);
+  if(id<1.5) return texture2D(u_texB1,uv).rgb;
+  if(id<2.5) return texture2D(u_texB2,uv).rgb;
+  if(id<3.5) return texture2D(u_texB3,uv).rgb;
+  if(id<4.5) return texture2D(u_texB4,uv).rgb;
+  if(id<5.5) return texture2D(u_texB5,uv).rgb;
+  return texture2D(u_texB6,uv).rgb;
+}
+
+vec2 waterNormal(vec2 uv){
+  vec2 texel = 1.0 / u_resolution;
+  float hL = texture2D(u_water, uv - vec2(texel.x, 0.0)).r * 2.0 - 1.0;
+  float hR = texture2D(u_water, uv + vec2(texel.x, 0.0)).r * 2.0 - 1.0;
+  float hD = texture2D(u_water, uv - vec2(0.0, texel.y)).r * 2.0 - 1.0;
+  float hU = texture2D(u_water, uv + vec2(0.0, texel.y)).r * 2.0 - 1.0;
+  return vec2(hL - hR, hD - hU) * 7.0;
+}
+
+void main(){
+  vec2 uv=(gl_FragCoord.xy-0.5*u_resolution.xy)/u_resolution.y;
+
+  // --- INTERMITTENT DIGITAL GLITCH ---
+  float gTick = floor(u_time * 24.0); 
+  float isGlitch = step(0.97, hash1(gTick * 13.37)); 
+  if (isGlitch > 0.0) {
+    float sliceY = floor(uv.y * mix(15.0, 50.0, hash1(gTick * 2.1)));
+    uv.x += (hash1(sliceY + gTick) - 0.5) * 0.18;
+  }
+
+  vec2 screenUV=gl_FragCoord.xy/u_resolution.xy;
+  vec2 m=u_mouse*0.35;
+
+  vec3 ro=vec3(0.0,0.0,-4.5);
+  vec3 rd=normalize(vec3(uv,1.4));
+
+  float groggy = 1.0 - u_wake;
+  ro.y -= groggy * 1.2;
+  rd.yz *= rot(groggy * 0.4);
+  rd.xz *= rot(groggy * -0.3); 
+  rd.xy *= rot(groggy * 0.2);
+
+  rd.yz*=rot(-m.y*0.5);
+  rd.xz*=rot(-m.x*0.6);
+
+  // --- GRAVITATIONAL LENSING FOR MODE 3 ---
+  if(u_mode == 3){
+    float d = length(rd.xy);
+    float warp = 0.06 / (d + 0.05); // Hyperbolic gravity curve
+    rd.xy *= rot(warp * 1.5);       // Twist space around the center
+    rd.xy -= normalize(rd.xy) * (warp * 0.4); // Suck space inward
+    rd = normalize(rd); // Re-stabilize the camera ray
+  }
+
+  if(u_mode==3){
+    float sx=(hash2(vec2(floor(u_time*40.0),1.7))-0.5)*0.020*u_shake;
+    float sy=(hash2(vec2(floor(u_time*40.0),8.3))-0.5)*0.016*u_shake;
+    rd.xz*=rot(sx); rd.yz*=rot(sy);
+  }
+
+  float t=0.0; vec2 hit=vec2(0.0);
+  for(int i=0;i<90;i++){
+    hit=mapScene(ro+rd*t);
+    if(hit.x<0.001||t>70.0) break;
+    t+=hit.x;
+  }
+  bool isSky=(t>=70.0);
+
+  vec3 colorStorm=vec3(0.008,0.018,0.040);
+  vec3 skyTone=(u_mode==3)
+    ? mix(colorStorm,vec3(0.015,0.030,0.060),exp(-max(rd.y,0.0)*3.5))
+    : mix(vec3(0.01,0.02,0.04),vec3(0.35,0.20,0.08),exp(-max(rd.y,0.0)*4.0));
+
+  vec3 sceneCol=vec3(0.0);
+
+  if(!isSky){
+    vec3 p=ro+rd*t;
+    float fogAmt = (u_mode == 3) ? (1.0-exp(-0.004*t*t)) : (1.0-exp(-0.015*t*t));
+
+    if(hit.y <= 9.0){
+      vec3 n=normalize(vec3(
+        mapScene(p+vec3(0.01,0,0)).x-mapScene(p-vec3(0.01,0,0)).x,
+        mapScene(p+vec3(0,0.01,0)).x-mapScene(p-vec3(0,0.01,0)).x,
+        mapScene(p+vec3(0,0,0.01)).x-mapScene(p-vec3(0,0,0.01)).x
+      ));
+      vec2 texUV=(abs(n.x)>abs(n.y))?p.zy:p.xy;
+      float buildAmt = (u_mode == 3) ? 0.08 : 0.09;
+      sceneCol=mix(sampleBuilding(hit.y,texUV)*buildAmt, skyTone, fogAmt);
     }
 
-       function findNearestCigarettes(lat, lon) {
-        const radius = 3000; 
-        const query = `[out:json];(node["shop"~"convenience|kiosk"](around:${radius},${lat},${lon});node["amenity"="fuel"](around:${radius},${lat},${lon}););out body;`;
-        const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+    if(hit.y > 9.0){
+      vec3 p2 = p; 
 
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                const display = document.getElementById('cig-display');
-                const linkDiv = document.getElementById('cig-link');
-                if (data.elements && data.elements.length > 0) {
-                    const shop = data.elements[0];
-                    const name = (shop.tags.name || shop.tags.brand || "UNNAMED SHOP").toUpperCase();
-                    display.innerText = name;
-                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${shop.lat},${shop.lon}`;
-                    linkDiv.innerHTML = `<a href="${mapUrl}" class="conky-link" target="_blank">>> VIEW ON MAP</a>`;
-                } else {
-                    display.innerText = "NONE NEARBY";
-                }
-            })
-            .catch(() => {
-                document.getElementById('cig-display').innerText = "SCAN FAILED";
-            });
+      float seed = floor(u_time * 0.015);
+      float num  = floor(hash1(seed * 31.1) * 3.0) + 1.0;      
+      float closestDist = 1e10;
+      float closestFogD = 0.015;
+
+      vec3 a0 = fractalAnchor(seed * 7.0);
+      float dist0 = length(p2 - a0);
+      if(dist0 < closestDist){ closestDist = dist0; closestFogD = fractalFogDensity(seed * 7.0); }
+
+      if(num >= 2.0){
+        vec3 a1 = fractalAnchor(seed * 7.0 + 1.0);
+        float dist1 = length(p2 - a1);
+        if(dist1 < closestDist){ closestDist = dist1; closestFogD = fractalFogDensity(seed * 7.0 + 1.0); }
+      }
+      if(num >= 3.0){
+        vec3 a2 = fractalAnchor(seed * 7.0 + 2.0);
+        float dist2 = length(p2 - a2);
+        if(dist2 < closestDist){ closestDist = dist2; closestFogD = fractalFogDensity(seed * 7.0 + 2.0); }
+      }
+
+      float inner = max(closestDist - 0.8, 0.0);
+      float fractalFog = 1.0 - exp(-closestFogD * inner * inner);
+
+      vec3 fractalCol;
+      if(u_mode == 1){
+        fractalCol = colorPickover(p2);
+      } else {
+        fractalCol = colorClifford(p2);
+      }
+      sceneCol = mix(fractalCol, skyTone * 0.12, fractalFog);
     }
 
-        const imageDetails = {
-        grid1: "UNIX666-18\nSelbstentfremdungsbewusstsein\nEscalationist\nCD-R",
-        grid2: "INTERDEPRAVITY\n2025 Sampler\nSelf-Released",
-        grid3: "BPP-6004\nScant/DJ Speedsick Split\nBreathing Problem Productions\n12in Vinyl",
-        grid4: "UNIX666-17\ndjss250417-dj.sbd\nEscalationist\nCD-R",
-        grid5: "UNIX666-16\nNothing Is Original\nBootleg Remixes And Edits 2017-2025\nEscalationist\nCD-R",
-        grid6: "UNIX666-14\nNon-Diegetic Instrumentals Vol. 1\nEscalationist\nCD-R",
-        grid7: "UNIX666-13\nHead Crash\nEscalationist\nMP3-CD",
-        grid8: "UNIX666-12\nChoke Out\nEscalationist\n2x Mini-CDr",
-        grid9: "RECYCLED\nRecycled Music\nRRRecords\nCassette"
-    };
+    if(u_mode==3) sceneCol+=vec3(0.55,0.78,1.0)*u_flash*0.35;
 
-    const cursor = document.getElementById('custom-cursor');
-    let activeItem = null, startX, startY, zIndexCounter = 100;
-
-    function updateCursor(e, text) {
-        if (!text) { cursor.style.display = 'none'; return; }
-        cursor.innerText = text;
-        cursor.style.display = 'block';
-        const x = e.touches ? e.touches[0].clientX : e.clientX;
-        const y = e.touches ? e.touches[0].clientY : e.clientY;
-        cursor.style.left = (x + 15) + 'px';
-        cursor.style.top = (y - 60) + 'px';
+  } else {
+    if(u_mode==3){
+      vec2 bhUV = rd.xy * 1.2 + vec2(0.5, 0.5);
+      bhUV = clamp(bhUV, 0.001, 0.999);
+      sceneCol=texture2D(u_texBH, bhUV).rgb;
+    } else {
+      vec2 skyUV=fract(rd.xy*0.5+0.5+vec2(u_time*0.002,0.0));
+      sceneCol=texture2D(u_texSkyline,skyUV).rgb*0.3+skyTone*0.5;
     }
+  }
 
-    document.querySelectorAll('#image-grid .grid-item-wrap').forEach(item => {
-        const info = imageDetails[item.id] || "";
-        ['touchstart', 'touchmove', 'mouseenter', 'mousemove'].forEach(ev => {
-            item.addEventListener(ev, (e) => updateCursor(e, info));
-        });
-        ['touchend', 'mouseleave'].forEach(ev => {
-            item.addEventListener(ev, () => cursor.style.display = 'none');
-        });
-    });
+  // Draw snow over EVERYTHING
+  if(u_mode != 3 && u_mode != 4){
+    sceneCol += snow(vec2(atan(rd.z,rd.x)*2.0,rd.y*2.0), 15.0, 0.3, 0.3);
+  }
 
-    document.querySelectorAll('.video-move').forEach(item => {
-        item.dataset.x = 0; item.dataset.y = 0;
-        const onStart = (e) => {
-            activeItem = item; zIndexCounter++; item.style.zIndex = zIndexCounter;
-            const evt = e.touches ? e.touches[0] : e;
-            startX = evt.clientX - parseFloat(item.dataset.x);
-            startY = evt.clientY - parseFloat(item.dataset.y);
-        };
-        item.addEventListener('mousedown', onStart);
-        item.addEventListener('touchstart', onStart, {passive: false});
-    });
+  if(u_mode==3){
+    float wr = worldRain(uv, u_time);
+    wr *= isSky ? 1.0 : 0.0;
+    sceneCol += vec3(0.62,0.72,0.85) * wr * 0.65;
+  }
 
-    const onMove = (e) => {
-        if (!activeItem) return;
-        const evt = e.touches ? e.touches[0] : e;
-        const x = evt.clientX - startX, y = evt.clientY - startY;
-        activeItem.dataset.x = x; activeItem.dataset.y = y;
-        activeItem.style.transform = `translate(${x}px, ${y}px)`;
-    };
+  if(u_mode==4){
+    vec2 suv = gl_FragCoord.xy / u_resolution.xy;
+    sceneCol = texture2D(u_texMirror, vec2(suv.x, 1.0 - suv.y)).rgb;
+  }
 
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onMove, {passive: false});
-    window.addEventListener('mouseup', () => activeItem = null);
-    window.addEventListener('touchend', () => activeItem = null);
+  float dWin=(-1.5-ro.z)/rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+rd*dWin;
+    if(abs(pW.x)<4.0&&abs(pW.y)<3.0){
+      vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+      
+      // Mode 5 mask swap
+      vec4 txW = (u_mode == 5) ? texture2D(u_texOOB, wuv) : texture2D(u_texWindow, wuv);
+      
+      float frameA=clamp(txW.a,0.0,1.0);
+      float isGlass=1.0-frameA;
 
-    initCigaretteLocator();
+      if(isGlass>0.1 && u_mode==3){
+        float waterH = texture2D(u_water, wuv).r * 2.0 - 1.0;
+        waterH = max(waterH, 0.0);
+        vec2  wNorm  = waterNormal(wuv);
+        float highlight = clamp(dot(normalize(wNorm), normalize(vec2(0.25,0.85))), 0.0, 1.0);
+        highlight = pow(highlight, 7.0) * waterH * 1.6;
+        float wetness = clamp(waterH * 2.6, 0.0, 0.38);
+        float useBH = isSky ? 1.0 : 0.0;
+        vec2 bhUV = rd.xy * 1.2 + vec2(0.5, 0.5);
+        vec2 refractUV = bhUV + wNorm * 0.020;
+        refractUV = clamp(refractUV, 0.001, 0.999);
+        vec3 refracted = texture2D(u_texBH, refractUV).rgb;
+        float refractAmt = clamp((waterH - 0.12) * 7.0, 0.0, 0.65) * useBH;
+        sceneCol = mix(sceneCol, refracted, refractAmt);
+        sceneCol += vec3(0.62,0.78,1.0) * highlight;
+        sceneCol = mix(sceneCol, sceneCol * 0.72, wetness);
+      } else if(isGlass>0.1 && u_mode!=3){
+        float frost = hash2(wuv*80.0)*0.04;
+        sceneCol = mix(sceneCol, vec3(0.6,0.7,0.8), frost*0.3);
+      }
+
+      vec3 frameCol=txW.rgb*0.50;
+      if(u_mode==3) frameCol+=vec3(0.55,0.78,1.0)*u_flash*0.55;
+      sceneCol=mix(sceneCol,frameCol,frameA);
+    }
+  }
+
+  float dimmer = (u_mode == 3) ? 1.0 : 0.55;
+  float wakeFade = smoothstep(0.0, 0.8, u_wake); 
+  gl_FragColor=vec4(sceneCol * (1.0 - u_blink) * dimmer * wakeFade, 1.0);
+}
+</script>
+
+<script>
+const canvas = document.getElementById("c");
+const gl = canvas.getContext("webgl", { antialias:false, alpha:false });
+gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
+
+const fit = () => {
+  const dpr = Math.min(2, devicePixelRatio||1);
+  canvas.width  = Math.floor(innerWidth  * dpr);
+  canvas.height = Math.floor(innerHeight * dpr);
+  gl.viewport(0,0,canvas.width,canvas.height);
+};
+addEventListener("resize", () => { fit(); rebuildFBOs(); }); fit();
+
+const compile = (type, src) => {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+  return sh;
+};
+
+const vsrc = `attribute vec2 p; void main(){ gl_Position=vec4(p,0,1); }`;
+
+const simProg = gl.createProgram();
+gl.attachShader(simProg, compile(gl.VERTEX_SHADER, vsrc));
+gl.attachShader(simProg, compile(gl.FRAGMENT_SHADER, document.getElementById("simFrag").textContent));
+gl.linkProgram(simProg);
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsrc));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById("frag").textContent));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog));
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+
+function bindVAO(program){
+  const loc = gl.getAttribLocation(program, "p");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+}
+
+let fbos = [], texs = [];
+function makeFBO(){
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,canvas.width,canvas.height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return {fbo, tex};
+}
+function rebuildFBOs(){
+  fbos = [makeFBO(), makeFBO()];
+  texs = [fbos[0].tex, fbos[1].tex];
+}
+rebuildFBOs();
+let ping = 0;
+
+const loadTex = (url, unit, p, name) => {
+  const tex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0+unit);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
+  gl.useProgram(p);
+  gl.uniform1i(gl.getUniformLocation(p, name), unit);
+  const img = new Image();
+  img.crossOrigin="anonymous";
+  img.onload = () => {
+    gl.activeTexture(gl.TEXTURE0+unit);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  };
+  img.src = url;
+  return tex;
+};
+
+gl.useProgram(prog);
+["01","09","08","07","06","05"].forEach((n,i) =>
+  loadTex(`files/img/void/building${n}.png`, i, prog, `u_texB${i+1}`));
+loadTex("files/img/void/skyline.png",        6, prog, "u_texSkyline");
+loadTex("files/img/void/canalport-mask.png", 7, prog, "u_texWindow");
+loadTex("files/img/mirror.png",             11, prog, "u_texMirror");
+loadTex("files/img/void/oob-mask.png",      12, prog, "u_texOOB"); 
+
+gl.useProgram(simProg);
+gl.uniform1i(gl.getUniformLocation(simProg,"u_window"), 7);
+gl.uniform1i(gl.getUniformLocation(simProg,"u_prev"),   10);
+
+const bhTex = gl.createTexture();
+gl.activeTexture(gl.TEXTURE0+8);
+gl.bindTexture(gl.TEXTURE_2D, bhTex);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,255]));
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+gl.useProgram(prog);
+gl.uniform1i(gl.getUniformLocation(prog,"u_texBH"), 8);
+gl.uniform1i(gl.getUniformLocation(prog,"u_water"), 9);
+
+const video = document.createElement("video");
+video.loop=true; video.muted=true; video.playsInline=true;
+const srcWebm=document.createElement("source"); srcWebm.src="files/mov/bh2.webm"; srcWebm.type="video/webm";
+const srcMp4=document.createElement("source");  srcMp4.src="files/mov/bh.mp4";  srcMp4.type="video/mp4";
+video.appendChild(srcWebm); video.appendChild(srcMp4);
+video.play().catch(()=>{});
+let videoReady=false;
+video.addEventListener("playing",()=>{ videoReady=true; });
+
+function uploadVideoTexture(){
+  if(!videoReady||video.readyState<2) return;
+  gl.activeTexture(gl.TEXTURE0+8);
+  gl.bindTexture(gl.TEXTURE_2D, bhTex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+}
+
+const U = {
+  res:   gl.getUniformLocation(prog,"u_resolution"),
+  time:  gl.getUniformLocation(prog,"u_time"),
+  mouse: gl.getUniformLocation(prog,"u_mouse"),
+  mode:  gl.getUniformLocation(prog,"u_mode"),
+  blink: gl.getUniformLocation(prog,"u_blink"),
+  flash: gl.getUniformLocation(prog,"u_flash"),
+  shake: gl.getUniformLocation(prog,"u_shake"),
+  wake:  gl.getUniformLocation(prog,"u_wake"),
+};
+const SU = {
+  res:  gl.getUniformLocation(simProg,"u_resolution"),
+  time: gl.getUniformLocation(simProg,"u_time"),
+  dt:   gl.getUniformLocation(simProg,"u_dt"),
+};
+
+let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0,
+    phase="sleeping",timer=-9999,start=0,lastNow=0,loopCount=0,
+    blinkCount=0,targetBlinks=2;
+
+// --- MOUSE SUPPORT (desktop) ---
+addEventListener("mousemove",e=>{
+  mx=(e.clientX/innerWidth)*2-1;
+  my=-(e.clientY/innerHeight)*2+1;
+});
+addEventListener("click",()=>{
+  video.play().catch(()=>{});
+});
+
+// --- TOUCH SUPPORT (mobile) ---
+let touchActive = false;
+let touchStartX = 0, touchStartY = 0;
+let touchCamX = 0, touchCamY = 0;
+
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchCamX = mx;
+  touchCamY = my;
+  touchActive = true;
+  video.play().catch(()=>{});
+}, { passive: false });
+
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if (!touchActive) return;
+  const t = e.touches[0];
+  const dx = (t.clientX - touchStartX) / innerWidth  * 2;
+  const dy = (t.clientY - touchStartY) / innerHeight * 2;
+  // Drag feel: moving finger right pans camera right, etc.
+  mx = Math.max(-1, Math.min(1, touchCamX + dx * 2.5));
+  my = Math.max(-1, Math.min(1, touchCamY - dy * 2.5));
+}, { passive: false });
+
+canvas.addEventListener("touchend", e => {
+  e.preventDefault();
+  touchActive = false;
+}, { passive: false });
+
+function simStep(now){
+  const dt = Math.min((now - lastNow) * 0.001, 0.05);
+  gl.activeTexture(gl.TEXTURE0+10);
+  gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
+  const next = 1 - ping;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[next].fbo);
+  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.useProgram(simProg);
+  bindVAO(simProg);
+  gl.uniform2f(SU.res, canvas.width, canvas.height);
+  gl.uniform1f(SU.time, now * 0.001);
+  gl.uniform1f(SU.dt, dt);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  ping = next;
+}
+
+function advanceMode(){
+  let nextMode = mode;
+  while(nextMode === mode){
+    nextMode = Math.floor(Math.random() * 6);
+  }
+  mode = nextMode;
+  if(mode >= 3){
+    targetBlinks = 1;
+    blinkCount = 0;
+  }
+}
+
+function render(now){
+  let wakeVal = 1.0; 
+  if(phase === "sleeping"){
+    wakeVal = 0.0;
+    if(window.startWakeSequence){
+      phase = "waking";
+      start = now;
+    }
+  } else if(phase === "waking"){
+    let t = Math.min((now - start) / 3000, 1.0); 
+    wakeVal = 1.0 - Math.pow(1.0 - t, 3); 
+    if(t >= 1.0){
+      phase = "open";
+      timer = now;
+    }
+  }
+
+  if(phase==="open" && now-timer>4500){
+    blinkCount++;
+    if(blinkCount >= targetBlinks){
+      targetBlinks = 2 + Math.floor(Math.random() * 5);
+      blinkCount = 0;
+      phase="closing_switch"; start=now; timer=now;
+    } else {
+      phase="closing_blink"; start=now; timer=now;
+  }
+  }
+  else if(phase==="closing_blink"){
+    blink=Math.min((now-start)/160,1);
+    if(blink>=1){ phase="black_blink"; start=now; }
+  }
+  else if(phase==="black_blink" && now-start>120){
+    phase="opening_blink"; start=now;
+  }
+  else if(phase==="opening_blink"){
+    blink=1.0-Math.min((now-start)/160,1);
+    if(blink<=0){ phase="open"; timer=now; blink=0; }
+  }
+  else if(phase==="closing_switch"){
+    blink=Math.min((now-start)/160,1);
+    if(blink>=1){
+      phase="black_switch"; start=now;
+      advanceMode();
+    }
+  }
+  else if(phase==="black_switch" && now-start>200){
+    phase="opening_switch"; start=now;
+  }
+  else if(phase==="opening_switch"){
+    blink=1.0-Math.min((now-start)/160,1);
+    if(blink<=0){ phase="open"; timer=now; blink=0; }
+  }
+
+  cx+=(mx-cx)*0.05; cy+=(my-cy)*0.05;
+
+  if(mode===3){
+    if(Math.random()<0.018) flash=1.0;
+    flash*=0.86;
+    shake=Math.max(flash,0.10*Math.sin(now*0.02)+0.06*Math.sin(now*0.06));
+    uploadVideoTexture();
+    simStep(now);
+  } else {
+    flash*=0.80; shake*=0.80;
+  }
+
+  gl.activeTexture(gl.TEXTURE0+9);
+  gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
+  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.useProgram(prog);
+  bindVAO(prog);
+  gl.uniform2f(U.res,  canvas.width,canvas.height);
+  gl.uniform1f(U.time, now*0.001);
+  gl.uniform2f(U.mouse,cx,cy);
+  gl.uniform1i(U.mode, mode);
+  gl.uniform1f(U.blink,blink);
+  gl.uniform1f(U.flash,flash);
+  gl.uniform1f(U.shake,shake);
+  gl.uniform1f(U.wake, wakeVal);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+
+  lastNow = now;
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
 </script>
 </body>
 </html>
