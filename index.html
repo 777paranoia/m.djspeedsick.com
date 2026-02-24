@@ -120,6 +120,11 @@ function enterSite() {
     const filter = audioCtx.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.value = 520;
+    
+        const filter = audioCtx.createBiquadFilter();
+    filter.type = "hipass";
+    filter.frequency.value = 520;
+
 
     const reverb = audioCtx.createConvolver();
     const rate = audioCtx.sampleRate;
