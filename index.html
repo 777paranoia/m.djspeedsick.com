@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        window.location.href = "https://m.djspeedsick.com";
-    }
-</script>
 <meta charset="UTF-8" />
 <title>DJSPEEDSICK.COM</title>
 <style>
@@ -43,22 +38,32 @@
       user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
   }
 
-  /* --- NEW LEFT/RIGHT PANORAMA SCENES --- */
+  /* --- NEW LEFT/RIGHT PANORAMA SCENES WITH GLITCH --- */
   .side-scene {
-      position: fixed; inset: 0; z-index: 600; /* Above canvas, below Conky */
+      position: fixed; inset: 0; z-index: 600;
       background: #000; overflow: hidden;
-      opacity: 0; transition: opacity 0.8s ease-in-out;
+      display: none; /* Changed from opacity to instant display for glitch effect */
       user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
   }
   .side-bg-container {
       position: absolute; inset: -10%; width: 120%; height: 120%;
-      cursor: grab; transition: transform 0.05s linear;
+      cursor: grab;
   }
   .side-bg-container:active { cursor: grabbing; }
   .side-bg-container img {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       object-fit: cover; pointer-events: none;
       user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
+  }
+
+  @keyframes digitalGlitch {
+      0% { filter: contrast(300%) brightness(200%) invert(1) hue-rotate(90deg); transform: scale(1.1) skewX(10deg); }
+      10% { filter: contrast(200%) brightness(150%) hue-rotate(-90deg); transform: scale(1.05) skewX(-5deg); }
+      20% { filter: contrast(150%) brightness(120%); transform: scale(1) skewX(2deg); }
+      100% { filter: contrast(100%) brightness(100%); transform: scale(1) skewX(0deg); }
+  }
+  .glitch-anim {
+      animation: digitalGlitch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
 
   #secret-button { position: fixed; top: 25px; left: 25px; width: 35px; height: auto; opacity: 0.1; z-index: 900; cursor: pointer; mix-blend-mode: screen; transition: opacity 0.3s ease; }
@@ -93,13 +98,13 @@
   <img id="enter-button" src="files/img/enter-button.png" draggable="false" onclick="enterSite()">
 </div>
 
-<div id="left-scene" class="side-scene" style="display:none;">
+<div id="left-scene" class="side-scene">
     <div class="side-bg-container" id="left-bg-container">
         <img src="files/img/left-scene.png" draggable="false">
     </div>
 </div>
 
-<div id="right-scene" class="side-scene" style="display:none;">
+<div id="right-scene" class="side-scene">
     <div class="side-bg-container" id="right-bg-container">
         <img src="files/img/right-scene.png" draggable="false">
     </div>
@@ -239,16 +244,14 @@ function getNearestSmokes(lat, lng) {
     }
 }
 
-// --- BOOT TIMER ---
 let splashStartTime = Date.now(); 
-
 window.addEventListener('load', () => {
   const loader = document.getElementById("loading-screen");
   if (loader) loader.style.display = "none";
   splashStartTime = Date.now(); 
 });
 
-// --- SPLASH SCREEN DRAG LOGIC ---
+// --- SPLASH SCREEN LOGIC ---
 const bgContainer = document.getElementById('background-container');
 const splashScreen = document.getElementById('splash-screen');
 let sDrag = false, sStartX = 0, sStartY = 0, sPanX = 0, sPanY = 0;
@@ -268,117 +271,111 @@ const doSplashDrag = (e) => {
     let clientY = e.touches ? e.touches[0].clientY : e.clientY;
     sPanX = clientX - sStartX;
     sPanY = clientY - sStartY;
-    
-    let maxX = window.innerWidth * 0.10;
-    let maxY = window.innerHeight * 0.10;
-    
-    sPanX = Math.max(-maxX, Math.min(maxX, sPanX));
-    sPanY = Math.max(-maxY, Math.min(maxY, sPanY));
-    
+    let maxX = window.innerWidth * 0.10; let maxY = window.innerHeight * 0.10;
+    sPanX = Math.max(-maxX, Math.min(maxX, sPanX)); sPanY = Math.max(-maxY, Math.min(maxY, sPanY));
     bgContainer.style.transform = `translate(${sPanX}px, ${sPanY}px)`;
 };
-
 const endSplashDrag = () => { sDrag = false; };
-splashScreen.addEventListener('mousedown', startSplashDrag);
-window.addEventListener('mousemove', doSplashDrag);
-window.addEventListener('mouseup', endSplashDrag);
-splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false});
-window.addEventListener('touchmove', doSplashDrag, {passive: false});
-window.addEventListener('touchend', endSplashDrag);
+splashScreen.addEventListener('mousedown', startSplashDrag); window.addEventListener('mousemove', doSplashDrag); window.addEventListener('mouseup', endSplashDrag);
+splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false}); window.addEventListener('touchmove', doSplashDrag, {passive: false}); window.addEventListener('touchend', endSplashDrag);
 
 // ==========================================
-// NEW: SIDE SCENE PANORAMA LOGIC
+// MASSIVELY IMPROVED SIDE SCENE LOGIC (WITH INERTIA)
 // ==========================================
-window.activeScene = 'main'; // Tracks global state ('main', 'left', 'right')
+window.activeScene = 'main'; 
 
-let sideDrag = false, sideStartX = 0, sideStartY = 0, sidePanX = 0, sidePanY = 0;
+let sideMx = 0, sideMy = 0, sideCx = 0, sideCy = 0;
+let sideDrag = false, sideStartX = 0, sideStartY = 0;
+let sideMaxX = 0, sideMaxY = 0;
 let activeSideEl = null;
 let activeBgEl = null;
 let sideHoldTimeout = null;
+window.sideLoopActive = false;
 
 window.openSideScene = function(side) {
-    window.activeScene = side; // Stop WebGL from registering mouse drags
-    if (side === 'right') {
-        activeSideEl = document.getElementById('right-scene');
-        activeBgEl = document.getElementById('right-bg-container');
-        // Start slightly panned left so the drag mechanic makes sense
-        sidePanX = -(window.innerWidth * 0.05); 
-    } else {
-        activeSideEl = document.getElementById('left-scene');
-        activeBgEl = document.getElementById('left-bg-container');
-        // Start slightly panned right
-        sidePanX = (window.innerWidth * 0.05);
-    }
-    sidePanY = 0;
-    activeBgEl.style.transform = `translate(${sidePanX}px, ${sidePanY}px)`;
+    window.activeScene = side; 
+    activeSideEl = document.getElementById(side + '-scene');
+    activeBgEl = document.getElementById(side + '-bg-container');
+    
+    sideMaxX = window.innerWidth * 0.10;
+    sideMaxY = window.innerHeight * 0.10;
+    
+    // Start slightly pushed inward so they can drag back to center
+    sideMx = side === 'right' ? -sideMaxX : sideMaxX;
+    sideCx = sideMx; sideMy = 0; sideCy = 0;
+    
     activeSideEl.style.display = 'block';
     
-    // Trigger CSS fade in
-    void activeSideEl.offsetWidth; 
-    activeSideEl.style.opacity = '1';
+    // Trigger CRT Glitch animation
+    activeBgEl.classList.remove('glitch-anim');
+    void activeBgEl.offsetWidth; 
+    activeBgEl.classList.add('glitch-anim');
+
+    if (!window.sideLoopActive) {
+        window.sideLoopActive = true;
+        requestAnimationFrame(sideRenderLoop);
+    }
 };
 
 window.closeSideScene = function(side) {
     if (!activeSideEl) return;
-    activeSideEl.style.opacity = '0';
-    
-    // Wait for fade to finish before resetting engine
-    setTimeout(() => {
-        if (activeSideEl) activeSideEl.style.display = 'none';
-        activeSideEl = null;
-        activeBgEl = null;
-        if (window.resetEngineToMain) window.resetEngineToMain(side);
-    }, 800);
+    activeSideEl.style.display = 'none';
+    activeSideEl = null;
+    activeBgEl = null;
+    if (window.resetEngineToMain) window.resetEngineToMain(side);
 };
 
-// Side Scene Drag Controls
+// Lerp Physics Loop for HTML Panoramas
+function sideRenderLoop() {
+    if (window.activeScene === 'main') {
+        window.sideLoopActive = false;
+        return;
+    }
+    
+    // Smooth inertia interpolation just like WebGL!
+    sideCx += (sideMx - sideCx) * 0.12;
+    sideCy += (sideMy - sideCy) * 0.12;
+
+    if (activeBgEl) {
+        activeBgEl.style.transform = `translate(${sideCx}px, ${sideCy}px)`;
+    }
+
+    // Edge Detection to return to Main 3D view
+    if (window.activeScene === 'right' && sideCx >= sideMaxX - 5) {
+        if (!sideHoldTimeout) sideHoldTimeout = setTimeout(() => { window.closeSideScene('right'); }, 600);
+    } else if (window.activeScene === 'left' && sideCx <= -sideMaxX + 5) {
+        if (!sideHoldTimeout) sideHoldTimeout = setTimeout(() => { window.closeSideScene('left'); }, 600);
+    } else {
+        if (sideHoldTimeout) { clearTimeout(sideHoldTimeout); sideHoldTimeout = null; }
+    }
+
+    requestAnimationFrame(sideRenderLoop);
+}
+
 const startSideDrag = (e) => {
     if (window.activeScene === 'main' || !activeSideEl) return;
     sideDrag = true;
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    sideStartX = clientX - sidePanX;
-    sideStartY = clientY - sidePanY;
+    sideStartX = clientX - sideMx;
+    sideStartY = clientY - sideMy;
 };
 
 const doSideDrag = (e) => {
     if (!sideDrag || window.activeScene === 'main' || !activeSideEl) return;
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
     let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    sidePanX = clientX - sideStartX;
-    sidePanY = clientY - sideStartY;
     
-    let maxX = window.innerWidth * 0.10;
-    let maxY = window.innerHeight * 0.10;
+    sideMx = clientX - sideStartX;
+    sideMy = clientY - sideStartY;
     
-    sidePanX = Math.max(-maxX, Math.min(maxX, sidePanX));
-    sidePanY = Math.max(-maxY, Math.min(maxY, sidePanY));
-    
-    activeBgEl.style.transform = `translate(${sidePanX}px, ${sidePanY}px)`;
-
-    // Detect if they drag all the way back toward the center and hold for 1 second
-    if (activeSideEl.id === 'right-scene' && sidePanX >= maxX - 5) {
-        if (!sideHoldTimeout) {
-            sideHoldTimeout = setTimeout(() => { window.closeSideScene('right'); }, 1000);
-        }
-    } else if (activeSideEl.id === 'left-scene' && sidePanX <= -maxX + 5) {
-        if (!sideHoldTimeout) {
-            sideHoldTimeout = setTimeout(() => { window.closeSideScene('left'); }, 1000);
-        }
-    } else {
-        if (sideHoldTimeout) {
-            clearTimeout(sideHoldTimeout);
-            sideHoldTimeout = null;
-        }
-    }
+    sideMx = Math.max(-sideMaxX, Math.min(sideMaxX, sideMx));
+    sideMy = Math.max(-sideMaxY, Math.min(sideMaxY, sideMy));
 };
 
 const endSideDrag = () => { 
     sideDrag = false; 
-    if (sideHoldTimeout) {
-        clearTimeout(sideHoldTimeout);
-        sideHoldTimeout = null;
-    }
+    if (sideHoldTimeout) { clearTimeout(sideHoldTimeout); sideHoldTimeout = null; }
 };
 
 window.addEventListener('mousedown', startSideDrag);
@@ -388,7 +385,7 @@ window.addEventListener('touchstart', startSideDrag, {passive: false});
 window.addEventListener('touchmove', doSideDrag, {passive: false});
 window.addEventListener('touchend', endSideDrag);
 
-// --- ENTER SITE LOGIC & AUDIO ROUTING ---
+// --- ENTER SITE LOGIC ---
 let _entered = false;
 
 window.enterSite = function() {
@@ -399,83 +396,58 @@ window.enterSite = function() {
   const timeWaited = Date.now() - splashStartTime;
   const isSecret = timeWaited >= 10000;
 
-  // 1. SETUP AUDIO
   const audio = document.getElementById("audioPlayer");
-  let audioCtx;
-  let dryGain, wetGain;
+  let audioCtx; let dryGain, wetGain;
 
   if (audio && typeof audioTracks !== 'undefined') {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaElementSource(audio);
     const filter = audioCtx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 520;
     
-    dryGain = audioCtx.createGain(); 
-    wetGain = audioCtx.createGain(); 
-    
-    dryGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
-    wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+    dryGain = audioCtx.createGain(); wetGain = audioCtx.createGain(); 
+    dryGain.gain.setValueAtTime(0.0, audioCtx.currentTime); wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
 
-    const reverb = audioCtx.createConvolver();
-    const rate = audioCtx.sampleRate;
-    const len = rate * 2.0;
-    const buffer = audioCtx.createBuffer(2, len, rate);
+    const reverb = audioCtx.createConvolver(); const rate = audioCtx.sampleRate; const len = rate * 2.0; const buffer = audioCtx.createBuffer(2, len, rate);
     for (let channel = 0; channel < 2; channel++) {
       let data = buffer.getChannelData(channel);
-      for (let i = 0; i < len; i++) {
-        data[i] = ((Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * Math.sin(i * 0.005));
-      }
+      for (let i = 0; i < len; i++) { data[i] = ((Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * Math.sin(i * 0.005)); }
     }
     reverb.buffer = buffer;
-
     source.connect(filter); filter.connect(dryGain); filter.connect(reverb); reverb.connect(wetGain);
     
     const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256; source.connect(analyser);
     window.audioAnalyser = analyser; window.audioData = new Uint8Array(analyser.frequencyBinCount);
-    
     dryGain.connect(audioCtx.destination); wetGain.connect(audioCtx.destination);
   }
 
-  // 2. PLAYLIST HANDLER
   window.startMainAudio = function(startMuted) {
       if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      
       let now = audioCtx ? audioCtx.currentTime : 0;
       if (!startMuted && dryGain && wetGain) {
-          dryGain.gain.setValueAtTime(0.3, now);
-          wetGain.gain.setValueAtTime(0.7, now);
+          dryGain.gain.setValueAtTime(0.3, now); wetGain.gain.setValueAtTime(0.7, now);
       }
-
       const playRandomTrack = () => {
         if (typeof audioTracks !== 'undefined' && audioTracks.length > 0) {
             audio.src = audioTracks[Math.floor(Math.random() * audioTracks.length)];
-            audio.play().catch((e) => { console.log("Audio play blocked", e); });
+            audio.play().catch((e) => {});
         }
       };
-      playRandomTrack();
-      audio.addEventListener('ended', playRandomTrack);
+      playRandomTrack(); audio.addEventListener('ended', playRandomTrack);
   };
 
-  // 3. WAKEUP FADE TRIGGER (Fired by engine.js)
   window.unmuteMainAudio = function() {
       if(audioCtx && dryGain && wetGain) {
           let now = audioCtx.currentTime;
-          dryGain.gain.setValueAtTime(0.0, now);
-          dryGain.gain.linearRampToValueAtTime(0.3, now + 1.5);
-          wetGain.gain.setValueAtTime(0.0, now);
-          wetGain.gain.linearRampToValueAtTime(0.7, now + 1.5);
+          dryGain.gain.setValueAtTime(0.0, now); dryGain.gain.linearRampToValueAtTime(0.3, now + 1.5);
+          wetGain.gain.setValueAtTime(0.0, now); wetGain.gain.linearRampToValueAtTime(0.7, now + 1.5);
       }
   };
 
-  // 4. EXECUTE ROUTE
   if (isSecret) {
-      const jumpAudio = new Audio('files/aud/jump.mp3');
-      jumpAudio.play().catch(()=>{});
-      
-      window.startMainAudio(true);
-      window.startSecretFlySequence = true;
+      const jumpAudio = new Audio('files/aud/jump.mp3'); jumpAudio.play().catch(()=>{});
+      window.startMainAudio(true); window.startSecretFlySequence = true;
   } else {
-      window.startMainAudio(false);
-      window.startWakeSequence = true;
+      window.startMainAudio(false); window.startWakeSequence = true;
   }
 };
 </script>
