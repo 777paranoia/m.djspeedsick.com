@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        window.location.href = "https://m.djspeedsick.com";
+    }
+</script>
 <meta charset="UTF-8" />
 <title>DJSPEEDSICK.COM</title>
 <style>
@@ -11,60 +16,33 @@
   #loading-screen { position: fixed; inset: 0; z-index: 10000; background: #000; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
   #loading-strobe { width: 100vw; height: auto; }
   
-  #splash-screen { 
-      position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; 
-      user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
-  }
+  #splash-screen { position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; }
   
+  /* CONTAINER THAT HOLDS BOTH IMAGES FOR DRAGGING */
   #background-container { 
-      position: absolute; inset: -10%; width: 120%; height: 120%; 
-      cursor: grab; transition: transform 0.05s linear; 
+      position: absolute; 
+      inset: -10%; 
+      width: 120%; 
+      height: 120%; 
+      cursor: grab; 
+      transition: transform 0.05s linear; 
   }
   #background-container:active { cursor: grabbing; }
 
+  /* ENSURE BOTH IMAGES FILL THE CONTAINER PERFECTLY */
   #background-container img {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; pointer-events: none; 
-      user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none; /* Let the container handle the drag clicks */
   }
 
+  /* Z-INDEX STACKING (GIF bottom, PNG top) */
   #layer-gif { z-index: 1; }
   #layer-png { z-index: 2; }
   
-  #enter-button { 
-      position: absolute; top: 50%; left: 50%; 
-      transform: translate(-50%, -50%) rotate(90deg); 
-      cursor: pointer; z-index: 5; width: 25%; height: auto;
-      user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
-  }
-
-  /* --- NEW LEFT/RIGHT PANORAMA SCENES WITH GLITCH --- */
-  .side-scene {
-      position: fixed; inset: 0; z-index: 600;
-      background: #000; overflow: hidden;
-      display: none; /* Changed from opacity to instant display for glitch effect */
-      user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
-  }
-  .side-bg-container {
-      position: absolute; inset: -10%; width: 120%; height: 120%;
-      cursor: grab;
-  }
-  .side-bg-container:active { cursor: grabbing; }
-  .side-bg-container img {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      object-fit: cover; pointer-events: none;
-      user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
-  }
-
-  @keyframes digitalGlitch {
-      0% { filter: contrast(300%) brightness(200%) invert(1) hue-rotate(90deg); transform: scale(1.1) skewX(10deg); }
-      10% { filter: contrast(200%) brightness(150%) hue-rotate(-90deg); transform: scale(1.05) skewX(-5deg); }
-      20% { filter: contrast(150%) brightness(120%); transform: scale(1) skewX(2deg); }
-      100% { filter: contrast(100%) brightness(100%); transform: scale(1) skewX(0deg); }
-  }
-  .glitch-anim {
-      animation: digitalGlitch 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
+  #enter-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg); cursor: pointer; z-index: 5; }
 
   #secret-button { position: fixed; top: 25px; left: 25px; width: 35px; height: auto; opacity: 0.1; z-index: 900; cursor: pointer; mix-blend-mode: screen; transition: opacity 0.3s ease; }
   #secret-button:hover { opacity: 0.7; }
@@ -95,19 +73,7 @@
       <img id="layer-gif" src="files/img/aerial.gif" draggable="false">
       <img id="layer-png" src="files/img/aerial.png" draggable="false">
   </div>
-  <img id="enter-button" src="files/img/enter-button.png" draggable="false" onclick="enterSite()">
-</div>
-
-<div id="left-scene" class="side-scene">
-    <div class="side-bg-container" id="left-bg-container">
-        <img src="files/img/left-scene.png" draggable="false">
-    </div>
-</div>
-
-<div id="right-scene" class="side-scene">
-    <div class="side-bg-container" id="right-bg-container">
-        <img src="files/img/right-scene.png" draggable="false">
-    </div>
+  <img id="enter-button" src="files/img/enter-button.png" onclick="enterSite()">
 </div>
 
 <img id="secret-button" src="files/img/buttin.jpg" onclick="toggleConky()">
@@ -226,9 +192,17 @@ function getNearestSmokes(lat, lng) {
             dummyDiv.style.display = 'none';
             document.body.appendChild(dummyDiv);
         }
+
         const service = new google.maps.places.PlacesService(dummyDiv);
-        const request = { location: new google.maps.LatLng(lat, lng), radius: 5000, keyword: 'cigarettes tobacco convenience' };
-        const failSafe = setTimeout(() => { if (display.innerText === "SCANNING...") display.innerText = "NETWORK_BLOCKED"; }, 8000);
+        const request = {
+            location: new google.maps.LatLng(lat, lng),
+            radius: 5000,
+            keyword: 'cigarettes tobacco convenience'
+        };
+        const failSafe = setTimeout(() => {
+            if (display.innerText === "SCANNING...") display.innerText = "NETWORK_BLOCKED";
+        }, 8000);
+        
         service.nearbySearch(request, (results, status) => {
             clearTimeout(failSafe);
             if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
@@ -244,14 +218,16 @@ function getNearestSmokes(lat, lng) {
     }
 }
 
+// --- BOOT TIMER ---
 let splashStartTime = Date.now(); 
+
 window.addEventListener('load', () => {
   const loader = document.getElementById("loading-screen");
   if (loader) loader.style.display = "none";
-  splashStartTime = Date.now(); 
+  splashStartTime = Date.now(); // Reset timer to start counting once the loading screen is gone
 });
 
-// --- SPLASH SCREEN LOGIC ---
+// --- SPLASH SCREEN DRAG LOGIC ---
 const bgContainer = document.getElementById('background-container');
 const splashScreen = document.getElementById('splash-screen');
 let sDrag = false, sStartX = 0, sStartY = 0, sPanX = 0, sPanY = 0;
@@ -271,183 +247,80 @@ const doSplashDrag = (e) => {
     let clientY = e.touches ? e.touches[0].clientY : e.clientY;
     sPanX = clientX - sStartX;
     sPanY = clientY - sStartY;
-    let maxX = window.innerWidth * 0.10; let maxY = window.innerHeight * 0.10;
-    sPanX = Math.max(-maxX, Math.min(maxX, sPanX)); sPanY = Math.max(-maxY, Math.min(maxY, sPanY));
+    
+    let maxX = window.innerWidth * 0.10;
+    let maxY = window.innerHeight * 0.10;
+    
+    sPanX = Math.max(-maxX, Math.min(maxX, sPanX));
+    sPanY = Math.max(-maxY, Math.min(maxY, sPanY));
+    
     bgContainer.style.transform = `translate(${sPanX}px, ${sPanY}px)`;
 };
+
 const endSplashDrag = () => { sDrag = false; };
-splashScreen.addEventListener('mousedown', startSplashDrag); window.addEventListener('mousemove', doSplashDrag); window.addEventListener('mouseup', endSplashDrag);
-splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false}); window.addEventListener('touchmove', doSplashDrag, {passive: false}); window.addEventListener('touchend', endSplashDrag);
 
-// ==========================================
-// MASSIVELY IMPROVED SIDE SCENE LOGIC (WITH INERTIA)
-// ==========================================
-window.activeScene = 'main'; 
+splashScreen.addEventListener('mousedown', startSplashDrag);
+window.addEventListener('mousemove', doSplashDrag);
+window.addEventListener('mouseup', endSplashDrag);
 
-let sideMx = 0, sideMy = 0, sideCx = 0, sideCy = 0;
-let sideDrag = false, sideStartX = 0, sideStartY = 0;
-let sideMaxX = 0, sideMaxY = 0;
-let activeSideEl = null;
-let activeBgEl = null;
-let sideHoldTimeout = null;
-window.sideLoopActive = false;
-
-window.openSideScene = function(side) {
-    window.activeScene = side; 
-    activeSideEl = document.getElementById(side + '-scene');
-    activeBgEl = document.getElementById(side + '-bg-container');
-    
-    sideMaxX = window.innerWidth * 0.10;
-    sideMaxY = window.innerHeight * 0.10;
-    
-    // Start slightly pushed inward so they can drag back to center
-    sideMx = side === 'right' ? -sideMaxX : sideMaxX;
-    sideCx = sideMx; sideMy = 0; sideCy = 0;
-    
-    activeSideEl.style.display = 'block';
-    
-    // Trigger CRT Glitch animation
-    activeBgEl.classList.remove('glitch-anim');
-    void activeBgEl.offsetWidth; 
-    activeBgEl.classList.add('glitch-anim');
-
-    if (!window.sideLoopActive) {
-        window.sideLoopActive = true;
-        requestAnimationFrame(sideRenderLoop);
-    }
-};
-
-window.closeSideScene = function(side) {
-    if (!activeSideEl) return;
-    activeSideEl.style.display = 'none';
-    activeSideEl = null;
-    activeBgEl = null;
-    if (window.resetEngineToMain) window.resetEngineToMain(side);
-};
-
-// Lerp Physics Loop for HTML Panoramas
-function sideRenderLoop() {
-    if (window.activeScene === 'main') {
-        window.sideLoopActive = false;
-        return;
-    }
-    
-    // Smooth inertia interpolation just like WebGL!
-    sideCx += (sideMx - sideCx) * 0.12;
-    sideCy += (sideMy - sideCy) * 0.12;
-
-    if (activeBgEl) {
-        activeBgEl.style.transform = `translate(${sideCx}px, ${sideCy}px)`;
-    }
-
-    // Edge Detection to return to Main 3D view
-    if (window.activeScene === 'right' && sideCx >= sideMaxX - 5) {
-        if (!sideHoldTimeout) sideHoldTimeout = setTimeout(() => { window.closeSideScene('right'); }, 600);
-    } else if (window.activeScene === 'left' && sideCx <= -sideMaxX + 5) {
-        if (!sideHoldTimeout) sideHoldTimeout = setTimeout(() => { window.closeSideScene('left'); }, 600);
-    } else {
-        if (sideHoldTimeout) { clearTimeout(sideHoldTimeout); sideHoldTimeout = null; }
-    }
-
-    requestAnimationFrame(sideRenderLoop);
-}
-
-const startSideDrag = (e) => {
-    if (window.activeScene === 'main' || !activeSideEl) return;
-    sideDrag = true;
-    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    sideStartX = clientX - sideMx;
-    sideStartY = clientY - sideMy;
-};
-
-const doSideDrag = (e) => {
-    if (!sideDrag || window.activeScene === 'main' || !activeSideEl) return;
-    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    sideMx = clientX - sideStartX;
-    sideMy = clientY - sideStartY;
-    
-    sideMx = Math.max(-sideMaxX, Math.min(sideMaxX, sideMx));
-    sideMy = Math.max(-sideMaxY, Math.min(sideMaxY, sideMy));
-};
-
-const endSideDrag = () => { 
-    sideDrag = false; 
-    if (sideHoldTimeout) { clearTimeout(sideHoldTimeout); sideHoldTimeout = null; }
-};
-
-window.addEventListener('mousedown', startSideDrag);
-window.addEventListener('mousemove', doSideDrag);
-window.addEventListener('mouseup', endSideDrag);
-window.addEventListener('touchstart', startSideDrag, {passive: false});
-window.addEventListener('touchmove', doSideDrag, {passive: false});
-window.addEventListener('touchend', endSideDrag);
+splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false});
+window.addEventListener('touchmove', doSplashDrag, {passive: false});
+window.addEventListener('touchend', endSplashDrag);
 
 // --- ENTER SITE LOGIC ---
 let _entered = false;
 
 window.enterSite = function() {
   if (_entered) return;
+
   _entered = true;
   document.getElementById("splash-screen").style.display = "none";
 
+  // Check if they waited 10 seconds (10000 milliseconds)
   const timeWaited = Date.now() - splashStartTime;
   const isSecret = timeWaited >= 10000;
 
+  // Audio setup
   const audio = document.getElementById("audioPlayer");
-  let audioCtx; let dryGain, wetGain;
-
   if (audio && typeof audioTracks !== 'undefined') {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaElementSource(audio);
     const filter = audioCtx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 520;
-    
-    dryGain = audioCtx.createGain(); wetGain = audioCtx.createGain(); 
-    dryGain.gain.setValueAtTime(0.0, audioCtx.currentTime); wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+    const dryGain = audioCtx.createGain(); dryGain.gain.value = 0.3;
+    const wetGain = audioCtx.createGain(); wetGain.gain.value = 0.7;
 
-    const reverb = audioCtx.createConvolver(); const rate = audioCtx.sampleRate; const len = rate * 2.0; const buffer = audioCtx.createBuffer(2, len, rate);
+    const reverb = audioCtx.createConvolver();
+    const rate = audioCtx.sampleRate;
+    const len = rate * 2.0;
+    const buffer = audioCtx.createBuffer(2, len, rate);
     for (let channel = 0; channel < 2; channel++) {
       let data = buffer.getChannelData(channel);
-      for (let i = 0; i < len; i++) { data[i] = ((Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * Math.sin(i * 0.005)); }
+      for (let i = 0; i < len; i++) {
+        data[i] = ((Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * Math.sin(i * 0.005));
+      }
     }
     reverb.buffer = buffer;
+
     source.connect(filter); filter.connect(dryGain); filter.connect(reverb); reverb.connect(wetGain);
     
     const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256; source.connect(analyser);
     window.audioAnalyser = analyser; window.audioData = new Uint8Array(analyser.frequencyBinCount);
+    
     dryGain.connect(audioCtx.destination); wetGain.connect(audioCtx.destination);
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const playRandomTrack = () => {
+      audio.src = audioTracks[Math.floor(Math.random() * audioTracks.length)];
+      audio.play().catch(() => {});
+    };
+    playRandomTrack();
+    audio.addEventListener('ended', playRandomTrack);
   }
 
-  window.startMainAudio = function(startMuted) {
-      if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      let now = audioCtx ? audioCtx.currentTime : 0;
-      if (!startMuted && dryGain && wetGain) {
-          dryGain.gain.setValueAtTime(0.3, now); wetGain.gain.setValueAtTime(0.7, now);
-      }
-      const playRandomTrack = () => {
-        if (typeof audioTracks !== 'undefined' && audioTracks.length > 0) {
-            audio.src = audioTracks[Math.floor(Math.random() * audioTracks.length)];
-            audio.play().catch((e) => {});
-        }
-      };
-      playRandomTrack(); audio.addEventListener('ended', playRandomTrack);
-  };
-
-  window.unmuteMainAudio = function() {
-      if(audioCtx && dryGain && wetGain) {
-          let now = audioCtx.currentTime;
-          dryGain.gain.setValueAtTime(0.0, now); dryGain.gain.linearRampToValueAtTime(0.3, now + 1.5);
-          wetGain.gain.setValueAtTime(0.0, now); wetGain.gain.linearRampToValueAtTime(0.7, now + 1.5);
-      }
-  };
-
   if (isSecret) {
-      const jumpAudio = new Audio('files/aud/jump.mp3'); jumpAudio.play().catch(()=>{});
-      window.startMainAudio(true); window.startSecretFlySequence = true;
+      window.startSecretFlySequence = true;
   } else {
-      window.startMainAudio(false); window.startWakeSequence = true;
+      window.startWakeSequence = true;
   }
 };
 </script>
@@ -462,6 +335,7 @@ window.enterSite = function() {
 <script src="modes/mode6.js"></script>
 <script src="modes/mode7.js"></script>
 <script src="modes/mode8.js"></script>
+
 <script src="engine.js"></script>
 
 </body>

@@ -121,7 +121,10 @@ class ActiveMode {
         gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
         const vid = document.createElement("video"); 
         vid.muted = true; vid.playsInline = true;
+        
+        // ONLY LOOP IF IT'S NOT THE FLY SEQUENCE
         vid.loop = !srcFile.includes("fly");
+        
         const s = document.createElement("source"); s.src=srcFile; s.type="video/webm";
         vid.appendChild(s); vid.play().catch(()=>{});
         this.videoObj = vid;
@@ -166,39 +169,23 @@ class ActiveMode {
     }
 }
 
-// --- STATE MACHINE & DRAG LOGIC ---
+// --- STATE MACHINE ---
 let currentEngine = null;
 let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0, phase="sleeping",timer=-9999,start=0,lastNow=0,blinkCount=0,targetBlinks=1, modeSeed=0, lastMode=-1;
 
-let timerEdge = 0; 
 const limitX = 0.65; const limitY = 0.50; let isDragging = false; let lastDragX = 0; let lastDragY = 0;
-
 const startDrag = (x, y) => {
-  if (window.activeScene !== 'main') return; 
   if (event && (event.target.id === 'secret-button' || event.target.closest('#conky-sidebar') || event.target.closest('#aboutOverlay'))) return;
   isDragging = true; lastDragX = x; lastDragY = y;
 };
 const doDrag = (x, y) => {
-  if (!isDragging || window.activeScene !== 'main') return;
+  if (!isDragging) return;
   mx -= ((x - lastDragX) / innerWidth) * 3.0; my -= ((y - lastDragY) / innerHeight) * 3.0;
-  lastDragX = x; lastDragY = y; 
-  mx = Math.max(-limitX, Math.min(limitX, mx)); my = Math.max(-limitY, Math.min(limitY, my));
+  lastDragX = x; lastDragY = y; mx = Math.max(-limitX, Math.min(limitX, mx)); my = Math.max(-limitY, Math.min(limitY, my));
 };
 const endDrag = () => { isDragging = false; };
 window.addEventListener("mousedown", e => startDrag(e.clientX, e.clientY)); window.addEventListener("mousemove", e => doDrag(e.clientX, e.clientY)); window.addEventListener("mouseup", endDrag);
 window.addEventListener("touchstart", e => startDrag(e.touches[0].clientX, e.touches[0].clientY), {passive: false}); window.addEventListener("touchmove", e => doDrag(e.touches[0].clientX, e.touches[0].clientY), {passive: false}); window.addEventListener("touchend", endDrag);
-
-// Returns control from DOM to WebGL and triggers glitch flash
-window.resetEngineToMain = function(fromSide) {
-    window.activeScene = 'main';
-    if (fromSide === 'right') mx = limitX - 0.2; 
-    if (fromSide === 'left') mx = -limitX + 0.2;
-    cx = mx; 
-    timerEdge = 0;
-    
-    // Trigger intense glitch/flash when snapping back to 3D world
-    flash = 2.5; shake = 1.5; 
-};
 
 function simStep(now){
   gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
@@ -243,6 +230,7 @@ function render(now){
       if (Math.random() < 0.05 && blink < 0.1) blink = 1.0;
       blink *= 0.85;
       
+      // UNMUTE BACKGROUND AUDIO EXACTLY WHEN VIDEO ENDS
       if (currentEngine && currentEngine.videoObj && currentEngine.videoObj.readyState > 0) {
           if (currentEngine.videoObj.ended || currentEngine.videoObj.currentTime >= currentEngine.videoObj.duration - 0.1) {
               phase = "waking"; 
@@ -263,36 +251,10 @@ function render(now){
   else if(phase==="black_switch" && now-start>200){ phase="opening_switch"; start=now; }
   else if(phase==="opening_switch"){ blink=1.0-Math.min((now-start)/160, 1); if(blink<=0){ phase="open"; timer=now; blink=0; } }
 
-  // --- PANORAMA EDGE DETECTOR WITH GLITCH TRIGGERS ---
-  if (window.activeScene === 'main' && phase === "open") {
-      if (mx >= limitX - 0.01) { // Pushed fully against RIGHT wall
-          if (timerEdge === 0) timerEdge = now;
-          else if (now - timerEdge > 600) { 
-              flash = 2.5; shake = 1.5; // Fire massive WebGL distortion
-              setTimeout(() => { if (window.openSideScene) window.openSideScene('right'); }, 50);
-              timerEdge = -9999; // Lock to prevent re-trigger
-          }
-      } else if (mx <= -limitX + 0.01) { // Pushed fully against LEFT wall
-          if (timerEdge === 0) timerEdge = now;
-          else if (now - timerEdge > 600) {
-              flash = 2.5; shake = 1.5;
-              setTimeout(() => { if (window.openSideScene) window.openSideScene('left'); }, 50);
-              timerEdge = -9999;
-          }
-      } else {
-          timerEdge = 0;
-      }
-  } else {
-      if (timerEdge !== -9999) timerEdge = 0;
-  }
-
   cx += (mx - cx) * (0.12 + audioIntensity * 0.05); cy += (my - cy) * (0.12 + audioIntensity * 0.05);
 
   drawFadeQuad();
   if(mode !== 9) simStep(now);
-
-  // If flash is high enough from the edge transition, invert the colors momentarily 
-  if(flash > 1.8) drawFadeQuad(); // Darken abruptly
 
   if(mode===3 || mode===8 || mode===9){ if(Math.random() < 0.08) flash = 1.0 + Math.random() * 0.5; flash *= 0.86; shake = Math.max(flash, (0.15 * Math.random() + audioIntensity * 0.4)); } else { flash *= 0.80; shake = audioIntensity * 0.1; }
 
