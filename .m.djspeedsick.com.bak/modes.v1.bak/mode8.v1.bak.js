@@ -15,10 +15,8 @@ void main() {
 
   vec3 col = texture2D(u_texEnv1, clamp(flyUV + vec2(sx, sy), 0.0, 1.0)).rgb;
 
-  // Vignette (was applyRoomBlend - function no longer exists in core)
-  vec2 vigUV = (gl_FragCoord.xy / u_resolution.xy) * 2.0 - 1.0;
-  float vig = 1.0 - dot(vigUV * vec2(0.5, 0.7), vigUV * vec2(0.5, 0.7));
-  col *= clamp(vig * 1.3, 0.0, 1.0);
+  vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+  col = applyRoomBlend(col, screenUV);
 
   gl_FragColor = vec4(col * (1.0 - u_blink), 1.0);
 }

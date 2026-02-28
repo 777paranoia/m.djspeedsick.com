@@ -32,8 +32,6 @@ void main() {
     }
     col=mix(col, txW.rgb * 0.50 + vec3(0.55,0.78,1.0)*u_flash*0.55, txW.a);
   }
-  float wr = worldRain(gl_FragCoord.xy/u_resolution.xy, u_time);
-  col += vec3(0.62,0.72,0.85) * wr * (t >= 70.0 ? 0.65 : 0.0);
   if (u_flash > 1.2) col = 1.0 - col;
   gl_FragColor=vec4(col*(1.0-u_blink)*smoothstep(0.0,0.8,u_wake), 1.0);
 }

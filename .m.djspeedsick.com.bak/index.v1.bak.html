@@ -1,13 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<<<<<<< Updated upstream
 <meta charset="UTF-8" />
-=======
-  <script src="videos.js"></script>
-    <script src="gallery.js"></script>
- <meta charset="UTF-8" />
->>>>>>> Stashed changes
 <title>DJSPEEDSICK.COM</title>
 <style>
   html,body{margin:0;padding:0;overflow:hidden;background:#000;touch-action:none;}
@@ -19,6 +13,7 @@
   
   #splash-screen { position: fixed; inset: 0; z-index: 9999; background: #000; overflow: hidden; }
   
+  /* CONTAINER THAT HOLDS BOTH IMAGES FOR DRAGGING */
   #background-container { 
       position: absolute; 
       inset: -10%; 
@@ -29,18 +24,21 @@
   }
   #background-container:active { cursor: grabbing; }
 
+  /* ENSURE BOTH IMAGES FILL THE CONTAINER PERFECTLY */
   #background-container img {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: cover;
-      pointer-events: none; 
+      pointer-events: none; /* Let the container handle the drag clicks */
   }
 
+  /* Z-INDEX STACKING (GIF bottom, PNG top) */
   #layer-gif { z-index: 1; }
   #layer-png { z-index: 2; }
   
-  #enter-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg); cursor: pointer; z-index: 5; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: transparent; }
+  #enter-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg); cursor: pointer; z-index: 5; }
+
   #secret-button { position: fixed; top: 25px; left: 25px; width: 35px; height: auto; opacity: 0.1; z-index: 900; cursor: pointer; mix-blend-mode: screen; transition: opacity 0.3s ease; }
   #secret-button:hover { opacity: 0.7; }
 
@@ -58,7 +56,6 @@
   #legalNotice { margin-top: 1rem; padding-top: 0.4rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.45rem; line-height: 1.2; color: rgba(200,200,200,0.6); }
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdCATEbK-IG7f_8SXtqe1IhWSiARQCPHw&libraries=places"></script>
-
 </head>
 <body>
 
@@ -93,9 +90,9 @@
     <div class="separator">-----------------------</div>
     <div class="conky-line">CONTACT</div>
     <div class="separator">-----------------------</div>
-    <div class="conky-line"><a href="/cdn-cgi/l/email-protection#5f3d303a2b2b343a1f383b352c2f3a3a3b2c363c34713c3032" class="conky-link">>> BOOKING</a></div>
-    <div class="conky-line"><a href="/cdn-cgi/l/email-protection#6e0a042e0a041d1e0b0b0a1d070d05400d0103" class="conky-link">>> PRESS</a></div>
-    <div class="conky-line"><a href="/cdn-cgi/l/email-protection#72454545021300131c1d1b1332151f131b1e5c111d1f" class="conky-link">>> COMMISSIONS</a></div>
+    <div class="conky-line"><a href="mailto:boettke@gdjspeedsick.com" class="conky-link">>> BOOKING</a></div>
+    <div class="conky-line"><a href="mailto:dj@djspeedsick.com" class="conky-link">>> PRESS</a></div>
+    <div class="conky-line"><a href="mailto:777paranoia@gmail.com" class="conky-link">>> COMMISSIONS</a></div>
     <div class="separator">-----------------------</div><BR>
     <div class="separator">-----------------------</div>
     <div class="conky-line"><a href="http://escalation.ist" class="conky-link">>> ESCALATIONIST</a></div>
@@ -132,8 +129,10 @@
 
 <audio id="audioPlayer"></audio>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-
+<script>
+// ==========================================
+// UI, CONKY & ENTRY LOGIC
+// ==========================================
 const IPINFO_TOKEN = '4b45867ce7c229';
 
 function toggleConky() {
@@ -214,14 +213,16 @@ function getNearestSmokes(lat, lng) {
     }
 }
 
+// --- BOOT TIMER ---
 let splashStartTime = Date.now(); 
 
 window.addEventListener('load', () => {
   const loader = document.getElementById("loading-screen");
   if (loader) loader.style.display = "none";
-  splashStartTime = Date.now(); 
+  splashStartTime = Date.now(); // Reset timer to start counting once the loading screen is gone
 });
 
+// --- SPLASH SCREEN DRAG LOGIC ---
 const bgContainer = document.getElementById('background-container');
 const splashScreen = document.getElementById('splash-screen');
 let sDrag = false, sStartX = 0, sStartY = 0, sPanX = 0, sPanY = 0;
@@ -261,6 +262,7 @@ splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false});
 window.addEventListener('touchmove', doSplashDrag, {passive: false});
 window.addEventListener('touchend', endSplashDrag);
 
+// --- ENTER SITE LOGIC ---
 let _entered = false;
 
 window.enterSite = function() {
@@ -269,9 +271,11 @@ window.enterSite = function() {
   _entered = true;
   document.getElementById("splash-screen").style.display = "none";
 
+  // Check if they waited 10 seconds (10000 milliseconds)
   const timeWaited = Date.now() - splashStartTime;
   const isSecret = timeWaited >= 10000;
 
+  // Audio setup
   const audio = document.getElementById("audioPlayer");
   if (audio && typeof audioTracks !== 'undefined') {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -304,26 +308,8 @@ window.enterSite = function() {
       audio.src = audioTracks[Math.floor(Math.random() * audioTracks.length)];
       audio.play().catch(() => {});
     };
-
-    window.playFlyAudio = () => {
-      audio.pause();
-      audio.src = 'files/aud/fly';
-      audio.loop = false;
-      audio.play().catch(() => {});
-    };
-
-    window.unmuteMainAudio = () => {
-      audio.pause();
-      audio.loop = false;
-      audio.removeEventListener('ended', playRandomTrack);
-      audio.addEventListener('ended', playRandomTrack);
-      playRandomTrack();
-    };
-
-    if (!isSecret) {
-      playRandomTrack();
-      audio.addEventListener('ended', playRandomTrack);
-    }
+    playRandomTrack();
+    audio.addEventListener('ended', playRandomTrack);
   }
 
   if (isSecret) {
@@ -344,10 +330,8 @@ window.enterSite = function() {
 <script src="modes/mode6.js"></script>
 <script src="modes/mode7.js"></script>
 <script src="modes/mode8.js"></script>
-<script src="modes/mode-right.js"></script>
-<script src="modes/mode-left.js"></script>
 
 <script src="engine.js"></script>
-<script src="cosmetics.js"></script>
+
 </body>
 </html>

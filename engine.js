@@ -3,23 +3,33 @@ const gl = canvas.getContext("webgl", { antialias: false, alpha: false, preserve
 gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
 
 const fit = () => {
-  const dpr = Math.min(2, devicePixelRatio || 1.0); 
+  const dpr = Math.min(2, devicePixelRatio || 1.0);
   canvas.width = Math.floor(innerWidth * dpr);
   canvas.height = Math.floor(innerHeight * dpr);
   gl.viewport(0, 0, canvas.width, canvas.height);
 };
 let lastWidth = innerWidth;
-window.addEventListener("resize", () => { if (innerWidth !== lastWidth) { lastWidth = innerWidth; fit(); rebuildFBOs(); } else fit(); }); 
+window.addEventListener("resize", () => { if (innerWidth !== lastWidth) { lastWidth = innerWidth; fit(); rebuildFBOs(); } else fit(); });
 fit();
 
-// --- STATIC ASSETS ---
 const staticAssets = {};
 function loadStaticTex(url) {
-  const tex = gl.createTexture(); const img = new Image(); img.crossOrigin="anonymous";
+  const tex = gl.createTexture();
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  tex._w = 1; tex._h = 1;
   img.onload = () => {
-    gl.bindTexture(gl.TEXTURE_2D, tex); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  }; img.src = url; return tex;
+    tex._w = img.naturalWidth || img.width || 1;
+    tex._h = img.naturalHeight || img.height || 1;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  };
+  img.src = url;
+  return tex;
 }
 
 staticAssets.b1 = loadStaticTex(`files/img/void/building01.png`);
@@ -31,10 +41,9 @@ staticAssets.b6 = loadStaticTex(`files/img/void/building05.png`);
 staticAssets.windowMask = loadStaticTex("files/img/void/canalport-mask.png");
 staticAssets.oobMask = loadStaticTex("files/img/void/oob-mask.png");
 
-// --- RAIN SIMULATION ---
 const compile = (type, src) => {
   const sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh);
-  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
   return sh;
 };
 
@@ -43,104 +52,179 @@ gl.attachShader(simProg, compile(gl.VERTEX_SHADER, GLSL.vert));
 gl.attachShader(simProg, compile(gl.FRAGMENT_SHADER, GLSL.sim));
 gl.linkProgram(simProg);
 gl.useProgram(simProg);
-gl.uniform1i(gl.getUniformLocation(simProg,"u_window"), 7); gl.uniform1i(gl.getUniformLocation(simProg,"u_prev"), 6); 
+gl.uniform1i(gl.getUniformLocation(simProg, "u_window"), 7);
+gl.uniform1i(gl.getUniformLocation(simProg, "u_prev"), 6);
 
 let fbos = [], texs = [];
-function makeFBO(){
+let mirrorFBO = null;
+function makeFBO() {
   const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,canvas.width,canvas.height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   const fbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0); gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  return {fbo, tex};
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0); gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { fbo, tex };
 }
-function rebuildFBOs(){ fbos = [makeFBO(), makeFBO()]; texs = [fbos[0].tex, fbos[1].tex]; }
+function rebuildFBOs() { fbos = [makeFBO(), makeFBO()]; texs = [fbos[0].tex, fbos[1].tex]; mirrorFBO = makeFBO(); }
 rebuildFBOs(); let ping = 0;
 
 const buf = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
 
-// --- THE JIT MODE CLASS ---
+const BLACK_TEX = (() => {
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return tex;
+})();
+
+const BACKLIGHT = (() => {
+  const frag = `precision mediump float; uniform vec4 u_col; void main(){ gl_FragColor = u_col; }`;
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, GLSL.vert));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, frag));
+  gl.linkProgram(prog);
+  return { prog, Ucol: gl.getUniformLocation(prog, "u_col") };
+})();
+
+function drawBacklight(now, strength, audio) {
+  if (strength <= 0.0005) return;
+  gl.useProgram(BACKLIGHT.prog);
+  const loc = gl.getAttribLocation(BACKLIGHT.prog, "p");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const t = now * 0.001;
+  const a = Math.max(0.0, Math.min(1.0, strength + audio * 0.08));
+  const r = 0.35 + 0.25 * Math.sin(t * 0.70);
+  const g = 0.30 + 0.25 * Math.sin(t * 0.55 + 2.1);
+  const b = 0.40 + 0.25 * Math.sin(t * 0.60 + 4.2);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  gl.uniform4f(BACKLIGHT.Ucol, r, g, b, a);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.disable(gl.BLEND);
+}
+
 class ActiveMode {
-    constructor(modeID) {
-        this.id = modeID;
-        this.textures = [];
-        this.videoObj = null;
-        
-        const map = { 0: 'city', 1: 'fractal', 2: 'fractal', 3: 'bh', 4: 'mirror', 5: 'city', 6: 'ocean', 7: 'earth', 8: 'deadcity', 9: 'fly' };
-        let fragKey = map[this.id];
-        
-        this.prog = gl.createProgram();
-        gl.attachShader(this.prog, compile(gl.VERTEX_SHADER, GLSL.vert));
-        gl.attachShader(this.prog, compile(gl.FRAGMENT_SHADER, GLSL.core + GLSL.modules[fragKey]));
-        gl.linkProgram(this.prog);
-        
-        gl.useProgram(this.prog);
-        
-        gl.uniform1i(gl.getUniformLocation(this.prog,"u_texB1"), 0); gl.uniform1i(gl.getUniformLocation(this.prog,"u_texB2"), 1);
-        gl.uniform1i(gl.getUniformLocation(this.prog,"u_texB3"), 2); gl.uniform1i(gl.getUniformLocation(this.prog,"u_texB4"), 3);
-        gl.uniform1i(gl.getUniformLocation(this.prog,"u_texB5"), 4); gl.uniform1i(gl.getUniformLocation(this.prog,"u_texB6"), 5);
-        gl.uniform1i(gl.getUniformLocation(this.prog,"u_water"), 6); gl.uniform1i(gl.getUniformLocation(this.prog,"u_texWindow"), 7); 
-        gl.uniform1i(gl.getUniformLocation(this.prog,"u_texEnv1"), 8); gl.uniform1i(gl.getUniformLocation(this.prog,"u_texEnv2"), 9);
-        
-        this.U = {
-            res: gl.getUniformLocation(this.prog,"u_resolution"), time: gl.getUniformLocation(this.prog,"u_time"),
-            mouse: gl.getUniformLocation(this.prog,"u_mouse"), mode: gl.getUniformLocation(this.prog,"u_mode"),
-            blink: gl.getUniformLocation(this.prog,"u_blink"), flash: gl.getUniformLocation(this.prog,"u_flash"),
-            shake: gl.getUniformLocation(this.prog,"u_shake"), wake: gl.getUniformLocation(this.prog,"u_wake"),
-            modeSeed: gl.getUniformLocation(this.prog,"u_modeSeed"), audio: gl.getUniformLocation(this.prog,"u_audio")
-        };
+  constructor(modeID) {
+    this.id = modeID;
+    this.textures = [];
+    this.vidObjs = [];
+    const map = { 0: 'city', 1: 'fractal', 2: 'bh', 3: 'mirror', 4: 'city', 5: 'ocean', 6: 'earth', 7: 'deadcity', 8: 'fly', 10: 'room_left', 11: 'room_right' };
+    let fragKey = map[this.id];
+    this.prog = gl.createProgram();
+    gl.attachShader(this.prog, compile(gl.VERTEX_SHADER, GLSL.vert));
+    const isRoom = (fragKey === 'room_left' || fragKey === 'room_right');
+    gl.attachShader(this.prog, compile(gl.FRAGMENT_SHADER, isRoom ? GLSL.modules[fragKey] : GLSL.core + GLSL.modules[fragKey]));
+    gl.linkProgram(this.prog);
+    gl.useProgram(this.prog);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texB1"), 0); gl.uniform1i(gl.getUniformLocation(this.prog, "u_texB2"), 1);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texB3"), 2); gl.uniform1i(gl.getUniformLocation(this.prog, "u_texB4"), 3);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texB5"), 4); gl.uniform1i(gl.getUniformLocation(this.prog, "u_texB6"), 5);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_water"), 6); gl.uniform1i(gl.getUniformLocation(this.prog, "u_texWindow"), 7);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texEnv1"), 8); gl.uniform1i(gl.getUniformLocation(this.prog, "u_texEnv2"), 9);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texEnv3"), 10); gl.uniform1i(gl.getUniformLocation(this.prog, "u_texEnv4"), 11);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texEnv6"), 12);
+    gl.uniform1i(gl.getUniformLocation(this.prog, "u_texEnv5"), 13);
 
-        if (fragKey === 'city' || fragKey === 'fractal') {
-            this.env1 = loadStaticTex("files/img/void/skyline.png");
-            this.textures.push(this.env1);
-        } else if (fragKey === 'mirror') {
-            this.env1 = loadStaticTex("files/img/mirror.png");
-            this.textures.push(this.env1);
-        } else if (fragKey === 'ocean') {
-            this.env1 = loadStaticTex("files/img/ocean.jpg");
-            this.textures.push(this.env1);
-        } else if (fragKey === 'deadcity') {
-            this.env1 = this.loadVideo("files/mov/bh2.webm");
-            this.env2 = loadStaticTex("files/img/deadcity.png");
-            this.textures.push(this.env2);
-        } else if (fragKey === 'bh') {
-            this.env1 = this.loadVideo("files/mov/bh2.webm");
-        } else if (fragKey === 'earth') {
-            this.env1 = this.loadVideo("files/mov/earth.webm");
-        } else if (fragKey === 'fly') {
-            this.env1 = this.loadVideo("files/mov/fly.webm"); 
-        }
+    this.U = {
+      res: gl.getUniformLocation(this.prog, "u_resolution"), time: gl.getUniformLocation(this.prog, "u_time"),
+      mouse: gl.getUniformLocation(this.prog, "u_mouse"), mode: gl.getUniformLocation(this.prog, "u_mode"),
+      blink: gl.getUniformLocation(this.prog, "u_blink"), flash: gl.getUniformLocation(this.prog, "u_flash"),
+      shake: gl.getUniformLocation(this.prog, "u_shake"), wake: gl.getUniformLocation(this.prog, "u_wake"),
+      modeSeed: gl.getUniformLocation(this.prog, "u_modeSeed"), audio: gl.getUniformLocation(this.prog, "u_audio"),
+      texSize: gl.getUniformLocation(this.prog, "u_texSize")
+    };
+
+    if (fragKey === 'room_left') {
+      this.env1 = loadStaticTex("files/img/rooms/left-mobile.png");
+      this.textures.push(this.env1);
+      this.galleryTex = [0, 1, 2, 3].map(() => this._makeBlackTex());
+      this.galleryTex.forEach(t => this.textures.push(t));
+      [0, 1, 2, 3].forEach(i => this._loadGallerySlot(i));
+    } else if (fragKey === 'room_right') {
+      this.env1 = loadStaticTex("files/img/rooms/right-mobile.png");
+      this.textures.push(this.env1);
+      this.vidTexs = [0, 1, 2, 3].map(() => this._makeBlackTex());
+      this.vidObjs = [0, 1, 2, 3].map(() => this._makeMappedVideo());
+      this.vidTexs.forEach(t => this.textures.push(t));
+    } else {
+      if (fragKey === 'city' || fragKey === 'fractal') this.env1 = loadStaticTex("files/img/void/skyline.png");
+      else if (fragKey === 'mirror') this.env1 = loadStaticTex("files/img/mirror.png");
+      else if (fragKey === 'ocean') this.env1 = loadStaticTex("files/img/ocean.jpg");
+      else if (fragKey === 'deadcity') { this.env1 = this.loadVideo("files/mov/bh2.webm"); this.env2 = loadStaticTex("files/img/deadcity.png"); this.textures.push(this.env2); }
+      else if (fragKey === 'bh') this.env1 = this.loadVideo("files/mov/bh2.webm");
+      else if (fragKey === 'earth') this.env1 = this.loadVideo("files/mov/earth.webm");
+      else if (fragKey === 'fly') this.env1 = this.loadVideo("files/mov/fly.webm");
+      if (this.env1 && !['deadcity', 'bh', 'earth', 'fly'].includes(fragKey)) this.textures.push(this.env1);
     }
-    
-    loadVideo(srcFile) {
-        const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,255]));
-        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-        const vid = document.createElement("video"); 
-        vid.muted = true; vid.playsInline = true;
-        
-        // ONLY LOOP IF IT'S NOT THE FLY SEQUENCE
-        vid.loop = !srcFile.includes("fly");
-        
-        const s = document.createElement("source"); s.src=srcFile; s.type="video/webm";
-        vid.appendChild(s); vid.play().catch(()=>{});
-        this.videoObj = vid;
-        this.textures.push(tex);
-        return tex;
+  }
+
+  _makeBlackTex() {
+    const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return tex;
+  }
+
+  _makeMappedVideo() {
+    const pool = window.MAPPED_VIDEOS || [];
+    const src = 'files/mov/mapped/' + pool[Math.floor(Math.random() * pool.length)];
+    const vid = document.createElement("video");
+    vid.muted = true; vid.playsInline = true; vid.loop = true;
+    const s = document.createElement("source"); s.src = src; s.type = "video/webm";
+    vid.appendChild(s); vid.play().catch(() => { });
+    return vid;
+  }
+
+  _loadGallerySlot(i) {
+    const pool = window.galleryImages || [];
+    const src = 'files/img/gallery/' + pool[Math.floor(Math.random() * pool.length)];
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[i]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    };
+    img.src = src;
+  }
+
+  loadVideo(srcFile) {
+    const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    const vid = document.createElement("video");
+    vid.muted = true; vid.playsInline = true;
+    vid.loop = !srcFile.includes("fly");
+    const s = document.createElement("source"); s.src = srcFile; s.type = "video/webm";
+    vid.appendChild(s); vid.play().catch(() => { });
+    this.videoObj = vid;
+    this.textures.push(tex);
+    return tex;
+  }
+
+  render(now, mx, my, audioIntensity, blink, flash, shake, wakeVal, modeSeed) {
+    gl.useProgram(this.prog);
+    const loc = gl.getAttribLocation(this.prog, "p");
+    gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    if (this.videoObj && this.videoObj.readyState >= 2) {
+      gl.bindTexture(gl.TEXTURE_2D, this.env1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.videoObj);
     }
-
-    render(now, mx, my, audioIntensity, blink, flash, shake, wakeVal, modeSeed) {
-        gl.useProgram(this.prog);
-        const loc = gl.getAttribLocation(this.prog, "p");
-        gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-
-        if (this.videoObj && this.videoObj.readyState >= 2) {
-            gl.bindTexture(gl.TEXTURE_2D, this.env1);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.videoObj);
-        }
 
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, staticAssets.b1);
         gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, staticAssets.b2);
@@ -148,118 +232,169 @@ class ActiveMode {
         gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, staticAssets.b4);
         gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, staticAssets.b5);
         gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, staticAssets.b6);
-        gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, texs[ping]); 
+        gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
         gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, this.id === 5 ? staticAssets.oobMask : staticAssets.windowMask);
+        gl.activeTexture(gl.TEXTURE8); gl.bindTexture(gl.TEXTURE_2D, this.env1 || BLACK_TEX);
 
-        if(this.env1) { gl.activeTexture(gl.TEXTURE8); gl.bindTexture(gl.TEXTURE_2D, this.env1); }
-        if(this.env2) { gl.activeTexture(gl.TEXTURE9); gl.bindTexture(gl.TEXTURE_2D, this.env2); }
+        gl.activeTexture(gl.TEXTURE9);  gl.bindTexture(gl.TEXTURE_2D, BLACK_TEX);
+        gl.activeTexture(gl.TEXTURE10); gl.bindTexture(gl.TEXTURE_2D, BLACK_TEX);
+        gl.activeTexture(gl.TEXTURE11); gl.bindTexture(gl.TEXTURE_2D, BLACK_TEX);
+        gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, BLACK_TEX);
+        gl.activeTexture(gl.TEXTURE13); gl.bindTexture(gl.TEXTURE_2D, BLACK_TEX);
+
+        if (this.env2) { gl.activeTexture(gl.TEXTURE9); gl.bindTexture(gl.TEXTURE_2D, this.env2); }
+        if (this.env3) { gl.activeTexture(gl.TEXTURE10); gl.bindTexture(gl.TEXTURE_2D, this.env3); }
+        if (this.env4) { gl.activeTexture(gl.TEXTURE11); gl.bindTexture(gl.TEXTURE_2D, this.env4); }
+        if (this.env6) { gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, this.env6); }
+        if (this.env5) { gl.activeTexture(gl.TEXTURE13); gl.bindTexture(gl.TEXTURE_2D, this.env5); }
+
+        if (this.id === 10 && this.galleryTex) {
+            gl.activeTexture(gl.TEXTURE9);  gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[0]);
+            gl.activeTexture(gl.TEXTURE10); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[1]);
+            gl.activeTexture(gl.TEXTURE11); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[2]);
+            gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[3]);
+        }
+
+        if (this.id === 11) {
+            for (let i = 0; i < 4; i++) {
+                gl.activeTexture(gl.TEXTURE9 + i);
+                gl.bindTexture(gl.TEXTURE_2D, this.vidTexs[i]);
+                const vid = this.vidObjs[i];
+                if (vid && vid.readyState >= 2) {
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, vid);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                }
+            }
+            gl.activeTexture(gl.TEXTURE13);
+            gl.bindTexture(gl.TEXTURE_2D, mirrorFBO.tex);
+        }
 
         gl.uniform1f(this.U.audio, audioIntensity); gl.uniform2f(this.U.res, canvas.width, canvas.height); 
         gl.uniform1f(this.U.time, now*0.001); gl.uniform2f(this.U.mouse, mx, my); gl.uniform1i(this.U.mode, this.id); 
         gl.uniform1f(this.U.blink, blink); gl.uniform1f(this.U.flash, flash); gl.uniform1f(this.U.shake, shake); 
         gl.uniform1f(this.U.wake, wakeVal); gl.uniform1f(this.U.modeSeed, modeSeed);
-        
         gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
+  }
 
-    destroy() {
-        if (this.videoObj) { this.videoObj.pause(); this.videoObj.removeAttribute('src'); this.videoObj.load(); }
-        for(let tex of this.textures) gl.deleteTexture(tex);
-        gl.deleteProgram(this.prog);
-    }
+  destroy() {
+    if (this.videoObj) { this.videoObj.pause(); this.videoObj.removeAttribute('src'); this.videoObj.load(); }
+    if (this.vidObjs) this.vidObjs.forEach(v => { v.pause(); v.src = ""; v.load(); });
+    for (let tex of this.textures) gl.deleteTexture(tex);
+    gl.deleteProgram(this.prog);
+  }
 }
 
-// --- STATE MACHINE ---
-let currentEngine = null;
-let mx=0,my=0,cx=0,cy=0,mode=0,blink=0,flash=0,shake=0, phase="sleeping",timer=-9999,start=0,lastNow=0,blinkCount=0,targetBlinks=1, modeSeed=0, lastMode=-1;
+let currentEngine = null, mx = 0, my = 0, cx = 0, cy = 0, mode = 0, blink = 0, flash = 0, shake = 0, phase = "sleeping", timer = -9999, start = 0, lastNow = 0, blinkCount = 0, targetBlinks = 1, modeSeed = 0, lastMode = -1;
+let leftEngine = null, rightEngine = null, activePOV = 'center';
+const SLIDE_MS = 340, EDGE_SNAP_MS = 80;
+let slideState = 'idle', slideStart = 0, slideDir = 0, slideOffset = 0, pendingPOV = null, povSwitchTime = -9999;
 
-const limitX = 0.65; const limitY = 0.50; let isDragging = false; let lastDragX = 0; let lastDragY = 0;
+function beginSlide(targetPOV, direction) { if (slideState !== 'idle') return; pendingPOV = targetPOV; slideDir = direction; slideState = 'out'; slideStart = lastNow; }
+function tickSlide(now) {
+  if (slideState === 'idle') return;
+  const elapsed = now - slideStart;
+  if (slideState === 'out') {
+    const t = Math.min(elapsed / SLIDE_MS, 1.0);
+    slideOffset = (t * t) * innerWidth * slideDir;
+    if (t >= 1.0) { slideOffset = innerWidth * slideDir; slideState = 'black'; slideStart = now; activePOV = pendingPOV; mx = 0; my = 0; cx = 0; cy = 0; povSwitchTime = now; }
+  } else if (slideState === 'black') { if (elapsed >= EDGE_SNAP_MS) { slideOffset = -innerWidth * slideDir; slideState = 'in'; slideStart = now; }
+  } else if (slideState === 'in') {
+    const t = Math.min(elapsed / SLIDE_MS, 1.0);
+    const ease = 1.0 - (1.0 - t) * (1.0 - t);
+    slideOffset = -innerWidth * slideDir * (1.0 - ease);
+    if (t >= 1.0) { slideOffset = 0; slideState = 'idle'; pendingPOV = null; }
+  }
+  canvas.style.transform = slideOffset !== 0 ? `translateX(${slideOffset.toFixed(1)}px)` : '';
+}
+
+function checkPOVThreshold() {
+  if (slideState !== 'idle') return;
+  if (activePOV !== 'center' && (lastNow - povSwitchTime) < 600) return;
+  if (!isDragging) return;
+  if (activePOV === 'center') {
+    if (mx >= 1.24) beginSlide('left', +1);
+    else if (mx <= -1.24) beginSlide('right', -1);
+  } else if (activePOV === 'left') { if (mx <= -1.14) beginSlide('center', -1);
+  } else if (activePOV === 'right') { if (mx >= 1.14) beginSlide('center', +1); }
+}
+
+let isDragging = false, lastDragX = 0, lastDragY = 0;
 const startDrag = (x, y) => {
   if (event && (event.target.id === 'secret-button' || event.target.closest('#conky-sidebar') || event.target.closest('#aboutOverlay'))) return;
   isDragging = true; lastDragX = x; lastDragY = y;
 };
-const doDrag = (x, y) => {
-  if (!isDragging) return;
-  mx -= ((x - lastDragX) / innerWidth) * 3.0; my -= ((y - lastDragY) / innerHeight) * 3.0;
-  lastDragX = x; lastDragY = y; mx = Math.max(-limitX, Math.min(limitX, mx)); my = Math.max(-limitY, Math.min(limitY, my));
-};
+const doDrag = (x, y) => { if (!isDragging) return; mx -= ((x - lastDragX) / innerWidth) * 3.0; my -= ((y - lastDragY) / innerHeight) * 3.0; lastDragX = x; lastDragY = y; mx = Math.max(-1.35, Math.min(1.35, mx)); my = Math.max(-0.5, Math.min(0.5, my)); };
 const endDrag = () => { isDragging = false; };
 window.addEventListener("mousedown", e => startDrag(e.clientX, e.clientY)); window.addEventListener("mousemove", e => doDrag(e.clientX, e.clientY)); window.addEventListener("mouseup", endDrag);
-window.addEventListener("touchstart", e => startDrag(e.touches[0].clientX, e.touches[0].clientY), {passive: false}); window.addEventListener("touchmove", e => doDrag(e.touches[0].clientX, e.touches[0].clientY), {passive: false}); window.addEventListener("touchend", endDrag);
+window.addEventListener("touchstart", e => startDrag(e.touches[0].clientX, e.touches[0].clientY), { passive: false }); window.addEventListener("touchmove", e => doDrag(e.touches[0].clientX, e.touches[0].clientY), { passive: false }); window.addEventListener("touchend", endDrag);
 
-function simStep(now){
+function simStep(now) {
   gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
-  gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, staticAssets.windowMask); 
-  const next = 1 - ping; gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[next].fbo); gl.viewport(0,0,canvas.width,canvas.height);
-  gl.useProgram(simProg); 
+  gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, staticAssets.windowMask);
+  const next = 1 - ping; gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[next].fbo); gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.useProgram(simProg);
   const loc = gl.getAttribLocation(simProg, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  gl.uniform2f(gl.getUniformLocation(simProg,"u_resolution"), canvas.width, canvas.height); gl.uniform1f(gl.getUniformLocation(simProg,"u_time"), now * 0.001); gl.uniform1f(gl.getUniformLocation(simProg,"u_dt"), Math.min((now - lastNow) * 0.001, 0.05));
+  gl.uniform2f(gl.getUniformLocation(simProg, "u_resolution"), canvas.width, canvas.height); gl.uniform1f(gl.getUniformLocation(simProg, "u_time"), now * 0.001); gl.uniform1f(gl.getUniformLocation(simProg, "u_dt"), Math.min((now - lastNow) * 0.001, 0.05));
   gl.drawArrays(gl.TRIANGLES, 0, 3); gl.bindFramebuffer(gl.FRAMEBUFFER, null); ping = next;
 }
 
-function isFractal(m) { return m === 1 || m === 2 || m === 6; }
-
-function advanceMode(){
-  let nextMode = mode; let attempts = 0;
-  while((nextMode === mode || nextMode === lastMode || (isFractal(nextMode) && isFractal(mode))) && attempts < 20){ nextMode = Math.floor(Math.random() * 9); if (nextMode === 9) nextMode = 0; attempts++; }
+function advanceMode() {
+  let nextMode = mode;
+  let attempts = 0;
+  while ((nextMode === mode || nextMode === lastMode || (mode < 7 && nextMode < 7)) && attempts < 20) { nextMode = Math.floor(Math.random() * 8); attempts++; }
   lastMode = mode; mode = nextMode; modeSeed++;
-  targetBlinks = (isFractal(mode)) ? 2 : 1; blinkCount = 0;
-  
-  if(currentEngine) currentEngine.destroy();
+  if (currentEngine) currentEngine.destroy();
   currentEngine = new ActiveMode(mode);
 }
 
-const trailIntensity = 0.85; 
-function drawFadeQuad() {
-  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.clearColor(0, 0, 0, 1.0 - trailIntensity); gl.clear(gl.COLOR_BUFFER_BIT); gl.disable(gl.BLEND);
-}
+function initSideEngines() { if (!leftEngine) leftEngine = new ActiveMode(10); if (!rightEngine) rightEngine = new ActiveMode(11); }
 
-function render(now){
+function render(now) {
   let audioIntensity = 0;
-  if (window.audioAnalyser) { window.audioAnalyser.getByteFrequencyData(window.audioData); let sum = 0; for (let i=0; i<6; i++) sum += window.audioData[i]; audioIntensity = sum / (6 * 255); }
+  if (window.audioAnalyser) { window.audioAnalyser.getByteFrequencyData(window.audioData); let sum = 0; for (let i = 0; i < 6; i++) sum += window.audioData[i]; audioIntensity = sum / (6 * 255); }
+  let wakeVal = 1.0;
+  if (phase === "sleeping") {
+    wakeVal = 0.0;
+    if (window.startWakeSequence && !currentEngine) { phase = "waking"; start = now; currentEngine = new ActiveMode(mode); initSideEngines(); }
+  } else if (phase === "waking") { let t = Math.min((now - start) / 3000, 1.0); wakeVal = 1.0 - Math.pow(1.0 - t, 3); if (t >= 1.0) { phase = "open"; timer = now; } }
 
-  let wakeVal = 1.0; 
-  if(phase === "sleeping"){
-      wakeVal = 0.0;
-      if(window.startSecretFlySequence && !currentEngine) { phase = "secret_fly"; mode = 9; currentEngine = new ActiveMode(9); }
-      else if(window.startWakeSequence && !currentEngine){ phase = "waking"; start = now; currentEngine = new ActiveMode(mode); }
-  } 
-  else if(phase === "secret_fly"){
-      wakeVal = 1.0;
-      if (Math.random() < 0.05 && blink < 0.1) blink = 1.0;
-      blink *= 0.85;
-      
-      // UNMUTE BACKGROUND AUDIO EXACTLY WHEN VIDEO ENDS
-      if (currentEngine && currentEngine.videoObj && currentEngine.videoObj.readyState > 0) {
-          if (currentEngine.videoObj.ended || currentEngine.videoObj.currentTime >= currentEngine.videoObj.duration - 0.1) {
-              phase = "waking"; 
-              start = now; 
-              blink = 0.0; 
-              if (window.unmuteMainAudio) window.unmuteMainAudio(); 
-              advanceMode();
-          }
-      }
-  } 
-  else if(phase === "waking"){ let t = Math.min((now - start) / 3000, 1.0); wakeVal = 1.0 - Math.pow(1.0 - t, 3); if(t >= 1.0){ phase = "open"; timer = now; } }
+  if (activePOV === 'center') {
+    if (phase === "open" && now - timer > 9000) { blinkCount++; if (blinkCount >= targetBlinks) { phase = "closing_switch"; start = now; timer = now; } else { phase = "closing_blink"; start = now; timer = now; } }
+    else if (phase === "closing_blink") { blink = Math.min((now - start) / 160, 1); if (blink >= 1) { phase = "black_blink"; start = now; } }
+    else if (phase === "black_blink" && now - start > 120) { phase = "opening_blink"; start = now; }
+    else if (phase === "opening_blink") { blink = 1.0 - Math.min((now - start) / 160, 1); if (blink <= 0) { phase = "open"; timer = now; blink = 0; } }
+    else if (phase === "closing_switch") { blink = Math.min((now - start) / 160, 1); if (blink >= 1) { phase = "black_switch"; start = now; advanceMode(); } }
+    else if (phase === "black_switch" && now - start > 200) { phase = "opening_switch"; start = now; }
+    else if (phase === "opening_switch") { blink = 1.0 - Math.min((now - start) / 160, 1); if (blink <= 0) { phase = "open"; timer = now; blink = 0; } }
+  }
 
-  if(phase==="open" && now-timer>9000){ blinkCount++; if(blinkCount >= targetBlinks){ phase="closing_switch"; start=now; timer=now; } else { phase="closing_blink"; start=now; timer=now; } }
-  else if(phase==="closing_blink"){ blink=Math.min((now-start)/160, 1); if(blink>=1){ phase="black_blink"; start=now; } }
-  else if(phase==="black_blink" && now-start>120){ phase="opening_blink"; start=now; }
-  else if(phase==="opening_blink"){ blink=1.0-Math.min((now-start)/160, 1); if(blink<=0){ phase="open"; timer=now; blink=0; } }
-  else if(phase==="closing_switch"){ blink=Math.min((now-start)/160, 1); if(blink>=1){ phase="black_switch"; start=now; advanceMode(); } }
-  else if(phase==="black_switch" && now-start>200){ phase="opening_switch"; start=now; }
-  else if(phase==="opening_switch"){ blink=1.0-Math.min((now-start)/160, 1); if(blink<=0){ phase="open"; timer=now; blink=0; } }
+  if (phase === "open" || activePOV !== 'center') checkPOVThreshold();
+  tickSlide(now);
+  cx += (mx - cx) * 0.12; cy += (my - cy) * 0.12;
 
-  cx += (mx - cx) * (0.12 + audioIntensity * 0.05); cy += (my - cy) * (0.12 + audioIntensity * 0.05);
-
-  drawFadeQuad();
-  if(mode !== 9) simStep(now);
-
-  if(mode===3 || mode===8 || mode===9){ if(Math.random() < 0.08) flash = 1.0 + Math.random() * 0.5; flash *= 0.86; shake = Math.max(flash, (0.15 * Math.random() + audioIntensity * 0.4)); } else { flash *= 0.80; shake = audioIntensity * 0.1; }
-
-  if(currentEngine) currentEngine.render(now, cx, cy, audioIntensity, blink, flash, shake, wakeVal, modeSeed);
-
+  if (activePOV === 'center') {
+    drawBacklight(now, 0.35, audioIntensity);
+    simStep(now);
+    if (mode === 2 || mode === 7) { if (Math.random() < 0.08) flash = 1.2; flash *= 0.86; shake = Math.max(flash, audioIntensity * 0.4); } else { flash *= 0.8; shake = audioIntensity * 0.1; }
+    if (currentEngine) currentEngine.render(now, cx, cy, audioIntensity, blink, flash, shake, wakeVal, modeSeed);
+  } else if (activePOV === 'left') {
+    gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    if (leftEngine) leftEngine.render(now, cx, cy, audioIntensity, blink, 0, 0, wakeVal, modeSeed);
+  } else if (activePOV === 'right') {
+    gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    simStep(now);
+    if (currentEngine && mirrorFBO) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, mirrorFBO.fbo);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      currentEngine.render(now, 0, 0, audioIntensity, 0, 0, 0, wakeVal, modeSeed);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
+    if (rightEngine) rightEngine.render(now, cx, cy, audioIntensity, blink, 0, 0, wakeVal, modeSeed);
+  }
   lastNow = now; requestAnimationFrame(render);
 }
 requestAnimationFrame(render);

@@ -1,0 +1,18 @@
+window.MAPPED_VIDEOS = [
+'forcedenlightenment_1.webm',
+'grate.webm',
+'untitled.webm',
+'mattlistendarkenlightenmenttrack.webm',
+'lotusmotel.webm',
+'crywolf.webm',
+'chemlove.webm',
+'thom_1.webm',
+'thom_2.webm',
+'forcedenlightenment_2.webm',
+'yfpmms.webm',
+'smtiaie.webm',
+'uwmadison.webm',
+'emptybottle.webm'
+'albionhouse.webm',
+'z-1.webm',
+];
