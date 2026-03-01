@@ -121,7 +121,7 @@ float worldRain(vec2 uv, float t){
 
 vec2 mapScene(vec3 p, bool renderFractals){
   vec2 res=vec2(1000.0,-1.0);
-  if (u_mode != 4 && u_mode != 6 && u_mode != 7 && u_mode != 9) {
+  if (u_mode != 6 && u_mode != 7 && u_mode != 9) {
       float d1=sdBox(p-vec3(-3.0,0.0,2.0), vec3(1.2,12.0,1.5)); if(d1<res.x) res=vec2(d1,1.0);
       float d2=sdBox(p-vec3(-4.2,0.0,7.0), vec3(1.2,12.0,1.5)); if(d2<res.x) res=vec2(d2,2.0);
       float d3=sdBox(p-vec3(-5.4,0.0,12.0),vec3(1.2,12.0,1.5)); if(d3<res.x) res=vec2(d3,3.0);

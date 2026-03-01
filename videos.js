@@ -12,7 +12,7 @@ window.MAPPED_VIDEOS = [
 'yfpmms.webm',
 'smtiaie.webm',
 'uwmadison.webm',
-'emptybottle.webm'
+'emptybottle.webm',
 'albionhouse.webm',
 'z-1.webm',
 ];

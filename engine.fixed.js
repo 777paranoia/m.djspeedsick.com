@@ -2,6 +2,96 @@ const canvas = document.getElementById("c");
 const gl = canvas.getContext("webgl", { antialias: false, alpha: false, preserveDrawingBuffer: true });
 gl.getExtension("OES_texture_float") || gl.getExtension("OES_texture_half_float");
 
+window.__ALL_VIDEOS = window.__ALL_VIDEOS || [];
+(function(){
+  function ensureBin(){
+    let bin = document.getElementById("__video_bin");
+    if (bin) return bin;
+    if (!document.body) return null;
+    bin = document.createElement("div");
+    bin.id = "__video_bin";
+    bin.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;";
+    document.body.appendChild(bin);
+    return bin;
+  }
+
+  function makePoolVid(src, loop) {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.playsInline = true;
+    v.loop = !!loop;
+    v.preload = "auto";
+    v.autoplay = true;
+    v.setAttribute("playsinline", "");
+    v.setAttribute("webkit-playsinline", "");
+    v.src = src 
+    const bin = ensureBin();
+    if (bin) bin.appendChild(v);
+    const p = v.play(); if (p && p.catch) p.catch(()=>{});
+    window.__ALL_VIDEOS.push(v);
+    return v;
+  }  
+  window.__primeVideoPool = function() {
+    const pool = { fixed: {}, mapped: [] } 
+    pool.fixed["files/mov/bh2.webm"]   = [makePoolVid("files/mov/bh2.webm",  true),
+                                           makePoolVid("files/mov/bh2.webm",  true)];
+    pool.fixed["files/mov/earth.webm"] = [makePoolVid("files/mov/earth.webm", true)];
+    pool.fixed["files/mov/fly.webm"]   = [makePoolVid("files/mov/fly.webm",  false)] 
+    const mappedFiles = window.MAPPED_VIDEOS || [];
+    if (mappedFiles.length) {
+      for (let i = 0; i < 4; i++) {
+        const src = "files/mov/mapped/" + mappedFiles[Math.floor(Math.random() * mappedFiles.length)];
+        pool.mapped.push(makePoolVid(src, true));
+      }
+    }
+
+    window.__videoPool = pool;
+  }  
+  window.__claimPoolVid = function(src) {
+    const pool = window.__videoPool;
+    if (!pool) return null;
+    const bucket = pool.fixed[src];
+    if (bucket && bucket.length) return bucket.shift();
+    return null;
+  } 
+  window.__claimMappedPoolVid = function() {
+    const pool = window.__videoPool;
+    if (pool && pool.mapped.length) return pool.mapped.shift();
+    return null;
+  } 
+  window.__registerVideo = function(v){
+    try{
+      v.muted = true;
+      v.playsInline = true;
+      v.setAttribute("playsinline", "");
+      v.setAttribute("webkit-playsinline", "");
+      v.preload = "auto";
+      v.autoplay = true;
+      const bin = ensureBin();
+      if (bin && v.parentNode !== bin) bin.appendChild(v);
+      if (window._siteEntered) { const p = v.play(); if (p && p.catch) p.catch(()=>{}); }
+    }catch(_){}
+    window.__ALL_VIDEOS.push(v);
+    return v;
+  };
+
+  window.__unlockAllVideos = function(){
+    const vids = window.__ALL_VIDEOS || [];
+    for (let i = 0; i < vids.length; i++){
+      const v = vids[i];
+      if (!v) continue;
+      try{
+        v.muted = true;
+        v.playsInline = true;
+        v.setAttribute("playsinline", "");
+        v.setAttribute("webkit-playsinline", "");
+        const p = v.play();
+        if (p && p.catch) p.catch(()=>{});
+      }catch(_){}
+    }
+  };
+})();
+
 const fit = () => {
   const dpr = Math.min(2, devicePixelRatio || 1.0); 
   canvas.width = Math.floor(innerWidth * dpr);
@@ -20,7 +110,8 @@ function loadStaticTex(url) {
   tex._w = 1; tex._h = 1;
   img.onload = () => {
     tex._w = img.naturalWidth || img.width || 1;
-    tex._h = img.naturalHeight || img.height || 1;
+    tex._h = img.naturalHeight || img.height || 1  
+    gl.activeTexture(gl.TEXTURE15);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
@@ -40,6 +131,17 @@ staticAssets.b5 = loadStaticTex(`files/img/void/building06.png`);
 staticAssets.b6 = loadStaticTex(`files/img/void/building05.png`);
 staticAssets.windowMask = loadStaticTex("files/img/void/canalport-mask.png");
 staticAssets.oobMask = loadStaticTex("files/img/void/oob-mask.png");
+
+const DUMMY_BLACK = (() => {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,0,0,255]));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+})();
 
 const compile = (type, src) => {
   const sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh);
@@ -164,13 +266,15 @@ class ActiveMode {
         return tex;
     }
 
-    _makeMappedVideo() {
-        const pool = window.MAPPED_VIDEOS || [];
-        const src = 'files/mov/mapped/' + pool[Math.floor(Math.random() * pool.length)];
+    _makeMappedVideo() {  
+        const poolVid = window.__claimMappedPoolVid && window.__claimMappedPoolVid();
+        if (poolVid) return poolVid 
+        const mappedFiles = window.MAPPED_VIDEOS || [];
+        const src = 'files/mov/mapped/' + mappedFiles[Math.floor(Math.random() * mappedFiles.length)];
         const vid = document.createElement("video");
         vid.muted = true; vid.playsInline = true; vid.loop = true;
-        const s = document.createElement("source"); s.src = src; s.type = "video/webm";
-        vid.appendChild(s); vid.play().catch(()=>{});
+        vid.src = src;
+        window.__registerVideo && window.__registerVideo(vid);
         return vid;
     }
 
@@ -179,7 +283,8 @@ class ActiveMode {
         const src = 'files/img/gallery/' + pool[Math.floor(Math.random() * pool.length)];
         const img = new Image();
         img.crossOrigin = "anonymous";
-        img.onload = () => {
+        img.onload = () => {   
+            gl.activeTexture(gl.TEXTURE15);
             gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[i]);
             gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
             gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
@@ -187,18 +292,25 @@ class ActiveMode {
             gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
         };
-        img.src = src;    
-        }
+        img.src = src;
+    }
 
     loadVideo(srcFile) {
         const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,255]));
-        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-        const vid = document.createElement("video"); 
-        vid.muted = true; vid.playsInline = true;
-        vid.loop = !srcFile.includes("fly");
-        const s = document.createElement("source"); s.src=srcFile; s.type="video/webm";
-        vid.appendChild(s); vid.play().catch(()=>{});
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR) 
+        let vid = window.__claimPoolVid && window.__claimPoolVid(srcFile);
+        if (vid) { 
+            vid.loop = !srcFile.includes("fly");
+        } else { 
+            vid = document.createElement("video");
+            vid.muted = true; vid.playsInline = true;
+            vid.loop = !srcFile.includes("fly");
+            const s = document.createElement("source"); s.src = srcFile; s.type = "video/webm";
+            vid.appendChild(s);
+            window.__registerVideo && window.__registerVideo(vid);
+        }
+
         this.videoObj = vid;
         this.textures.push(tex);
         return tex;
@@ -210,6 +322,7 @@ class ActiveMode {
         gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
         if (this.videoObj && this.videoObj.readyState >= 2) {
+            gl.activeTexture(gl.TEXTURE8);
             gl.bindTexture(gl.TEXTURE_2D, this.env1);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.videoObj);
         }
@@ -224,11 +337,21 @@ class ActiveMode {
         gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, this.id === 5 ? staticAssets.oobMask : staticAssets.windowMask);
         if(this.env1) { gl.activeTexture(gl.TEXTURE8); gl.bindTexture(gl.TEXTURE_2D, this.env1); }
 
+        // Prevent stale side-textures bleeding into center modes.
+        gl.activeTexture(gl.TEXTURE9);  gl.bindTexture(gl.TEXTURE_2D, DUMMY_BLACK);
+        gl.activeTexture(gl.TEXTURE10); gl.bindTexture(gl.TEXTURE_2D, DUMMY_BLACK);
+        gl.activeTexture(gl.TEXTURE11); gl.bindTexture(gl.TEXTURE_2D, DUMMY_BLACK);
+        gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, DUMMY_BLACK);
+        gl.activeTexture(gl.TEXTURE13); gl.bindTexture(gl.TEXTURE_2D, DUMMY_BLACK);
+
+        // deadcity uses u_texEnv2 (unit 9)
+        if (this.id === 7 && this.env2) { gl.activeTexture(gl.TEXTURE9); gl.bindTexture(gl.TEXTURE_2D, this.env2); }
+
         if (this.id === 10 && this.galleryTex) {
-gl.activeTexture(gl.TEXTURE9);  gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[0]);
-gl.activeTexture(gl.TEXTURE10); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[1]);
-gl.activeTexture(gl.TEXTURE11); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[2]);
-gl.activeTexture(gl.TEXTURE13); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[3]);
+            gl.activeTexture(gl.TEXTURE9);  gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[0]);
+            gl.activeTexture(gl.TEXTURE10); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[1]);
+            gl.activeTexture(gl.TEXTURE11); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[2]);
+            gl.activeTexture(gl.TEXTURE12); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[3]);
         }
 
         if (this.id === 11) {
@@ -254,8 +377,15 @@ gl.activeTexture(gl.TEXTURE13); gl.bindTexture(gl.TEXTURE_2D, this.galleryTex[3]
     }
 
     destroy() {
-        if (this.videoObj) { this.videoObj.pause(); this.videoObj.removeAttribute('src'); this.videoObj.load(); }
-        if (this.vidObjs) this.vidObjs.forEach(v => { v.pause(); v.src = ""; v.load(); });
+        const stopVid = (v) => {
+            if (!v) return;
+            v.pause() 
+            while (v.firstChild) v.removeChild(v.firstChild);
+            v.removeAttribute('src');
+            try { v.load(); } catch(_) {}
+        };
+        if (this.videoObj) stopVid(this.videoObj);
+        if (this.vidObjs) this.vidObjs.forEach(stopVid);
         for(let tex of this.textures) gl.deleteTexture(tex);
         gl.deleteProgram(this.prog);
     }
@@ -295,15 +425,48 @@ function checkPOVThreshold() {
   } else if (activePOV === 'right') { if (mx >= 1.14) beginSlide('center', +1); }
 }
 
-let isDragging = false, lastDragX = 0, lastDragY = 0;
-const startDrag = (x, y) => { 
-  if (event && (event.target.id === 'secret-button' || event.target.closest('#conky-sidebar') || event.target.closest('#aboutOverlay'))) return;
-  isDragging = true; lastDragX = x; lastDragY = y; 
+let isDragging = false;
+let lastDragX = 0;
+let lastDragY = 0;
+
+const startDrag = (e, x, y) => {
+  if (e && (e.target.id === 'secret-button' ||
+      e.target.closest('#conky-sidebar') ||
+      e.target.closest('#aboutOverlay'))) return;
+  isDragging = true;
+  lastDragX = x;
+  lastDragY = y;
 };
-const doDrag = (x, y) => { if (!isDragging) return; mx -= ((x - lastDragX) / innerWidth) * 3.0; my -= ((y - lastDragY) / innerHeight) * 3.0; lastDragX = x; lastDragY = y; mx = Math.max(-1.35, Math.min(1.35, mx)); my = Math.max(-0.5, Math.min(0.5, my)); };
-const endDrag = () => { isDragging = false; };
-window.addEventListener("mousedown", e => startDrag(e.clientX, e.clientY)); window.addEventListener("mousemove", e => doDrag(e.clientX, e.clientY)); window.addEventListener("mouseup", endDrag);
-window.addEventListener("touchstart", e => startDrag(e.touches[0].clientX, e.touches[0].clientY), {passive:false}); window.addEventListener("touchmove", e => doDrag(e.touches[0].clientX, e.touches[0].clientY), {passive:false}); window.addEventListener("touchend", endDrag);
+
+const doDrag = (x, y) => {
+  if (!isDragging) return;
+  mx -= ((x - lastDragX) / innerWidth)  * 3.0;
+  my -= ((y - lastDragY) / innerHeight) * 3.0;
+  lastDragX = x;
+  lastDragY = y;
+  mx = Math.max(-1.35, Math.min(1.35, mx));
+  my = Math.max(-0.5,  Math.min(0.5,  my));
+};
+
+const endDrag = () => {
+  isDragging = false;
+  mx = 0;
+  my = 0;
+}
+
+window.addEventListener("mousedown", e => startDrag(e, e.clientX, e.clientY));
+window.addEventListener("mousemove", e => doDrag(e.clientX, e.clientY));
+window.addEventListener("mouseup",   endDrag)
+
+window.addEventListener("touchstart",
+  e => startDrag(e, e.touches[0].clientX, e.touches[0].clientY),
+  { passive: true }
+);
+window.addEventListener("touchmove",
+  e => { if (e.touches.length > 0) doDrag(e.touches[0].clientX, e.touches[0].clientY); },
+  { passive: true }
+);
+window.addEventListener("touchend", endDrag);
 
 function simStep(now){
   gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, texs[ping]);
@@ -356,7 +519,7 @@ function render(now){
     if(currentEngine) currentEngine.render(now, cx, cy, audioIntensity, blink, flash, shake, wakeVal, modeSeed);
   } else if (activePOV === 'left') {
     gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
-    if (leftEngine) leftEngine.render(now, 0, 0, audioIntensity, blink, 0, 0, wakeVal, modeSeed);
+    if (leftEngine) leftEngine.render(now, cx, cy, audioIntensity, blink, 0, 0, wakeVal, modeSeed);
   } else if (activePOV === 'right') {
     gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
     simStep(now);
@@ -367,7 +530,7 @@ function render(now){
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
-    if (rightEngine) rightEngine.render(now, 0, 0, audioIntensity, blink, 0, 0, wakeVal, modeSeed);
+    if (rightEngine) rightEngine.render(now, cx, cy, audioIntensity, blink, 0, 0, wakeVal, modeSeed);
   }
   lastNow = now; requestAnimationFrame(render);
 }

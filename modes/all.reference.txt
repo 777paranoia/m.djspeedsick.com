@@ -1,0 +1,570 @@
+GLSL.modules['room_left'] = `
+precision mediump float;
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform sampler2D u_texEnv1; // left-mobile.png
+uniform sampler2D u_texEnv2; // Gallery 0 (TEXTURE9)
+uniform sampler2D u_texEnv3; // Gallery 1 (TEXTURE10)
+uniform sampler2D u_texEnv4; // Gallery 2 (TEXTURE11)
+uniform sampler2D u_texEnv6; // Gallery 3 (TEXTURE12)
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    uv.y = 1.0 - uv.y;
+
+    float panRangeX = 300.0 / 1437.0;
+    float panRangeY = 300.0 / 2048.0;
+    float screenAspect = u_resolution.x / u_resolution.y;
+    float visibleAspect = 643.0 / 2000.0;
+
+    // Camera aspect scaling
+    vec2 tuv;
+    if (screenAspect > visibleAspect) {
+        float scale = visibleAspect / screenAspect;
+        tuv = vec2(uv.x, (uv.y - 0.5) * scale + 0.5);
+    } else {
+        float scale = screenAspect / visibleAspect;
+        tuv = vec2((uv.x - 0.5) * scale + 0.5, uv.y);
+    }
+
+    // Apply mouse panning
+    tuv.x = tuv.x * (1.0 - 2.0 * panRangeX) + panRangeX - u_mouse.x * panRangeX;
+    tuv.y = tuv.y * (1.0 - 2.0 * panRangeY) + panRangeY - u_mouse.y * panRangeY;
+
+    tuv = clamp(tuv, 0.0, 1.0);
+
+    vec4 room = texture2D(u_texEnv1, tuv);
+    
+    // Chroma key mask
+    bool isGreen = room.g > 0.4 && room.r < 0.25 && room.b < 0.25;
+
+    if (isGreen) {
+        float px = tuv.x * 1437.0;
+        float py = tuv.y * 2048.0;
+        vec2 bMin, bMax;
+
+        // Expanded bounds so WebGL stops smearing the edges
+        if (px < 465.0) {
+            if (py < 935.0) {
+                // TOP LEFT
+                bMin = vec2(110.0/1437.0, 800.0/2048.0);
+                bMax = vec2(455.0/1437.0, 935.0/2048.0);
+                gl_FragColor = texture2D(u_texEnv2, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+            } else {
+                // BOTTOM LEFT
+                bMin = vec2(110.0/1437.0, 935.0/2048.0);
+                bMax = vec2(460.0/1437.0, 1075.0/2048.0);
+                gl_FragColor = texture2D(u_texEnv3, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+            }
+        } else {
+            if (px > 650.0) {
+                // RIGHT MONITOR
+                bMin = vec2(670.0/1437.0, 790.0/2048.0);
+                bMax = vec2(1050.0/1437.0, 945.0/2048.0);
+                gl_FragColor = texture2D(u_texEnv4, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+            } else {
+                // LAPTOP
+                bMin = vec2(465.0/1437.0, 970.0/2048.0);
+                bMax = vec2(630.0/1437.0, 1085.0/2048.0);
+                gl_FragColor = texture2D(u_texEnv6, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+            }
+        }
+    } else {
+        gl_FragColor = room;
+    }
+}
+`;GLSL.modules['room_right'] = `
+precision mediump float;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform sampler2D u_texEnv1; // right-mobile.png
+uniform sampler2D u_texEnv2; // Video 0 — Tall Left
+uniform sampler2D u_texEnv3; // Video 1 — Top Center
+uniform sampler2D u_texEnv4; // Video 2 — Bottom Center
+uniform sampler2D u_texEnv6; // Video 3 — Small Bottom-L
+uniform sampler2D u_texEnv5; // Mirror — mode shader
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    uv.y = 1.0 - uv.y;
+    float panRangeX = 300.0 / 1243.0;
+    float panRangeY = 300.0 / 2000.0;
+    float screenAspect = u_resolution.x / u_resolution.y;
+    float visibleAspect = 643.0 / 2000.0;
+    vec2 tuv;
+    if (screenAspect > visibleAspect) {
+        float scale = visibleAspect / screenAspect;
+        tuv = vec2(uv.x, (uv.y - 0.5) * scale + 0.5);
+    } else {
+        float scale = screenAspect / visibleAspect;
+        tuv = vec2((uv.x - 0.5) * scale + 0.5, uv.y);
+    }
+    tuv.x = tuv.x * (1.0 - 2.0 * panRangeX) + panRangeX - u_mouse.x * panRangeX;
+    tuv.y = tuv.y * (1.0 - 2.0 * panRangeY) + panRangeY - u_mouse.y * panRangeY;
+
+    vec4 room = texture2D(u_texEnv1, tuv);
+    bool isGreen = room.g > 0.4 && room.r < 0.25 && room.b < 0.25;
+
+    if (isGreen) {
+        float px = tuv.x * 1243.0;
+        float py = tuv.y * 2048.0; // Fixed resolution scale
+        vec2 bMin, bMax;
+
+        if (px < 330.0) {
+            bMin = vec2(155.0/1243.0, 875.0/2000.0);
+            bMax = vec2(300.0/1243.0, 1115.0/2000.0);
+            gl_FragColor = texture2D(u_texEnv2, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+            return;
+        } 
+        else if (px > 720.0) {
+            bMin = vec2(780.0/1243.0, 935.0/2000.0);
+            bMax = vec2(1010.0/1243.0, 1055.0/2000.0);
+            vec2 mirrorUV = clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0);
+            mirrorUV.y = 1.0 - mirrorUV.y; // FLIP MIRROR CONTENT
+            vec4 mirrorCol = texture2D(u_texEnv5, mirrorUV);
+            gl_FragColor = vec4(mirrorCol.rgb * 3.0, 1.0);
+            return;
+        } 
+        else {
+            if (px < 460.0) {
+                bMin = vec2(355.0/1243.0, 1010.0/2000.0);
+                bMax = vec2(445.0/1243.0, 1120.0/2000.0);
+                gl_FragColor = texture2D(u_texEnv6, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+                return;
+            } else if (py < 980.0) {
+                bMin = vec2(465.0/1243.0, 875.0/2000.0);
+                bMax = vec2(655.0/1243.0, 975.0/2000.0);
+                gl_FragColor = texture2D(u_texEnv3, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+                return;
+            } else {
+                bMin = vec2(485.0/1243.0, 990.0/2000.0);
+                bMax = vec2(670.0/1243.0, 1095.0/2000.0);
+                gl_FragColor = texture2D(u_texEnv4, clamp((tuv - bMin) / (bMax - bMin), 0.0, 1.0));
+                return;
+            }
+        }
+    } else {
+        gl_FragColor = room;
+    }
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.city = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 0.0);
+  float t=0.0; vec2 hit=vec2(0.0);
+  for(int i=0;i<90;i++){ hit=mapScene(ro+rd*t, false); if(hit.x<0.001||t>70.0) break; t+=hit.x; }
+  
+  vec3 cGreen = vec3(0.15, 0.9, 0.4); vec3 cRed = vec3(0.9, 0.05, 0.15); vec3 cAmber = vec3(1.0, 0.5, 0.0); 
+  float traffic = smoothstep(0.7, 1.0, sin(rd.x * 6.0 + u_time * 1.5)) * 0.4;
+  vec3 skyTone = mix(vec3(0.005, 0.01, 0.015), vec3(0.05, 0.08, 0.06), exp(-max(rd.y,0.0)*4.0)) + mix(mix(cGreen, cRed, sin(rd.x * 4.0 + u_time * 0.5) * 0.5 + 0.5), cAmber, traffic) * (noise1(u_time * 0.2 - rd.x * 3.0) * 0.5 + 0.5 + traffic) * smoothstep(0.0, -0.8, rd.y) * 0.6 * 0.8;
+  vec3 col = vec3(0.0);
+  
+  if(t<70.0){
+    vec3 p=ro+rd*t;
+    vec3 n=normalize(vec3(mapScene(p+vec3(0.01,0,0),false).x-mapScene(p-vec3(0.01,0,0),false).x, mapScene(p+vec3(0,0.01,0),false).x-mapScene(p-vec3(0,0.01,0),false).x, mapScene(p+vec3(0,0,0.01),false).x-mapScene(p-vec3(0,0,0.01),false).x));
+    vec3 bTex = sampleBuilding(hit.y, (abs(n.x)>abs(n.y))?p.zy:p.xy); bTex += bTex * smoothstep(0.5, 0.9, max(bTex.r, max(bTex.g, bTex.b))) * 2.5;
+    col=mix(bTex*0.25, skyTone, 1.0-exp(-0.015*t*t)) + mix(cGreen, cRed, sin(p.x * 0.4) * 0.5 + 0.5) * (noise1(u_time * 0.3 + p.x * 0.1) * 0.4 + 0.6 + smoothstep(0.8, 1.0, sin(p.z * 0.8 + u_time * 2.0)) * 0.2) * smoothstep(2.0, -20.0, p.y) * 0.4 * exp(-0.005 * t * t);
+  } else col=texture2D(u_texEnv1,fract(rd.xy*0.5+0.5+vec2(u_time*0.002,0.0))).rgb*0.3+skyTone*0.5;
+
+  col += snow(vec2(atan(rd.z,rd.x)*2.0, rd.y*2.0), 15.0, 0.3, 0.3);
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec2 edgeUV = clamp(wuv, 0.0, 1.0); // This line forces the stretch
+    vec4 txW = texture2D(u_texWindow, edgeUV);
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(edgeUV*80.0)*0.012);
+    col=mix(col, txW.rgb * 0.5 + mix(cGreen, cRed, sin(u_time * 0.6) * 0.5 + 0.5) * (noise1(u_time * 0.5) * 0.05 + smoothstep(0.8, 1.0, sin(u_time * 1.2)) * 0.04) * txW.a * 1.5, txW.a);
+  }
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.fractal = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 0.0);
+  float t=0.0; vec2 hit=vec2(0.0);
+  for(int i=0;i<90;i++){ hit=mapScene(ro+rd*t, true); if(hit.x<0.001||t>70.0) break; t+=hit.x; }
+  
+  vec3 cGreen = vec3(0.15, 0.9, 0.4); vec3 cRed = vec3(0.9, 0.05, 0.15); vec3 cAmber = vec3(1.0, 0.5, 0.0); 
+  float traffic = smoothstep(0.7, 1.0, sin(rd.x * 6.0 + u_time * 1.5)) * 0.4;
+  vec3 skyTone = mix(vec3(0.005, 0.01, 0.015), vec3(0.05, 0.08, 0.06), exp(-max(rd.y,0.0)*4.0)) + mix(mix(cGreen, cRed, sin(rd.x * 4.0 + u_time * 0.5) * 0.5 + 0.5), cAmber, traffic) * (noise1(u_time * 0.2 - rd.x * 3.0) * 0.5 + 0.5 + traffic) * smoothstep(0.0, -0.8, rd.y) * 0.6 * 0.8;
+  vec3 col = vec3(0.0);
+  
+  if(t<70.0){
+    vec3 p=ro+rd*t;
+    if(hit.y <= 9.0) {
+      vec3 n=normalize(vec3(mapScene(p+vec3(0.01,0,0),true).x-mapScene(p-vec3(0.01,0,0),true).x, mapScene(p+vec3(0,0.01,0),true).x-mapScene(p-vec3(0,0.01,0),true).x, mapScene(p+vec3(0,0,0.01),true).x-mapScene(p-vec3(0,0,0.01),true).x));
+      vec3 bTex = sampleBuilding(hit.y, (abs(n.x)>abs(n.y))?p.zy:p.xy); bTex += bTex * smoothstep(0.5, 0.9, max(bTex.r, max(bTex.g, bTex.b))) * 2.5;
+      col=mix(bTex*0.25, skyTone, 1.0-exp(-0.015*t*t)) + mix(cGreen, cRed, sin(p.x * 0.4) * 0.5 + 0.5) * (noise1(u_time * 0.3 + p.x * 0.1) * 0.4 + 0.6 + smoothstep(0.8, 1.0, sin(p.z * 0.8 + u_time * 2.0)) * 0.2) * smoothstep(2.0, -20.0, p.y) * 0.4 * exp(-0.005 * t * t);
+    } else {
+      col = mix(colorPickover(p), skyTone * 0.12, 1.0 - exp(-0.015 * max(length(p) - 0.8, 0.0) * max(length(p) - 0.8, 0.0)));
+    }
+  } else col=texture2D(u_texEnv1,fract(rd.xy*0.5+0.5+vec2(u_time*0.002,0.0))).rgb*0.3+skyTone*0.5;
+
+  col += snow(vec2(atan(rd.z,rd.x)*2.0, rd.y*2.0), 15.0, 0.3, 0.3);
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec2 edgeUV = clamp(wuv, 0.0, 1.0);
+    vec4 txW = texture2D(u_texWindow, edgeUV);
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(edgeUV*80.0)*0.012);
+    col=mix(col, txW.rgb * 0.5 + mix(cGreen, cRed, sin(u_time * 0.6) * 0.5 + 0.5) * (noise1(u_time * 0.5) * 0.05 + smoothstep(0.8, 1.0, sin(u_time * 1.2)) * 0.04) * txW.a * 1.5, txW.a);
+  }
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.bh = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 1.0);
+  float t=0.0; vec2 hit=vec2(0.0);
+  for(int i=0;i<90;i++){ hit=mapScene(ro+rd*t, false); if(hit.x<0.001||t>70.0) break; t+=hit.x; }
+  
+  vec3 skyTone = mix(vec3(0.008,0.018,0.040),vec3(0.015,0.030,0.060),exp(-max(rd.y,0.0)*3.5)); 
+  vec3 col = vec3(0.0);
+  
+  if(t<70.0){
+    vec3 p=ro+rd*t; vec3 n=normalize(vec3(mapScene(p+vec3(0.01,0,0),false).x-mapScene(p-vec3(0.01,0,0),false).x, mapScene(p+vec3(0,0.01,0),false).x-mapScene(p-vec3(0,0.01,0),false).x, mapScene(p+vec3(0,0,0.01),false).x-mapScene(p-vec3(0,0,0.01),false).x));
+    vec3 bTex = sampleBuilding(hit.y, (abs(n.x)>abs(n.y))?p.zy:p.xy); bTex += bTex * smoothstep(0.5, 0.9, max(bTex.r, max(bTex.g, bTex.b))) * 2.5;
+    col=mix(bTex*0.08, skyTone, 1.0-exp(-0.004*t*t)) + vec3(0.55,0.78,1.0)*u_flash*0.35;
+  } else {
+    vec2 bhUV = rd.xy * 1.2 + vec2(0.5, 0.5); float split = u_shake * 0.025;
+    col = vec3(texture2D(u_texEnv1, clamp(bhUV + vec2(split, -split*0.5), 0.001, 0.999)).r, texture2D(u_texEnv1, clamp(bhUV, 0.001, 0.999)).g, texture2D(u_texEnv1, clamp(bhUV - vec2(split, -split*0.5), 0.001, 0.999)).b) + vec3(0.8, 0.9, 1.0) * u_flash * smoothstep(0.3, 0.0, length(rd.xy)) * 1.5;
+  }
+
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec2 edgeUV = clamp(wuv, 0.0, 1.0);
+    vec4 txW = texture2D(u_texWindow, edgeUV);
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1){
+      float waterH = texture2D(u_water, edgeUV).r; vec2 wNorm = waterNormal(edgeUV);
+      vec2 bhUV = clamp(rd.xy * 1.2 + vec2(0.5, 0.5) + wNorm * (0.020 + u_shake * 0.02), 0.001, 0.999);
+      col = mix(col, texture2D(u_texEnv1, bhUV).rgb, clamp((waterH - 0.12) * 7.0, 0.0, 0.65) * (t>=70.0 ? 1.0 : 0.0));
+      col = mix(col + vec3(0.62,0.78,1.0) * pow(clamp(dot(normalize(wNorm), normalize(vec2(0.25,0.85))), 0.0, 1.0), 7.0) * waterH * 1.6, col * 0.72, clamp(waterH * 2.6, 0.0, 0.38));
+    }
+    col=mix(col, txW.rgb * 0.50 + vec3(0.55,0.78,1.0)*u_flash*0.55, txW.a);
+  }
+  float wr = worldRain(gl_FragCoord.xy/u_resolution.xy, u_time);
+  col += vec3(0.62,0.72,0.85) * wr * (t >= 70.0 ? 0.65 : 0.0);
+  if (u_flash > 1.2) col = 1.0 - col;
+  gl_FragColor=vec4(col*(1.0-u_blink)*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.mirror = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 0.0);
+  vec3 col = texture2D(u_texEnv1, clamp(vec2(0.5) + vec2(-rd.x, rd.y) * 1.5, 0.0, 1.0)).rgb;
+  col = mix(col, vec3(0.05, 0.05, 0.06), 0.3 + hash2(gl_FragCoord.xy/u_resolution.xy * 50.0 + u_time * 2.0) * 0.15) * mix(0.1, 1.0, sin(u_time * 0.5) * 0.5 + 0.5);
+  
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec2 edgeUV = clamp(wuv, 0.0, 1.0);
+    vec4 txW = texture2D(u_texWindow, edgeUV);
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(edgeUV*80.0)*0.012);
+    col=mix(col, txW.rgb * 0.5, txW.a);
+  }
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.ocean = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 0.0);
+  
+  vec2 envUV = vec2(0.5) + vec2(rd.x, -rd.y) * 1.2;
+  float t_w = u_time * 0.5; 
+  vec2 waveOffset = vec2(sin(envUV.y * 10.0 + t_w) * 0.02 + sin(envUV.y * 25.0 - t_w * 1.5) * 0.01, cos(envUV.x * 8.0 + t_w * 0.8) * 0.015 + cos(envUV.x * 30.0 + t_w * 2.0) * 0.008);
+  
+  // The Fix: smoothstep(0.45, 0.7, envUV.y) isolates the bottom half of the screen
+  vec2 distUV = clamp(envUV + waveOffset * smoothstep(0.45, 0.7, envUV.y), 0.0, 1.0);
+  distUV.y = 1.0 - distUV.y; 
+  
+  vec3 skyTone = texture2D(u_texEnv1, distUV).rgb;
+  skyTone = mix(skyTone, vec3(0.01, 0.05, 0.1), 0.2 + hash2(gl_FragCoord.xy/u_resolution.xy * 50.0 + u_time * 2.0) * 0.15) * mix(0.5, 1.1, sin(u_time * 0.3) * 0.5 + 0.5);
+  
+  float t=0.0; vec2 hit=vec2(0.0);
+  for(int i=0;i<90;i++){ hit=mapScene(ro+rd*t, true); if(hit.x<0.001||t>70.0) break; t+=hit.x; }
+  
+  vec3 col = skyTone;
+  if(t<70.0 && hit.y > 9.0){
+    vec3 p=ro+rd*t;
+    col = mix(colorPickover(p), skyTone, 1.0 - exp(-0.015 * max(length(p) - 0.8, 0.0) * max(length(p) - 0.8, 0.0)));
+  }
+
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec4 txW = texture2D(u_texWindow, 1.0 - abs(fract(wuv * 0.5) * 2.0 - 1.0));
+    if(wuv.x<0.0||wuv.x>1.0||wuv.y<0.0||wuv.y>1.0){ txW.a=1.0; txW.rgb=mix(vec3(0.01),txW.rgb,0.3); }
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(wuv*80.0)*0.012);
+    col=mix(col, txW.rgb * 0.5 + vec3(0.05, 0.2, 0.4) * (noise1(u_time * 0.5) * 0.1) * txW.a, txW.a);
+  }
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.earth = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 0.0);
+  vec3 col = mix(texture2D(u_texEnv1, clamp(vec2(0.5) + vec2(rd.x, -rd.y) * 1.5, 0.0, 1.0)).rgb, vec3(0.0), 0.1 + hash2(gl_FragCoord.xy/u_resolution.xy * 50.0 + u_time * 2.0) * 0.15);
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec2 edgeUV = clamp(wuv, 0.0, 1.0);
+    vec4 txW = texture2D(u_texWindow, edgeUV);
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(edgeUV*80.0)*0.012);
+    col=mix(col, txW.rgb * 0.5 + vec3(0.2, 0.3, 0.4) * (noise1(u_time * 0.5) * 0.1) * txW.a, txW.a);
+  }
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.deadcity = `
+void main() {
+  vec3 ro, rd, clean_rd; setupCamera(ro, rd, clean_rd, 0.0); 
+  vec2 bhUV = rd.xy * 1.2 + vec2(0.5, 0.5);
+  vec3 col = texture2D(u_texEnv1, clamp(bhUV, 0.001, 0.999)).rgb;
+  
+  vec4 cTex = texture2D(u_texEnv2, vec2(fract(bhUV.x), 1.0 - clamp(bhUV.y * 1.0 + 0.05, 0.0, 1.0)));
+  col = mix(col, cTex.rgb, cTex.a); 
+  
+  float dWin=(-1.5-ro.z)/clean_rd.z;
+  if(dWin>0.0){
+    vec3 pW=ro+clean_rd*dWin; vec2 wuv=vec2(pW.x*0.25+0.5,0.5-pW.y*0.25);
+    vec2 edgeUV = clamp(wuv, 0.0, 1.0);
+    vec4 txW = texture2D(u_texWindow, edgeUV);
+    
+    if(1.0-clamp(txW.a,0.0,1.0)>0.1){
+      float waterH = texture2D(u_water, edgeUV).r; vec2 wNorm = waterNormal(edgeUV) * 0.4;
+      vec2 bhUVw = clamp(rd.xy * 1.2 + vec2(0.5, 0.5) + wNorm * 0.020, 0.001, 0.999);
+      vec3 bgCol = texture2D(u_texEnv1, bhUVw).rgb;
+      
+      vec4 cTexW = texture2D(u_texEnv2, vec2(fract(bhUVw.x), 1.0 - clamp(bhUVw.y * 1.0 + 0.05, 0.0, 1.0)));
+      bgCol = mix(bgCol, cTexW.rgb, cTexW.a);
+      
+      col = mix(col, bgCol, clamp((waterH - 0.12) * 7.0, 0.0, 0.65));
+      col = mix(col + vec3(0.62,0.78,1.0) * pow(clamp(dot(normalize(wNorm), normalize(vec2(0.25,0.85))), 0.0, 1.0), 7.0) * waterH * 1.6, col * 0.72, clamp(waterH * 2.6, 0.0, 0.38));
+    }
+    col=mix(col, txW.rgb * 0.50 + vec3(0.55,0.78,1.0)*u_flash*0.2 + vec3(0.4, 0.1, 0.05) * (noise1(u_time * 0.5) * 0.08) * txW.a, txW.a);
+  }
+  gl_FragColor=vec4(col*(1.0-u_blink)*smoothstep(0.0,0.8,u_wake), 1.0);
+}
+`;window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.modules.fly = `
+void main() {
+  vec2 flyUV = gl_FragCoord.xy / u_resolution.xy;
+  flyUV.y = 1.0 - flyUV.y;
+
+  float sx=(hash2(vec2(floor(u_time*40.0),1.7))-0.5)*0.020*u_shake;
+  float sy=(hash2(vec2(floor(u_time*40.0),8.3))-0.5)*0.016*u_shake;
+  if (u_shake > 0.7 && hash1(u_time * 20.0) > 0.5) {
+    sx += (hash1(u_time * 12.0) - 0.5) * 0.08;
+    sy += (hash1(u_time * 22.0) - 0.5) * 0.08;
+  }
+
+  vec3 col = texture2D(u_texEnv1, clamp(flyUV + vec2(sx, sy), 0.0, 1.0)).rgb;
+
+  // Vignette (was applyRoomBlend - function no longer exists in core)
+  vec2 vigUV = (gl_FragCoord.xy / u_resolution.xy) * 2.0 - 1.0;
+  float vig = 1.0 - dot(vigUV * vec2(0.5, 0.7), vigUV * vec2(0.5, 0.7));
+  col *= clamp(vig * 1.3, 0.0, 1.0);
+
+  gl_FragColor = vec4(col * (1.0 - u_blink), 1.0);
+}
+`;
+window.GLSL = window.GLSL || {};
+window.GLSL.modules = window.GLSL.modules || {};
+
+GLSL.vert = `attribute vec2 p; void main(){ gl_Position=vec4(p,0,1); }`;
+
+GLSL.sim = `
+precision highp float;
+uniform sampler2D u_prev; uniform sampler2D u_window;
+uniform vec2 u_resolution; uniform float u_time;
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float hash1(float x){ return fract(sin(x*127.1)*43758.5); }
+void main(){
+  vec2 uv = gl_FragCoord.xy / u_resolution;
+  vec4 win = texture2D(u_window, uv);
+  float isGlass = 1.0 - clamp(win.a, 0.0, 1.0);
+  if(isGlass < 0.1){ gl_FragColor = vec4(0.0); return; }
+  vec2 texel = 1.0 / u_resolution;
+  float h = texture2D(u_prev, uv).r;
+  float band = floor(uv.x * 12.0); float depthRd = hash1(band * 9.17);
+  float speedMul = mix(0.55, 1.55, depthRd); float thickMul = mix(0.65, 1.85, depthRd);
+  float cols = 36.0 + depthRd * 56.0; float colId = floor(uv.x * cols);
+  float colRnd = hash1(colId * 3.7 + 1.3); float colRnd2 = hash1(colId * 7.1 + 5.9);
+  float spawnT1 = step(0.935, fract(u_time * (0.12 + colRnd * 0.16) * speedMul + colRnd2 * 13.7));
+  float spawnT2 = step(0.965, fract(u_time * (0.08 + colRnd2 * 0.11) * speedMul + colRnd * 7.3));
+  float spawnRnd = hash(uv * vec2(1.0, 2.2) + vec2(floor(u_time * (1.7 + colRnd * 1.9)), band * 11.0));
+  float newDrop = (spawnT1 + spawnT2) * step(0.62, spawnRnd) * step(0.5, isGlass) * (0.85 + 1.35 * depthRd);
+  float flowIn = texture2D(u_prev, uv - vec2(0.0, texel.y * (2.0 + depthRd * 2.0))).r * (0.22 + 0.38 * depthRd);
+  float breakup = mix(0.985, 0.965, hash(vec2(colId, floor(u_time*1.2 + depthRd*9.0))));
+  float dryPulse = mix(0.00, 0.08, step(0.992, hash(vec2(colId*2.3, floor(u_time*0.8)))));
+  h = clamp(h * (0.92 * breakup) + flowIn + newDrop * (0.045 * thickMul), 0.0, 1.0) * (0.989 - dryPulse*0.25);
+  h = clamp(h - smoothstep(0.18, 0.88, h) * (0.20 + 0.22 * depthRd), 0.0, 1.0) * isGlass;
+  gl_FragColor = vec4(h, 0.0, depthRd, 1.0);
+}
+`;
+
+GLSL.core = `
+precision highp float;
+uniform float u_audio; uniform vec2 u_resolution; uniform float u_time;
+uniform vec2 u_mouse; uniform float u_blink; uniform float u_flash;
+uniform float u_shake; uniform float u_wake; uniform float u_modeSeed;
+uniform int u_mode;
+
+uniform sampler2D u_texB1, u_texB2, u_texB3, u_texB4, u_texB5, u_texB6;
+uniform sampler2D u_water; uniform sampler2D u_texWindow; 
+uniform sampler2D u_texEnv1; uniform sampler2D u_texEnv2;
+
+#define PI 3.14159265359
+float hash2(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+float hash1(float x){ return fract(sin(x*127.1 + 1.9898)*43758.5); }
+float noise1(float t){ float i=floor(t); float f=fract(t); f=f*f*(3.0-2.0*f); return mix(hash1(i),hash1(i+1.0),f); }
+mat2 rot(float a){ float s=sin(a),c=cos(a); return mat2(c,-s,s,c); }
+float sdBox(vec3 p,vec3 b){ vec3 q=abs(p)-b; return length(max(q,0.0))+min(max(q.x,max(q.y,q.z)),0.0); }
+vec3 neonPalette(float t) { return vec3(0.5) + vec3(0.5) * cos(6.28318 * (vec3(1.0) * t + vec3(0.00, 0.33, 0.67))); }
+
+float sdFractal(vec3 p, float power, float rotA, float rotB){
+  vec3 z = p; z.xz *= rot(u_time * rotA); z.yz *= rot(u_time * rotB);
+  float scale = 1.0; vec3 foldOffset = vec3(0.6) + (vec3(0.15) * sin(u_time * 0.15 + power)) + u_audio * 0.2;
+  for(int i=0; i<8; i++){
+    z=abs(z); if(z.x<z.y) z.xy=z.yx; if(z.x<z.z) z.xz=z.zx; if(z.y<z.z) z.yz=z.zy;
+    z=z*2.0-foldOffset; scale*=2.0;
+  }
+  return (length(z) - 0.2) / scale;
+}
+
+vec3 colorPickover(vec3 p) {
+  vec2 c = vec2(p.x * 0.4 + sin(u_time * 0.07) * 0.3, p.y * 0.4 + cos(u_time * 0.05) * 0.3);
+  vec2 z = vec2(0.0); float minDist = 1e10; float escapeI = 0.0;
+  for(int i = 0; i < 80; i++) {
+    z = clamp(vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c, -1000.0, 1000.0);
+    float d = min(abs(z.x), abs(z.y)); if(d < minDist) minDist = d;
+    if(dot(z,z) > 100.0){ escapeI = float(i); break; }
+  }
+  return neonPalette(fract(clamp(minDist * 8.0, 0.0, 1.0) * 2.0 + u_time * 0.15 + escapeI * 0.01)) * (0.4 + 0.6 * (1.0 - clamp(minDist * 8.0, 0.0, 1.0)));
+}
+
+vec3 colorClifford(vec3 p) {
+  float a  =  1.5 + sin(u_time * 0.11) * 0.4; float b  = -1.8 + cos(u_time * 0.07) * 0.3;
+  float c2 = -1.9 + sin(u_time * 0.09) * 0.3; float d  =  0.4 + cos(u_time * 0.13) * 0.4;
+  float x = p.x * 0.5 + p.z * 0.2; float y = p.y * 0.5 + p.z * 0.1;
+  float density = 0.0; float hueAcc = 0.0;
+  for(int i = 0; i < 48; i++){
+    float nx = sin(a * y) + c2 * cos(a * x); float ny = sin(b * x) + d  * cos(b * y);
+    x = nx; y = ny; density += exp(-length(vec2(x, y)) * 0.5); hueAcc  += atan(y, x);
+  }
+  return neonPalette(fract(hueAcc * 0.05 + u_time * 0.12)) * (0.3 + 0.7 * clamp(density * 0.06, 0.0, 1.0));
+}
+
+vec3 fractalAnchor(float id){
+  float x = mix(-1.4,  1.4,  hash1(id * 3.1 + 0.13)); 
+  float y = mix( 0.0,  1.6,  hash1(id * 7.3 + 0.27)); 
+  float z = mix( 0.0,  3.5,  hash1(id * 11.7 + 0.41)); 
+  return vec3(x, y, z);
+}
+float fractalPower(float id){ return mix(6.0, 10.0, hash1(id * 5.3)) + sin(u_time * mix(0.03, 0.08, hash1(id * 2.1))) * 1.5; }
+float fractalRotA(float id){ return mix(0.05, 0.18, hash1(id * 9.7))  * (hash1(id * 4.1) > 0.5 ? 1.0 : -1.0); }
+float fractalRotB(float id){ return mix(0.04, 0.14, hash1(id * 6.3))  * (hash1(id * 8.9) > 0.5 ? 1.0 : -1.0); }
+float fractalScale(float id){ return mix(0.7, 1.2, hash1(id * 13.1)); }
+float fractalFogDensity(float id){ return mix(0.006, 0.03, hash1(id * 17.3)); }
+
+float snow(vec2 uv,float size,float speed,float opacity){
+  vec2 grid=uv*size; vec2 id=floor(grid); vec2 f=fract(grid)-0.5;
+  f.y+=fract(u_time*speed+hash2(id)*15.0)-0.5; f.x+=sin(u_time*0.5+hash2(id)*6.2831)*0.2;
+  return smoothstep(.05,0.0,length(f))*hash2(id)*opacity;
+}
+
+float worldRainLayer(vec2 uv, float t, float scale, float speed, float thickness, float density, float slant){
+  vec2 u = uv; u.x *= u_resolution.x / u_resolution.y; u *= scale; u += vec2(slant, 1.0) * t * speed;
+  vec2 id = floor(u); vec2 f  = fract(u); float n = hash2(id); float on = step(1.0 - density, n);
+  float x = f.x - (0.5 + (n - 0.5) * 0.18); float streak = smoothstep(thickness, 0.0, abs(x));
+  float seg = hash2(id + 19.17); float gate = smoothstep(0.15, 0.95, fract(f.y + seg));
+  return on * streak * gate;
+}
+
+float worldRain(vec2 uv, float t){
+  float r = 0.0;
+  r += worldRainLayer(uv, t, 18.0, 1.8, 0.003, 0.10, 0.06);
+  r += worldRainLayer(uv, t, 28.0, 2.4, 0.002, 0.13, 0.08);
+  r += worldRainLayer(uv, t, 44.0, 3.2, 0.001, 0.16, 0.10);
+  return clamp(r, 0.0, 1.0);
+}
+
+vec2 mapScene(vec3 p, bool renderFractals){
+  vec2 res=vec2(1000.0,-1.0);
+  if (u_mode != 4 && u_mode != 6 && u_mode != 7 && u_mode != 9) {
+      float d1=sdBox(p-vec3(-3.0,0.0,2.0), vec3(1.2,12.0,1.5)); if(d1<res.x) res=vec2(d1,1.0);
+      float d2=sdBox(p-vec3(-4.2,0.0,7.0), vec3(1.2,12.0,1.5)); if(d2<res.x) res=vec2(d2,2.0);
+      float d3=sdBox(p-vec3(-5.4,0.0,12.0),vec3(1.2,12.0,1.5)); if(d3<res.x) res=vec2(d3,3.0);
+      float d4=sdBox(p-vec3( 3.0,0.0,2.5), vec3(1.2,12.0,1.5)); if(d4<res.x) res=vec2(d4,4.0);
+      float d5=sdBox(p-vec3( 4.2,0.0,7.5), vec3(1.2,12.0,1.5)); if(d5<res.x) res=vec2(d5,5.0);
+      float d6=sdBox(p-vec3( 5.4,0.0,12.5),vec3(1.2,12.0,1.5)); if(d6<res.x) res=vec2(d6,6.0);
+  }
+  
+  if(renderFractals){
+    float seed = u_modeSeed; float num = floor(hash1(seed * 31.1) * 3.0) + 1.0; 
+    for(float i=0.0; i<3.0; i++){
+      if(i >= num) break;
+      float id = seed * 7.0 + i; float sc = mix(0.7, 1.2, hash1(id * 13.1)) * 0.7;
+      vec3 a = vec3(mix(-1.4,1.4,hash1(id*3.1+0.13)), mix(0.0,1.6,hash1(id*7.3+0.27)), mix(0.0,3.5,hash1(id*11.7+0.41)));
+      vec3 fp = p - a; float bound = length(fp) - (sc * 1.5); float df = bound;
+      if(bound < 0.2) df = max(bound, sdFractal(fp/sc, mix(6.0,10.0,hash1(id*5.3))+sin(u_time*mix(0.03,0.08,hash1(id*2.1)))*1.5, mix(0.05,0.18,hash1(id*9.7))*(hash1(id*4.1)>0.5?1.0:-1.0), mix(0.04,0.14,hash1(id*6.3))*(hash1(id*8.9)>0.5?1.0:-1.0)) * sc);
+      if(df < res.x) res = vec2(df, 10.0);
+    }
+  }
+  return res;
+}
+
+vec3 sampleBuilding(float id,vec2 texUV){
+  vec2 uv=abs(fract(texUV*0.25)*2.0-1.0);
+  if(id<1.5) return texture2D(u_texB1,uv).rgb; if(id<2.5) return texture2D(u_texB2,uv).rgb;
+  if(id<3.5) return texture2D(u_texB3,uv).rgb; if(id<4.5) return texture2D(u_texB4,uv).rgb;
+  if(id<5.5) return texture2D(u_texB5,uv).rgb; return texture2D(u_texB6,uv).rgb;
+}
+
+vec2 waterNormal(vec2 uv){
+  vec2 texel = 1.0 / u_resolution;
+  float hL = texture2D(u_water, uv - vec2(texel.x, 0.0)).r; float hR = texture2D(u_water, uv + vec2(texel.x, 0.0)).r;
+  float hD = texture2D(u_water, uv - vec2(0.0, texel.y)).r; float hU = texture2D(u_water, uv + vec2(0.0, texel.y)).r;
+  return vec2(hL - hR, hD - hU) * 7.0;
+}
+
+void setupCamera(out vec3 ro, out vec3 rd, out vec3 clean_rd, float intensity) {
+  vec2 uv=(gl_FragCoord.xy-0.5*u_resolution.xy)/u_resolution.y;
+  float gTick = floor(u_time * 16.0); 
+  if (step(0.979, hash1(gTick * 133.77)) > 0.0) uv.x += (hash1(floor(uv.y * mix(10.0, 30.0, hash1(gTick * 2.1))) + gTick) - 0.5) * 0.21; 
+  vec2 m=u_mouse*0.35; ro=vec3(0.0,0.0,-4.5); rd=normalize(vec3(uv,1.4));
+  float groggy = 1.0 - u_wake; ro.y -= groggy * 1.2;
+  rd.yz *= rot(groggy * 0.4); rd.xz *= rot(groggy * -0.3); rd.xy *= rot(groggy * 0.2);
+  rd.yz *= rot(m.y * 0.8); rd.xz *= rot(m.x * 1.0);
+  
+  if (intensity > 0.0) {
+      float sx=(hash2(vec2(floor(u_time*40.0),1.7))-0.5)*0.020*u_shake*intensity;
+      float sy=(hash2(vec2(floor(u_time*40.0),8.3))-0.5)*0.016*u_shake*intensity;
+      if (u_shake > 0.7 && hash1(u_time * 20.0) > 0.5) { sx += (hash1(u_time * 12.0) - 0.5) * 0.08 * intensity; sy += (hash1(u_time * 22.0) - 0.5) * 0.08 * intensity; }
+      rd.xz*=rot(sx); rd.yz*=rot(sy);
+  }
+  clean_rd = rd;
+  if (intensity > 0.0) {
+      float warp = (0.06 + hash1(u_time * 50.0) * u_shake * 0.08 * intensity) / (length(rd.xy) + 0.05) * intensity; 
+      rd.xy *= rot(warp * (1.5 + u_shake * 0.5)); rd.xy -= normalize(rd.xy) * (warp * (0.4 + u_shake * 0.3)); rd = normalize(rd); 
+  }
+}
+`;

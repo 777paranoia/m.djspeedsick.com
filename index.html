@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<<<<<<< Updated upstream
-<meta charset="UTF-8" />
-=======
   <script src="videos.js"></script>
     <script src="gallery.js"></script>
  <meta charset="UTF-8" />
->>>>>>> Stashed changes
 <title>DJSPEEDSICK.COM</title>
 <style>
   html,body{margin:0;padding:0;overflow:hidden;background:#000;touch-action:none;}
@@ -204,7 +200,7 @@ function getNearestSmokes(lat, lng) {
             if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                 const store = results[0];
                 display.innerText = store.name.toUpperCase();
-                linkDiv.innerHTML = `<a href="http://googleusercontent.com/maps.google.com/?q=${store.geometry.location.lat()},${store.geometry.location.lng()}" target="_blank" class="conky-link">>> NAVIGATE</a>`;
+                linkDiv.innerHTML = `<a href="https://maps.google.com/?q=${store.geometry.location.lat()},${store.geometry.location.lng()}" target="_blank" class="conky-link">>> NAVIGATE</a>`;
             } else {
                 display.innerText = "NONE_FOUND";
             }
@@ -265,9 +261,20 @@ let _entered = false;
 
 window.enterSite = function() {
   if (_entered) return;
-
   _entered = true;
+
   document.getElementById("splash-screen").style.display = "none";
+
+  // ---- MOBILE VIDEO PRIMING ----
+  // Must happen synchronously here, while we are still inside the click handler (user gesture).
+  // __primeVideoPool creates every video element we may need and calls .play() on each one.
+  // loadVideo() and _makeMappedVideo() will claim these pre-warmed elements from the pool
+  // instead of creating new ones, sidestepping iOS Safari's autoplay restrictions entirely.
+  window._siteEntered = true;
+  if (window.__primeVideoPool) window.__primeVideoPool();
+  // Belt-and-suspenders: unlock anything already in the registry (e.g. from before enter)
+  if (window.__unlockAllVideos) window.__unlockAllVideos();
+
 
   const timeWaited = Date.now() - splashStartTime;
   const isSecret = timeWaited >= 10000;
@@ -348,6 +355,85 @@ window.enterSite = function() {
 <script src="modes/mode-left.js"></script>
 
 <script src="engine.js"></script>
-<script src="cosmetics.js"></script>
+<script>
+(function(){
+
+  function makeUI(){
+
+    const box = document.createElement("div");
+    box.style.cssText = `
+      position:fixed;
+      top:10px;
+      left:10px;
+      z-index:2147483647;
+      background:rgba(0,0,0,.85);
+      color:#0f0;
+      font:12px monospace;
+      padding:8px;
+      border:1px solid #0f0;
+    `;
+
+    box.innerHTML = `
+      <div>POV: <span id="pov">?</span></div>
+      <div>MODE: <span id="mode">?</span></div>
+
+      <div style="margin-top:6px">
+        <button id="prev">◀</button>
+
+        <select id="sel">
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+          <option>7</option>
+        </select>
+
+        <button id="next">▶</button>
+      </div>
+    `;
+
+    document.body.appendChild(box);
+
+    const modeLabel = box.querySelector("#mode");
+    const povLabel  = box.querySelector("#pov");
+    const sel  = box.querySelector("#sel");
+    const prev = box.querySelector("#prev");
+    const next = box.querySelector("#next");
+
+   function setMode(n){
+
+  n = Math.max(1, Math.min(7, n|0));
+
+  // reset blink/phase safely
+  phase = "open";
+  blink = 0;
+  flash = 0;
+  shake = 0;
+
+  // destroy engine correctly
+  if (currentEngine) currentEngine.destroy();
+
+  lastMode = mode;
+  mode = n;
+  modeSeed++;
+
+  currentEngine = new ActiveMode(mode);
+}
+    sel.onchange = ()=>setMode(+sel.value);
+    prev.onclick = ()=>setMode(window.mode - 1);
+    next.onclick = ()=>setMode(window.mode + 1);
+
+    setInterval(()=>{
+      modeLabel.textContent = window.mode;
+      povLabel.textContent  = window.activePOV;
+      sel.value = String(window.mode);
+    }, 100);
+  }
+
+  // run after ENTER / init
+  window.addEventListener("load", ()=>{
+    setTimeout(makeUI, 800);
+  });
+
+})();
+</script>
 </body>
 </html>
