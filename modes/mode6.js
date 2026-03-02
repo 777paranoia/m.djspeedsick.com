@@ -13,6 +13,8 @@ void main() {
     if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(edgeUV*80.0)*0.012);
     col=mix(col, txW.rgb * 0.5 + vec3(0.2, 0.3, 0.4) * (noise1(u_time * 0.5) * 0.1) * txW.a, txW.a);
   }
-  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+  
+  col = digitalGlitch(col, gl_FragCoord.xy / u_resolution.xy);
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.85*smoothstep(0.0,0.8,u_wake), 1.0);
 }
 `;

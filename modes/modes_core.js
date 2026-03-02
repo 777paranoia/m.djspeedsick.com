@@ -39,6 +39,9 @@ uniform float u_audio; uniform vec2 u_resolution; uniform float u_time;
 uniform vec2 u_mouse; uniform float u_blink; uniform float u_flash;
 uniform float u_shake; uniform float u_wake; uniform float u_modeSeed;
 uniform int u_mode;
+uniform float u_isOOB;
+uniform float u_modeTime;
+uniform float u_trip;
 
 uniform sampler2D u_texB1, u_texB2, u_texB3, u_texB4, u_texB5, u_texB6;
 uniform sampler2D u_water; uniform sampler2D u_texWindow; 
@@ -48,6 +51,25 @@ uniform sampler2D u_texEnv1; uniform sampler2D u_texEnv2;
 float hash2(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
 float hash1(float x){ return fract(sin(x*127.1 + 1.9898)*43758.5); }
 float noise1(float t){ float i=floor(t); float f=fract(t); f=f*f*(3.0-2.0*f); return mix(hash1(i),hash1(i+1.0),f); }
+
+float noise2(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p);
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix(mix(hash2(i + vec2(0.0,0.0)), hash2(i + vec2(1.0,0.0)), u.x),
+               mix(hash2(i + vec2(0.0,1.0)), hash2(i + vec2(1.0,1.0)), u.x), u.y);
+}
+
+float fbm(vec2 p) {
+    float v = 0.0; float a = 0.5;
+    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+    for (int i = 0; i < 4; ++i) {
+        v += a * noise2(p);
+        p = rot * p * 2.0 + vec2(100.0);
+        a *= 0.5;
+    }
+    return v;
+}
+
 mat2 rot(float a){ float s=sin(a),c=cos(a); return mat2(c,-s,s,c); }
 float sdBox(vec3 p,vec3 b){ vec3 q=abs(p)-b; return length(max(q,0.0))+min(max(q.x,max(q.y,q.z)),0.0); }
 vec3 neonPalette(float t) { return vec3(0.5) + vec3(0.5) * cos(6.28318 * (vec3(1.0) * t + vec3(0.00, 0.33, 0.67))); }
@@ -121,7 +143,7 @@ float worldRain(vec2 uv, float t){
 
 vec2 mapScene(vec3 p, bool renderFractals){
   vec2 res=vec2(1000.0,-1.0);
-  if (u_mode != 6 && u_mode != 7 && u_mode != 9) {
+  if (u_mode != 6 && u_mode != 7) {
       float d1=sdBox(p-vec3(-3.0,0.0,2.0), vec3(1.2,12.0,1.5)); if(d1<res.x) res=vec2(d1,1.0);
       float d2=sdBox(p-vec3(-4.2,0.0,7.0), vec3(1.2,12.0,1.5)); if(d2<res.x) res=vec2(d2,2.0);
       float d3=sdBox(p-vec3(-5.4,0.0,12.0),vec3(1.2,12.0,1.5)); if(d3<res.x) res=vec2(d3,3.0);
@@ -129,18 +151,19 @@ vec2 mapScene(vec3 p, bool renderFractals){
       float d5=sdBox(p-vec3( 4.2,0.0,7.5), vec3(1.2,12.0,1.5)); if(d5<res.x) res=vec2(d5,5.0);
       float d6=sdBox(p-vec3( 5.4,0.0,12.5),vec3(1.2,12.0,1.5)); if(d6<res.x) res=vec2(d6,6.0);
   }
-  
   if(renderFractals){
-    float seed = u_modeSeed; float num = floor(hash1(seed * 31.1) * 3.0) + 1.0; 
-    for(float i=0.0; i<3.0; i++){
+    float seed = u_modeSeed; float num = floor(hash1(seed * 31.1) * 1.5) + 1.0; 
+    for(float i=0.0; i<2.0; i++){ 
       if(i >= num) break;
-      float id = seed * 7.0 + i; float sc = mix(0.7, 1.2, hash1(id * 13.1)) * 0.7;
+      float id = seed * 7.0 + i; 
+      float sc = mix(0.3, 0.6, hash1(id * 13.1)) * 0.7; 
       vec3 a = vec3(mix(-1.4,1.4,hash1(id*3.1+0.13)), mix(0.0,1.6,hash1(id*7.3+0.27)), mix(0.0,3.5,hash1(id*11.7+0.41)));
       vec3 fp = p - a; float bound = length(fp) - (sc * 1.5); float df = bound;
+      
       if(bound < 0.2) df = max(bound, sdFractal(fp/sc, mix(6.0,10.0,hash1(id*5.3))+sin(u_time*mix(0.03,0.08,hash1(id*2.1)))*1.5, mix(0.05,0.18,hash1(id*9.7))*(hash1(id*4.1)>0.5?1.0:-1.0), mix(0.04,0.14,hash1(id*6.3))*(hash1(id*8.9)>0.5?1.0:-1.0)) * sc);
       if(df < res.x) res = vec2(df, 10.0);
     }
-  }
+  }  
   return res;
 }
 
@@ -158,11 +181,86 @@ vec2 waterNormal(vec2 uv){
   return vec2(hL - hR, hD - hU) * 7.0;
 }
 
+// PURE DATAMOSH / PIXEL DAMAGE LOGIC
+vec3 digitalGlitch(vec3 col, vec2 uv) {
+  float burstSlot = floor(u_time * 12.0); 
+  float isBurst = step(0.94, hash1(burstSlot * 13.7 + u_modeSeed)); 
+  float flicker = step(0.5, hash1(floor(u_time * 60.0) * 9.1)); 
+  float activeG = isBurst * flicker * clamp(u_trip, 0.0, 1.5);
+  
+  if (activeG < 0.01) return col;
+
+  float rndG = hash1(burstSlot + u_modeSeed);
+  float gridSize = (rndG < 0.33) ? 64.0 : ((rndG < 0.66) ? 128.0 : 256.0);
+  
+  vec2 blockUV = floor(uv * gridSize) / gridSize;
+  float blockRnd = hash2(blockUV + floor(u_time * 30.0)); 
+  
+  vec2 motionVector = (vec2(hash1(blockRnd), hash1(blockRnd * 2.0)) - 0.5) * 0.15;
+  vec2 moshUV = fract(blockUV + motionVector * activeG);
+  
+  vec3 moshCol = texture2D(u_texEnv1, moshUV).rgb;
+  
+  float doMosh = step(0.9, blockRnd) * activeG;
+  col = mix(col, moshCol, doMosh);
+  
+  float doDegrade = step(0.92, hash2(blockUV + 9.3)) * activeG; 
+  vec3 degradedCol = floor(col * 3.0) / 3.0;
+  
+  float tintRnd = hash1(blockRnd * 3.0);
+  vec3 yuvTint = (tintRnd > 0.5) ? vec3(0.9, 0.1, 0.8) : vec3(0.1, 0.8, 0.3);
+  col = mix(col, degradedCol * yuvTint, doDegrade);
+
+  float miniGrid = gridSize * 2.0;
+  vec2 miniBlockUV = floor(uv * miniGrid) / miniGrid;
+  float miniRnd = hash2(miniBlockUV + floor(u_time * 60.0));
+  float doMini = step(0.95, miniRnd) * activeG; 
+  
+  col = mix(col, vec3(col.b, col.r, col.g), doMini); 
+
+  return col;
+}
+
 void setupCamera(out vec3 ro, out vec3 rd, out vec3 clean_rd, float intensity) {
-  vec2 uv=(gl_FragCoord.xy-0.5*u_resolution.xy)/u_resolution.y;
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+  
+  float t = u_time * 0.15;
+  vec2 q = vec2(0.0);
+  q.x = fbm(uv * 2.0 + vec2(0.0, t));
+  q.y = fbm(uv * 2.0 + vec2(t, 0.0));
+
+  vec2 r = vec2(0.0);
+  r.x = fbm(uv * 2.0 + 2.0 * q + vec2(1.7, 9.2) + 0.15 * t);
+  r.y = fbm(uv * 2.0 + 2.0 * q + vec2(8.3, 2.8) + 0.12 * t);
+
+  float liqAmp = mix(0.06, 0.16, u_isOOB) * u_trip;
+  uv += (r - 0.5) * liqAmp; 
+
+  float mt = u_modeTime * u_isOOB;
+  
+  // --- THE LUCID SNAP ---
+  float w1 = sin(mt * 0.4 + u_modeSeed);
+  float w2 = sin(mt * 0.9 + u_modeSeed * 2.0);
+  float w3 = sin(mt * 1.5 + u_modeSeed * 3.0);
+  float surge = smoothstep(0.8, 1.0, (w1 + w2 + w3) / 3.0);
+  float snap = pow(surge, 2.0) * 12.0 * u_isOOB;
+  // ----------------------
+
+  uv *= 1.0 + mt * 0.005 + (snap * 0.02); 
+
   float gTick = floor(u_time * 16.0); 
   if (step(0.979, hash1(gTick * 133.77)) > 0.0) uv.x += (hash1(floor(uv.y * mix(10.0, 30.0, hash1(gTick * 2.1))) + gTick) - 0.5) * 0.21; 
-  vec2 m=u_mouse*0.35; ro=vec3(0.0,0.0,-4.5); rd=normalize(vec3(uv,1.4));
+  
+  vec2 m = u_mouse * 0.35; 
+  ro = vec3(0.0, 0.0, -4.5); 
+  
+  ro.y += mt * 0.03 + snap * 0.15;
+  ro.z -= mt * 0.08 + snap;
+  
+  rd = normalize(vec3(uv, 1.4));
+  
+  rd.xy *= rot((sin(mt * 0.05) * 0.08 + snap * 0.005) * u_isOOB);
+  
   float groggy = 1.0 - u_wake; ro.y -= groggy * 1.2;
   rd.yz *= rot(groggy * 0.4); rd.xz *= rot(groggy * -0.3); rd.xy *= rot(groggy * 0.2);
   rd.yz *= rot(m.y * 0.8); rd.xz *= rot(m.x * 1.0);
@@ -173,7 +271,9 @@ void setupCamera(out vec3 ro, out vec3 rd, out vec3 clean_rd, float intensity) {
       if (u_shake > 0.7 && hash1(u_time * 20.0) > 0.5) { sx += (hash1(u_time * 12.0) - 0.5) * 0.08 * intensity; sy += (hash1(u_time * 22.0) - 0.5) * 0.08 * intensity; }
       rd.xz*=rot(sx); rd.yz*=rot(sy);
   }
+  
   clean_rd = rd;
+  
   if (intensity > 0.0) {
       float warp = (0.06 + hash1(u_time * 50.0) * u_shake * 0.08 * intensity) / (length(rd.xy) + 0.05) * intensity; 
       rd.xy *= rot(warp * (1.5 + u_shake * 0.5)); rd.xy -= normalize(rd.xy) * (warp * (0.4 + u_shake * 0.3)); rd = normalize(rd); 

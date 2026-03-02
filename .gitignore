@@ -8,7 +8,6 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
-gallery.html
 gallerytest.html
 .imagearray
 .audioarray
@@ -22,3 +21,4 @@ gallerytest.html
 ./.ignore/milkdrop-preset-converter.min.js
 ./.ignore/ButterchurnPresets.min.js.zip
 ./.ignore/indextest.html
+.engine.bak

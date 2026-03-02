@@ -32,6 +32,8 @@ void main() {
     if(1.0-clamp(txW.a,0.0,1.0)>0.1) col=mix(col,vec3(0.6,0.7,0.8),hash2(edgeUV*80.0)*0.012);
     col=mix(col, txW.rgb * 0.5 + mix(cGreen, cRed, sin(u_time * 0.6) * 0.5 + 0.5) * (noise1(u_time * 0.5) * 0.05 + smoothstep(0.8, 1.0, sin(u_time * 1.2)) * 0.04) * txW.a * 1.5, txW.a);
   }
-  gl_FragColor=vec4(col*(1.0-u_blink)*0.55*smoothstep(0.0,0.8,u_wake), 1.0);
+  
+  col = digitalGlitch(col, gl_FragCoord.xy / u_resolution.xy);
+  gl_FragColor=vec4(col*(1.0-u_blink)*0.60*smoothstep(0.0,0.8,u_wake), 1.0);
 }
 `;

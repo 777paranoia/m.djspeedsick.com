@@ -8,7 +8,10 @@ void main() {
   vec3 col = texture2D(u_texEnv1, clamp(bhUV, 0.001, 0.999)).rgb;
   
   vec4 cTex = texture2D(u_texEnv2, vec2(fract(bhUV.x), 1.0 - clamp(bhUV.y * 1.0 + 0.05, 0.0, 1.0)));
-  col = mix(col, cTex.rgb, cTex.a); 
+  col = mix(col, cTex.rgb, cTex.a);
+
+  // Flash lives in the world only, applied before window composite
+  col += vec3(0.55,0.78,1.0) * u_flash * 0.35;
   
   float dWin=(-1.5-ro.z)/clean_rd.z;
   if(dWin>0.0){
@@ -27,8 +30,11 @@ void main() {
       col = mix(col, bgCol, clamp((waterH - 0.12) * 7.0, 0.0, 0.65));
       col = mix(col + vec3(0.62,0.78,1.0) * pow(clamp(dot(normalize(wNorm), normalize(vec2(0.25,0.85))), 0.0, 1.0), 7.0) * waterH * 1.6, col * 0.72, clamp(waterH * 2.6, 0.0, 0.38));
     }
-    col=mix(col, txW.rgb * 0.50 + vec3(0.55,0.78,1.0)*u_flash*0.2 + vec3(0.4, 0.1, 0.05) * (noise1(u_time * 0.5) * 0.08) * txW.a, txW.a);
+    // No flash on the window frame — it sits in front of the world
+    col=mix(col, txW.rgb * 0.50, txW.a);
   }
+  
+  col = digitalGlitch(col, gl_FragCoord.xy / u_resolution.xy);
   gl_FragColor=vec4(col*(1.0-u_blink)*smoothstep(0.0,0.8,u_wake), 1.0);
 }
 `;
