@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>collectio operum</title>
+    <style>
+        @font-face {
+            font-family: 'SymbolsNerdFont';
+            src: url('files/font/SymbolsNerdFont-Regular.woff2') format('woff2'),
+                 url('files/font/SymbolsNerdFont-Regular.woff') format('woff');
+            font-display: swap;
+        }
+        :root {
+            --fg: #000;
+            --muted: #666;
+            --item-size: 13px; 
+            --track-gap: 2px;
+        }
+        body {
+            font-family: 'GGX88 Book', sans-serif;
+            margin: 0; padding: 0;
+            height: 100vh; width: 100vw;
+            background-color: white;
+            overflow-x: hidden;
+            overflow-y: scroll;
+        }
+        #bgCanvas {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; opacity: 0;
+            transition: opacity .25s ease; z-index: 0;
+        }
+        #bg-text-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            font-family: 'GGX88 Book', sans-serif; 
+            font-size: 28vw; font-weight: 900;
+            color: black; line-height: 0.8; letter-spacing: -0.04em;
+            text-transform: uppercase; pointer-events: none; 
+            z-index: 1; white-space: nowrap; 
+            overflow: hidden; user-select: none;
+            padding: 10vw; box-sizing: border-box;
+        }
+        .back-to-index {
+            position: fixed; left: 10px; top: 10px;
+            font-family: 'SymbolsNerdFont', sans-serif;
+            font-size: 14px; text-decoration: none; color: black; z-index: 3000;
+        }
+        .page-title {
+            position: fixed; top: 40px; left: 50%;
+            transform: translateX(-50%); z-index: 2500;
+            width: 800px; max-width: 90%; height: auto; 
+            pointer-events: none;
+        }
+        .header-nav {
+            position: fixed; top: 230px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 20px; z-index: 2500; align-items: center;
+        }
+        .header-link {
+            font-family: monospace; font-size: 10px;
+            color: #000; text-decoration: underline;
+            cursor: pointer; text-transform: uppercase;
+        }
+        .help-trigger {
+            font-family: 'SymbolsNerdFont', sans-serif;
+            font-size: 12px; text-decoration: none;
+            cursor: pointer;
+        }
+        .split-container {
+            display: flex; flex-direction: column;
+            width: 100vw; position: relative; z-index: 5;
+        }
+        .audio-section {
+            width: 100vw; height: auto; 
+            position: relative;
+            display: flex; flex-direction: column; align-items: center;
+            padding-bottom: 100px;
+        }
+        .films-section { 
+            width: 100vw; height: 100vh;
+            position: relative;
+            overflow: visible; z-index: 20; 
+        }
+        .list {
+            display: flex; flex-direction: column; align-items: flex-start;
+            z-index: 2; margin-top: 280px;
+            font-family: ui-monospace, Menlo, Monaco, "Courier New", monospace;
+            font-size: 12px; line-height: 1.5; color: var(--fg);
+            white-space: pre; 
+            text-shadow: 0px 0px 5px rgba(255, 255, 255, 0.8), 0px 0px 2px white;
+        }
+        .tree-line { display: flex; align-items: center; }
+        .track {
+            background: none; border: 0; color: var(--fg); cursor: pointer;
+            font: inherit; letter-spacing: 0; text-transform: none;
+            white-space: pre; padding: 0; margin: 0;
+            text-decoration: none;
+        }
+        .track:hover { background-color: #000; color: #fff; }
+        .track.is-playing { background-color: #000; color: #fff; text-decoration: none; }
+        video { position: absolute; object-fit: cover; cursor: grab; z-index: 100; }
+        .dragging { cursor: grabbing; z-index: 1000 !important; }
+        .custom-cursor {
+            position: fixed; pointer-events: none; z-index: 2000; 
+            color: white; font-size: 13px; display: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .tooltip {
+            position: fixed; top: 250px; left: 50%; transform: translateX(-50%);
+            color: black; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 0.1em; display: none; z-index: 3500;
+            pointer-events: none; text-align: center;
+            background: rgba(255,255,255,0.8); padding: 5px; border: 1px solid black;
+        }
+        body.visualizer-active .track { color: #fff; }
+        body.visualizer-active .track:hover { background-color: #fff; color: #000; }
+        body.visualizer-active .track.is-playing { background-color: #fff; color: #000; }
+        body.visualizer-active .list { color: #fff; text-shadow: 2px 2px 2px #000; }
+        body.visualizer-active .back-to-index, 
+        body.visualizer-active .header-link,
+        body.visualizer-active .help-trigger { color: #fff; }
+        body.visualizer-active .tooltip { color: #fff; background: rgba(0,0,0,0.8); border: 1px solid white; }
+        body.visualizer-active .page-title { filter: invert(1); }
+        body.visualizer-active #bgCanvas { opacity: 1; }
+        body.visualizer-active #bg-text-canvas { color: #fff; opacity: 0.1; }
+        #cv-overlay {
+            position: fixed; top: 0; left: 0; 
+            width: 100vw; height: 100vh;
+            background: transparent; 
+            z-index: 5000; display: none;
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start;
+            overflow: hidden; 
+            padding-top: 320px; 
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        #cv-content {
+            color: #00ff00; font-family: ui-monospace, Menlo, Monaco, "Courier New", monospace;
+            white-space: pre; 
+            text-align: left;
+            width: 80ch; 
+            min-width: 80ch; 
+            max-width: 80ch;
+            height: auto;
+            pointer-events: none;
+            transform-origin: top center;
+            text-shadow: 
+                3px 3px 0 #000, -1px -1px 0 #000, 
+                1px -1px 0 #000, -1px 1px 0 #000, 
+                1px 1px 0 #000;
+        }
+        #artGalleryOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 6000; display: none; }
+        #artGalleryContent { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; }
+        .art-block {
+            position: absolute; background-position: center; background-size: contain; background-repeat: no-repeat;
+            transition: transform 3.5s linear, opacity 0.5s ease; outline: 1px solid rgba(255, 255, 255, 0.1);
+            will-change: transform; opacity: 0; 
+            box-shadow: none; 
+        }
+        .moving { opacity: 1; }
+    </style>
+</head>
+<body id="main-body">
+<canvas id="bgCanvas"></canvas>
+<div id="bg-text-canvas"></div>
+<a href="index.html" class="back-to-index"><</a>
+<div id="tip" class="tooltip">
+    Click text to play audio sample / Click again anywhere to stop.<br>
+    Hover over videos to unmute audio / Drag them anywhere you wish.
+</div>
+<img src="files/img/index.png" class="page-title" alt="">
+<div class="header-nav">
+    <div class="header-link" onclick="loadCV(event)">cv</div>
+    <div class="header-link" onclick="openGallery(event)">gallery</div>
+    <div class="help-trigger" id="help-icon">?</div>
+</div>
+
+<audio id="player" preload="metadata" crossorigin="anonymous"></audio>
+
+<div class="split-container">
+    <div class="audio-section">
+        <main class="list"> 
+<div class="tree-line">        ┌──────┬───────────────┐</div>
+<div class="tree-line">        │      │ CLICK TO PLAY │</div>
+<div class="tree-line">        │      └───────────────┘</div>
+<div class="tree-line">┌─┐ ┌───┤</div>
+<div class="tree-line">│A│ │   ├──── <button class="track" data-src="files/aud/TRAP_FRAGMENT.m4a">▶ AUDIO:001::N1:25</button></div>
+<div class="tree-line">│U│ │   ├──── <button class="track" data-src="files/aud/POP_PUNK_CLIP.m4a">▶ AUDIO:002::N1:25</button></div>
+<div class="tree-line">│D│ │   └──── <button class="track" data-src="files/aud/GABBER_CLIP.m4a">▶ AUDIO:003::N1.25</button></div>
+<div class="tree-line">│I│ │</div>
+<div class="tree-line">│O│ ├─────┐</div>
+<div class="tree-line">│ ├─┤     ├── <button class="track" data-src="files/aud/NIKE-3.m4a">▶ AUDIO:001::N2:25</button></div>
+<div class="tree-line">│S│ │     ├── <button class="track" data-src="files/aud/NIKE-2.m4a">▶ AUDIO:002::N2:24</button></div>
+<div class="tree-line">│A│ │     └── <button class="track" data-src="files/aud/NIKE-1x.m4a">▶ AUDIO:003::N2:25</button></div>
+<div class="tree-line">│M│ │</div>
+<div class="tree-line">│P│ ├─────┐</div>
+<div class="tree-line">│L│ │     ├── <button class="track" data-src="files/aud/MARGIELA_V2.0.m4a">▶ AUDIO:001::MM:24</button></div>
+<div class="tree-line">│E│ │     └── <button class="track" data-src="files/aud/MARGIELA_V1.0.m4a">▶ AUDIO:002::MM:24</button></div>
+<div class="tree-line">│S│ │</div>
+<div class="tree-line">└─┘ └──┬──┐</div>
+<div class="tree-line">       │  ├── <button class="track" data-src="files/aud/2025.12.22.23.57.12.m4a">▶ AUDIO:007::XX:26  </button></div>
+<div class="tree-line">       │  └── <button class="track" data-src="files/aud/2025.12.22.13.03.53.m4a">▶ AUDIO:007::XY:24</button></div>
+<div class="tree-line">       │</div>
+<div class="tree-line">       ├──┐</div>
+<div class="tree-line">       │  ├── <button class="track" data-src="files/aud/ACNE_COATEDDENIM_CUT4.m4a">▶ AUDIO:001::AS:24</button></div>
+<div class="tree-line">       │  ├── <button class="track" data-src="files/aud/ACNE_TEASER_CUT1.m4a">▶ AUDIO:002::AS:24</button></div>
+<div class="tree-line">       │  └── <button class="track" data-src="files/aud/ACNE_DARKSSIDE_CUT5V2.m4a">▶ AUDIO:003::AS:24</button></div>
+<div class="tree-line">       │</div>
+<div class="tree-line">       ├──┐</div>
+<div class="tree-line">       │  ├── <button class="track" data-src="files/aud/OP3-v2dubbed.m4a">▶ AUDIO:001::AS:24</button></div>
+<div class="tree-line">       │  └── <button class="track" data-src="files/aud/OP3-v1.m4a">▶ AUDIO:002::AS:24</button></div>
+<div class="tree-line">       │</div>
+<div class="tree-line">       └──┐</div>
+<div class="tree-line">          ├── <button class="track" data-src="files/aud/ACNE_SHERLING_CUT3.m4a">▶ AUDIO:001::AS:24</button></div>
+<div class="tree-line">          └── <button class="track" data-src="files/aud/ACNE_SHERLING_CUT2.m4a">▶ AUDIO:002::AS:24</button></div>
+        </main>
+    </div>
+    <div class="films-section">
+        <video id="video10" autoplay muted loop playsinline><source src="files/mov/nthng.mp4"></video>
+        <video id="video11" autoplay muted loop playsinline><source src="files/mov/tricky.mp4"></video>
+        <video id="video12" autoplay muted loop playsinline><source src="files/mov/mmxgm.mp4"></video>
+        <video id="video1" autoplay muted loop playsinline><source src="files/mov/acne1.mp4"></video>
+        <video id="video13" autoplay muted loop playsinline><source src="files/mov/gstar1.mp4"></video>
+        <video id="video14" autoplay muted loop playsinline><source src="files/mov/gstar2.mp4"></video>
+        <video id="video2" autoplay muted loop playsinline><source src="files/mov/acne2.mp4"></video>
+        <video id="video3" autoplay muted loop playsinline><source src="files/mov/acne3.mp4"></video>
+        <video id="video4" autoplay muted loop playsinline><source src="files/mov/acne4.mp4"></video>
+        <video id="video5" autoplay muted loop playsinline><source src="files/mov/camper1.mp4"></video>
+        <video id="video15" autoplay muted loop playsinline><source src="files/mov/gstar3.mp4"></video>
+        <video id="video16" autoplay muted loop playsinline><source src="files/mov/gstar4.mp4"></video>
+        <video id="video6" autoplay muted loop playsinline><source src="files/mov/camper2.mp4"></video>
+        <video id="video7" autoplay muted loop playsinline><source src="files/mov/camper3.mp4"></video>
+        <video id="video8" autoplay muted loop playsinline><source src="files/mov/marg1.mp4"></video>
+        <video id="video9" autoplay muted loop playsinline><source src="files/mov/marg2.mp4"></video>
+        <video id="videoR1" autoplay muted loop playsinline><source src="files/mov/compreelnu1.mp4"></video>
+        <video id="videoR2" autoplay muted loop playsinline><source src="files/mov/compreelnu2.mp4"></video>
+        <div id="custom-cursor" class="custom-cursor"></div>
+    </div>
+</div>
+<div id="cv-overlay" onclick="this.style.display='none'"><pre id="cv-content"></pre></div>
+<div id="artGalleryOverlay"><div id="artGalleryContent"></div></div>
+<script src="gallery.js"></script>
+<script src="lodash.js"></script>
+<script src="butterchurn.js"></script>
+<script src="butterchurnPresets.min.js"></script>
+<script>
+const TetrisGallery = { isSpawning: false, availableIndices: [], map: [], isLandscape: true, TRAVEL_TIME_MS: 2500 };
+const videoDetails = {
+    video13: "G-Star Raw<br>Jordan Hemingway<br>2025", video14: "G-Star Raw<br>Jordan Hemingway<br>2025",
+    video15: "G-Star Raw<br>Jordan Hemingway<br>2025", video16: "G-Star Raw<br>Jordan Hemingway<br>2025",
+    video10: "Nothing<br>Jordan Hemingway<br>2025", video11: "Acne Studios X Kappa<br>Jordan Hemingway<br>2025",
+    video12: "Maison Margiela x Gentle Monsters<br>Jordan Hemingway<br>2025", video1: "Acne Studios<br>Jordan Hemingway<br>2024",
+    video2: "Acne Studios<br>Jordan Hemingway<br>2024", video3: "Acne Studios<br>Jordan Hemingway<br>2024",
+    video4: "Acne Studios<br>Jordan Hemingway<br>2024", video5: "Camperlab<br>Jordan Hemingway<br>2024",
+    video6: "Camperlab<br>Jordan Hemingway<br>2024", video7: "Camperlab<br>Jordan Hemingway<br>2024",
+    video8: "Maison Margiela<br>Jordan Hemingway<br>2025", video9: "Maison Margiela<br>Jordan Hemingway<br>2025",
+    videoR1: "Compliance<br>Kyle Mangione-Smith<br>2026", videoR2: "Compliance<br>Kyle Mangione-Smith<br>2026"
+};
+
+let audioCtx, visualizer, mediaNode, presets, presetKeys;
+let curD = null; 
+let oX, oY;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.split-container');
+    const originalAudio = document.querySelector('.audio-section');
+    const originalFilms = document.querySelector('.films-section');
+    const helpIcon = document.getElementById('help-icon');
+    const tip = document.getElementById('tip');
+    const bgCanvasText = document.getElementById('bg-text-canvas');
+    const customCursor = document.getElementById('custom-cursor');
+    const player = document.getElementById('player');
+    const canvas = document.getElementById('bgCanvas');
+
+    // CLONE CONTENT FOR LOOP
+    const cloneAudio = originalAudio.cloneNode(true);
+    const cloneFilms = originalFilms.cloneNode(true);
+    container.appendChild(cloneAudio);
+    container.appendChild(cloneFilms);
+
+    // FIX: ROBUST SCROLL INITIALIZATION
+    const initScroll = () => {
+        // Use scrollHeight / 2 to find exact middle (start of clone)
+        // This is safer than offsetHeight which can change if images load late
+        const totalScroll = document.documentElement.scrollHeight;
+        const middlePoint = totalScroll / 2;
+        
+        // Start in the middle so you can scroll UP immediately
+        if (window.scrollY < 100) {
+            window.scrollTo(0, middlePoint);
+        }
+    };
+    
+    // Attempt init immediately and again after a delay to catch layout shifts
+    initScroll();
+    setTimeout(initScroll, 200);
+    window.addEventListener('resize', initScroll);
+
+    helpIcon.onmouseenter = () => { tip.style.display = 'block'; };
+    helpIcon.onmouseleave = () => { tip.style.display = 'none'; };
+
+    // VIDEO SYNC AND DRAG LOGIC
+    function initVideoEvents(videoElement) {
+        function getClones() {
+            return Array.from(document.querySelectorAll(`video[id="${videoElement.id}"]`));
+        }
+
+        videoElement.onmousedown = e => { 
+            curD = videoElement; 
+            const rect = videoElement.getBoundingClientRect();
+            oX = e.clientX - rect.left;
+            oY = e.clientY - rect.top;
+            videoElement.classList.add('dragging'); 
+            e.preventDefault(); 
+        };
+        videoElement.onmouseenter = () => { 
+            if (curD) return; 
+            player.pause(); 
+            const detail = videoDetails[videoElement.id] || ""; 
+            const col = Number(videoElement.dataset.vcol); 
+            bgCanvasText.style.alignItems = col === 0 ? 'flex-start' : (col === 1 ? 'center' : 'flex-end'); 
+            bgCanvasText.style.textAlign = col === 0 ? 'left' : (col === 1 ? 'center' : 'right'); 
+            customCursor.innerHTML = detail; 
+            customCursor.style.display = 'block'; 
+            bgCanvasText.innerHTML = detail; 
+            getClones().forEach(v => {
+                v.muted = (v !== videoElement);
+                v.play();
+            });
+        };
+        videoElement.onmousemove = e => { 
+            if (curD) return; 
+            const col = Number(videoElement.dataset.vcol); 
+            customCursor.style.top = `${e.clientY + 15}px`; 
+            if (col === 0) customCursor.style.left = `${e.clientX + 15}px`; 
+            else if (col === 1) customCursor.style.left = `${e.clientX - (customCursor.offsetWidth / 2)}px`; 
+            else customCursor.style.left = `${e.clientX - customCursor.offsetWidth - 15}px`; 
+        };
+        videoElement.onmouseleave = () => { 
+            if (curD) return; 
+            customCursor.style.display = 'none'; 
+            bgCanvasText.innerHTML = ""; 
+            getClones().forEach(v => {
+                v.muted = true;
+            });
+        };
+    }
+
+    document.querySelectorAll('video').forEach(v => initVideoEvents(v));
+
+    function updateAllGrids() {
+        const sw = document.body.clientWidth;
+        const sh = window.innerHeight;
+        const videoSize = Math.min(sw, sh) / 8.2; 
+        const gap = videoSize * 0.08;
+        const colPattern = [4, 2, 4, 2, 4];
+        const gstarIds = new Set(['video13','video14','video15','video16']);
+        const reelIds = new Set(['videoR1','videoR2']);
+        const gridWidth = colPattern.length * videoSize + (colPattern.length - 1) * gap;
+        const startX = (sw - gridWidth) / 2;
+
+        document.querySelectorAll('.films-section').forEach(section => {
+            const sectionVideos = Array.from(section.querySelectorAll('video'));
+            let index = 0;
+            const gridVideos = sectionVideos.filter(v => !reelIds.has(v.id));
+            
+            colPattern.forEach((rows, colIndex) => {
+                const colX = startX + colIndex * (videoSize + gap); 
+                let colH = 0;
+                for (let i = 0; i < rows && index + i < gridVideos.length; i++) {
+                    const v = gridVideos[index + i]; 
+                    colH += gstarIds.has(v.id) ? (videoSize * 2 + gap) : videoSize;
+                    if (i < rows - 1) colH += gap;
+                }
+                let y = (sh * 0.38) - (colH / 2);
+                for (let row = 0; row < rows && index < gridVideos.length; row++) {
+                    const video = gridVideos[index]; 
+                    const h = gstarIds.has(video.id) ? (videoSize * 2 + gap) : videoSize;
+                    video.style.width = `${videoSize}px`; 
+                    video.style.height = `${h}px`;
+                    video.style.left = `${colX}px`; 
+                    video.style.top = `${y}px`;
+                    video.dataset.vcol = colIndex === 0 ? 0 : (colIndex === colPattern.length - 1 ? 2 : 1);
+                    y += h + gap; 
+                    index++;
+                }
+            });
+            const reelVideos = sectionVideos.filter(v => reelIds.has(v.id));
+            const reelW = (gridWidth / 2) - (gap / 2);
+            let gridB = 0;
+            gridVideos.forEach(v => { const b = parseFloat(v.style.top) + parseFloat(v.style.height); if (b > gridB) gridB = b; });
+            reelVideos.forEach((v, i) => {
+                v.style.width = `${reelW}px`; 
+                v.style.height = `${reelW * 0.5625}px`;
+                v.style.left = `${startX + (i * (reelW + gap))}px`; 
+                v.style.top = `${gridB + gap}px`;
+                v.dataset.vcol = 1;
+            });
+        });
+    }
+    
+    updateAllGrids();
+    window.addEventListener('resize', updateAllGrids);
+
+    function fit() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr; 
+        canvas.height = window.innerHeight * dpr;
+        if (visualizer) visualizer.setRendererSize(canvas.width, canvas.height);
+    }
+    window.addEventListener('resize', fit); fit();
+
+    function initVisuals() {
+        if (visualizer) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            visualizer = butterchurn.createVisualizer(audioCtx, canvas, { width: canvas.width, height: canvas.height, pixelRatio: window.devicePixelRatio || 1, textureRatio: 1 });
+            mediaNode = audioCtx.createMediaElementSource(player); 
+            visualizer.connectAudio(mediaNode); 
+            mediaNode.connect(audioCtx.destination);
+            presets = butterchurnPresets.getPresets(); 
+            presetKeys = Object.keys(presets);
+            visualizer.loadPreset(presets[presetKeys[Math.floor(Math.random() * presetKeys.length)]], 0.0);
+            const loop = () => { visualizer.render(); requestAnimationFrame(loop); }; 
+            loop();
+        } catch (e) {}
+    }
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.track');
+        if (btn) {
+            e.stopPropagation(); 
+            initVisuals();
+            const src = btn.dataset.src;
+            if (player.src.includes(src) && !player.paused) { 
+                player.pause(); 
+            } else { 
+                player.src = src; 
+                player.play(); 
+                document.querySelectorAll('.track').forEach(b => {
+                    if (b.dataset.src === src) b.classList.add('is-playing');
+                    else b.classList.remove('is-playing');
+                });
+                if (visualizer) visualizer.loadPreset(presets[presetKeys[Math.floor(Math.random() * presetKeys.length)]], 0.0); 
+            }
+        } else if (!e.target.closest('.header-link')) {
+            player.pause();
+        }
+    });
+
+    player.onpause = () => { 
+        canvas.style.opacity = '0'; 
+        document.body.classList.remove('visualizer-active'); 
+        document.querySelectorAll('.track').forEach(b => b.classList.remove('is-playing')); 
+    };
+    player.onplay = () => { 
+        initVisuals(); 
+        canvas.style.opacity = '1'; 
+        document.body.classList.add('visualizer-active'); 
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
+    };
+
+    document.addEventListener('mousemove', e => { 
+        if (curD) { 
+            const parent = curD.closest('.films-section');
+            const rect = parent.getBoundingClientRect();
+            const id = curD.id;
+            const clones = document.querySelectorAll(`video[id="${id}"]`);
+            const x = e.clientX - oX - rect.left;
+            const y = e.clientY - oY - rect.top;
+            clones.forEach(clone => {
+                clone.style.left = `${x}px`;
+                clone.style.top = `${y}px`;
+            });
+            bgCanvasText.innerHTML = ""; 
+        } 
+    });
+    document.addEventListener('mouseup', () => { if (curD) { curD.classList.remove('dragging'); curD = null; } });
+
+    // FIX: INFINITE SCROLL LOGIC
+    window.addEventListener('scroll', () => {
+        const totalHeight = document.documentElement.scrollHeight;
+        const halfHeight = totalHeight / 2;
+        
+        // Loop Down (Past Bottom) -> Jump to Middle
+        if (window.scrollY >= totalHeight - window.innerHeight - 50) {
+            window.scrollTo(0, window.scrollY - halfHeight);
+        } 
+        // Loop Up (Past Top) -> Jump to Middle
+        else if (window.scrollY <= 0) {
+            window.scrollTo(0, window.scrollY + halfHeight);
+        }
+    });
+});
+
+async function loadCV(e) { 
+    e.stopPropagation(); 
+    const o = document.getElementById('cv-overlay'); 
+    const c = document.getElementById('cv-content'); 
+    try { 
+        const r = await fetch('files/nfo/cv.nfo?t=' + Date.now()); 
+        if (!r.ok) throw new Error(); 
+        const t = await r.text(); 
+        const cleanText = t.trim(); 
+        c.textContent = cleanText; 
+        c.style.fontSize = '12px';
+        c.style.lineHeight = '1';
+        c.style.transform = 'none';
+        o.style.display = 'flex'; 
+        const lines = cleanText.split(/\r\n|\r|\n/).length;
+        const safeZoneHeight = window.innerHeight - 320; 
+        const newSize = safeZoneHeight / lines; 
+        c.style.fontSize = `${newSize}px`;
+        c.style.lineHeight = `${newSize}px`;
+        const contentWidth = c.offsetWidth;
+        const viewportWidth = window.innerWidth;
+        if (contentWidth > viewportWidth) {
+            const scale = viewportWidth / contentWidth;
+            c.style.transform = `scale(${scale})`;
+        }
+    } catch (err) { 
+        c.textContent = ">>> ERROR: CV_NOT_FOUND"; 
+        o.style.display = 'flex'; 
+    } 
+}
+
+function openGallery(e) { e.stopPropagation(); const overlay = document.getElementById('artGalleryOverlay'); const container = document.getElementById('artGalleryContent'); overlay.style.display = 'block'; overlay.style.backgroundColor = 'transparent'; container.innerHTML = ''; TetrisGallery.isSpawning = true; TetrisGallery.isLandscape = window.innerWidth >= window.innerHeight; TetrisGallery.map = TetrisGallery.isLandscape ? new Array(window.innerHeight).fill(window.innerWidth) : new Array(window.innerWidth).fill(window.innerHeight); TetrisGallery.availableIndices = [...Array(galleryImages.length).keys()]; spawnSequence(); const closeHandler = () => { overlay.style.display = 'none'; TetrisGallery.isSpawning = false; container.innerHTML = ''; window.removeEventListener('click', closeHandler); }; setTimeout(() => { window.addEventListener('click', closeHandler); }, 50); }
+
+// FIX: UPDATED TETRIS SIZING (19-21% Width, 40% Max Height)
+async function spawnSequence() {
+    if (!TetrisGallery.isSpawning) return; const STAGE = document.getElementById('artGalleryContent'); const screenWidth = window.innerWidth; const screenHeight = window.innerHeight;
+    if (TetrisGallery.availableIndices.length === 0) { TetrisGallery.availableIndices = [...Array(galleryImages.length).keys()]; }
+    const randomIndex = Math.floor(Math.random() * TetrisGallery.availableIndices.length); const imageIndex = TetrisGallery.availableIndices.splice(randomIndex, 1)[0]; const url = galleryImages[imageIndex];
+    const img = new Image(); img.src = url; await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
+    if (!img.complete || img.naturalWidth === 0) { spawnSequence(); return; }
+    
+    const ratio = img.naturalHeight / img.naturalWidth; 
+    
+    // TIGHT SIZE CONTROL: 19% to 21%
+    const baseWidth = screenWidth * (Math.random() * 0.02 + 0.19); 
+    let width = baseWidth; let height = width * ratio;
+    
+    // MAX HEIGHT CAP: 40%
+    const maxHeight = screenHeight * 0.40;
+    if (height > maxHeight) { height = maxHeight; width = height / ratio; }
+    
+    let bestImpactX = -Infinity; let bestX, bestY; const buffer = 15;
+    for (let i = 0; i < 400; i++) {
+        if (TetrisGallery.isLandscape) {
+            const testY = Math.floor(Math.random() * (screenHeight - height - buffer)); let currentLimit = screenWidth;
+            for (let j = testY; j < testY + Math.floor(height); j++) { if (TetrisGallery.map[j] < currentLimit) currentLimit = TetrisGallery.map[j]; }
+            if (currentLimit > bestImpactX) { bestImpactX = currentLimit; bestY = testY; }
+        } else {
+            const testX = Math.floor(Math.random() * (screenWidth - width - buffer)); let currentLimit = screenHeight;
+            for (let j = testX; j < testX + Math.floor(width); j++) { if (TetrisGallery.map[j] < currentLimit) currentLimit = TetrisGallery.map[j]; }
+            if (currentLimit > bestImpactX) { bestImpactX = currentLimit; bestX = testX; }
+        }
+    }
+    const finalX = TetrisGallery.isLandscape ? (bestImpactX - width - buffer) : bestX; const finalY = TetrisGallery.isLandscape ? bestY : (bestImpactX - height - buffer);
+    if (bestImpactX < (TetrisGallery.isLandscape ? width : height) + 40) { STAGE.innerHTML = ''; TetrisGallery.map = TetrisGallery.isLandscape ? new Array(screenHeight).fill(screenWidth) : new Array(screenWidth).fill(screenHeight); spawnSequence(); return; }
+    const block = document.createElement('div'); block.className = 'art-block'; block.style.width = `${width}px`; block.style.height = `${height}px`;
+    const startX = TetrisGallery.isLandscape ? -width - 200 : finalX; const startY = TetrisGallery.isLandscape ? finalY : -height - 200;
+    block.style.left = `${startX}px`; block.style.top = `${startY}px`; block.style.backgroundImage = `url('${url}')`; STAGE.appendChild(block);
+    void block.offsetWidth; block.classList.add('moving'); const moveX = TetrisGallery.isLandscape ? (finalX - startX) : 0; const moveY = TetrisGallery.isLandscape ? 0 : (finalY - startY);
+    block.style.transform = `translate(${moveX}px, ${moveY}px)`;
+    if (TetrisGallery.isLandscape) { for (let k = bestY; k < bestY + Math.floor(height); k++) { if (TetrisGallery.map[k] > finalX) TetrisGallery.map[k] = finalX; } } 
+    else { for (let k = bestX; k < bestX + Math.floor(width); k++) { if (TetrisGallery.map[k] > finalY) TetrisGallery.map[k] = finalY; } }
+    await new Promise(r => setTimeout(r, TetrisGallery.TRAVEL_TIME_MS + 100)); spawnSequence();
+}
+</script>
+</body>
+</html>

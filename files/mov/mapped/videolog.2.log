@@ -1,0 +1,131 @@
+======== /Users/studio/djspeedsick/files/mov/earth.webm
+ExifTool Version Number         : 13.44
+File Name                       : earth.webm
+Directory                       : /Users/studio/djspeedsick/files/mov
+File Size                       : 27 MB
+File Modification Date/Time     : 2026:02:25 10:16:22-06:00
+File Access Date/Time           : 2026:03:03 07:23:47-06:00
+File Inode Change Date/Time     : 2026:03:02 18:36:03-06:00
+File Permissions                : -rw-r--r--
+File Type                       : WEBM
+File Type Extension             : webm
+MIME Type                       : video/webm
+EBML Version                    : 1
+EBML Read Version               : 1
+Doc Type                        : webm
+Doc Type Version                : 4
+Doc Type Read Version           : 2
+Timecode Scale                  : 1 ms
+Muxing App                      : Lavf62.4.100
+Writing App                     : Lavf62.4.100
+Date/Time Original              : 2026:02:25 16:16:09.42760705947876Z
+Duration                        : 0:00:34
+Track Default                   : No
+Video Frame Rate                : 120
+Image Width                     : 1236
+Image Height                    : 740
+Video Scan Type                 : Progressive
+Track Number                    : 2
+Track UID                       : 74d7b9d818e98833
+Track Language                  : und
+Codec ID                        : A_OPUS
+Track Type                      : Audio
+Audio Channels                  : 2
+Audio Sample Rate               : 48000
+Audio Bits Per Sample           : 32
+Comapplequicktimeauthor         : ReplayKitRecording
+Major Brand                     : qt
+Minor Version                   : 0
+Compatible Brands               : qt
+Comapplequicktimefullframerateplaybackintent: 1
+Encoder                         : Lavf62.4.100
+Tag Track UID                   : 74d7b9d818e98833
+Handler Name                    : Core Media Audio
+Vendor Id                       : [0][0][0][0]
+Image Size                      : 1236x740
+Megapixels                      : 0.915
+======== /Users/studio/djspeedsick/files/mov/fly.webm
+ExifTool Version Number         : 13.44
+File Name                       : fly.webm
+Directory                       : /Users/studio/djspeedsick/files/mov
+File Size                       : 11 MB
+File Modification Date/Time     : 2026:02:25 10:16:03-06:00
+File Access Date/Time           : 2026:03:07 03:35:42-06:00
+File Inode Change Date/Time     : 2026:03:02 18:36:03-06:00
+File Permissions                : -rw-r--r--
+File Type                       : WEBM
+File Type Extension             : webm
+MIME Type                       : video/webm
+EBML Version                    : 1
+EBML Read Version               : 1
+Doc Type                        : webm
+Doc Type Version                : 4
+Doc Type Read Version           : 2
+Timecode Scale                  : 1 ms
+Muxing App                      : Lavf62.4.100
+Writing App                     : Lavf62.4.100
+Date/Time Original              : 2026:02:25 16:15:43.403059959411621Z
+Duration                        : 19.75 s
+Track Default                   : No
+Video Frame Rate                : 37.117
+Image Width                     : 1720
+Image Height                    : 1092
+Video Scan Type                 : Progressive
+Track Number                    : 2
+Track UID                       : 391a6e41cc581f14
+Track Language                  : und
+Codec ID                        : A_OPUS
+Track Type                      : Audio
+Audio Channels                  : 2
+Audio Sample Rate               : 48000
+Audio Bits Per Sample           : 32
+Comapplequicktimeauthor         : ReplayKitRecording
+Major Brand                     : qt
+Minor Version                   : 0
+Compatible Brands               : qt
+Comapplequicktimefullframerateplaybackintent: 1
+Encoder                         : Lavf62.4.100
+Tag Track UID                   : 391a6e41cc581f14
+Handler Name                    : Core Media Audio
+Vendor Id                       : [0][0][0][0]
+Image Size                      : 1720x1092
+Megapixels                      : 1.9
+======== /Users/studio/djspeedsick/files/mov/bh2.webm
+ExifTool Version Number         : 13.44
+File Name                       : bh2.webm
+Directory                       : /Users/studio/djspeedsick/files/mov
+File Size                       : 99 kB
+File Modification Date/Time     : 2026:02:23 04:29:05-06:00
+File Access Date/Time           : 2026:03:07 03:35:43-06:00
+File Inode Change Date/Time     : 2026:03:02 18:36:02-06:00
+File Permissions                : -rw-r--r--
+File Type                       : WEBM
+File Type Extension             : webm
+MIME Type                       : video/webm
+EBML Version                    : 1
+EBML Read Version               : 1
+Doc Type                        : webm
+Doc Type Version                : 4
+Doc Type Read Version           : 2
+Timecode Scale                  : 1 ms
+Muxing App                      : Lavf62.3.100
+Writing App                     : Lavf62.3.100
+Duration                        : 6.12 s
+Video Frame Rate                : 18
+Image Width                     : 642
+Image Height                    : 694
+Video Scan Type                 : Progressive
+Track Number                    : 2
+Track UID                       : e9be98c7ed0dfae9
+Track Language                  : und
+Track Default                   : No
+Codec ID                        : A_OPUS
+Track Type                      : Audio
+Audio Channels                  : 2
+Audio Sample Rate               : 48000
+Audio Bits Per Sample           : 32
+Encoder                         : Lavf62.3.100
+Tag Track UID                   : e9be98c7ed0dfae9
+Image Size                      : 642x694
+Megapixels                      : 0.446
+    3 image files read

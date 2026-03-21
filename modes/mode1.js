@@ -1,3 +1,6 @@
+
+
+
 window.GLSL = window.GLSL || {};
 window.GLSL.modules = window.GLSL.modules || {};
 
@@ -17,6 +20,13 @@ void main() {
     vec3 n=normalize(vec3(mapScene(p+vec3(0.01,0,0),false).x-mapScene(p-vec3(0.01,0,0),false).x, mapScene(p+vec3(0,0.01,0),false).x-mapScene(p-vec3(0,0.01,0),false).x, mapScene(p+vec3(0,0,0.01),false).x-mapScene(p-vec3(0,0,0.01),false).x));
     vec3 bTex = sampleBuilding(hit.y, (abs(n.x)>abs(n.y))?p.zy:p.xy); bTex += bTex * smoothstep(0.5, 0.9, max(bTex.r, max(bTex.g, bTex.b))) * 2.5;
     col=mix(bTex*0.25, skyTone, 1.0-exp(-0.015*t*t)) + mix(cGreen, cRed, sin(p.x * 0.4) * 0.5 + 0.5) * (noise1(u_time * 0.3 + p.x * 0.1) * 0.4 + 0.6 + smoothstep(0.8, 1.0, sin(p.z * 0.8 + u_time * 2.0)) * 0.2) * smoothstep(2.0, -20.0, p.y) * 0.4 * exp(-0.005 * t * t);
+    vec2 texUV = (abs(n.x)>abs(n.y))?p.zy:p.xy;
+    vec2 wg = floor(texUV * vec2(5.0, 10.0));
+    float won    = step(0.82, hash2(wg + hit.y * 17.0));
+    float wflick = step(0.96, hash1(hash2(wg) + floor(u_time * 1.5)));
+    float wpx    = smoothstep(0.005, 0.0, abs(fract(texUV.x*5.0)-0.5)-0.15)
+                 * smoothstep(0.005, 0.0, abs(fract(texUV.y*10.0)-0.5)-0.10);
+    col += vec3(1.0, 0.75, 0.35) * won * (1.0-wflick) * wpx * 1.2;
   } else col=texture2D(u_texEnv1,fract(rd.xy*0.5+0.5+vec2(u_time*0.002,0.0))).rgb*0.3+skyTone*0.5;
 
   col += snow(vec2(atan(rd.z,rd.x)*2.0, rd.y*2.0), 15.0, 0.3, 0.3);

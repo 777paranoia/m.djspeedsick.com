@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+    <!DOCTYPE html>
 <html lang="en">
 <head>
   <script src="videos.js"></script>
@@ -6,7 +7,16 @@
   <meta charset="UTF-8" />
   <title>DJSPEEDSICK.COM</title>
 <style>
-  html,body{margin:0;padding:0;overflow:hidden;background:#000;touch-action:none;}
+:root {
+  --ui-base-width: 1440;
+  --ui-base-height: 900;
+
+  --scale-x: calc(100vw / var(--ui-base-width));
+  --scale-y: calc(100vh / var(--ui-base-height));
+
+  --ui-scale: min(var(--scale-x), var(--scale-y));
+}  html,body{margin:0;padding:0;overflow:hidden;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+  canvas{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;}
   canvas#c{position:fixed;inset:0;display:block;width:100vw;height:100vh;cursor:grab;}
   canvas#c:active{cursor:grabbing;}
 
@@ -42,11 +52,30 @@
   #layer-gif { z-index: 1; }
   #layer-png { z-index: 2; }
   
-  #enter-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg); cursor: pointer; z-index: 5; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: transparent; transition: all 0.3s ease; }
+  #enter-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg); cursor: pointer; z-index: 5; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; touch-action: none; transition: all 0.3s ease; }
   #secret-button { position: fixed; top: 25px; left: 25px; width: 35px; height: auto; z-index: 900; cursor: pointer; mix-blend-mode: screen; opacity: 0.7}
 
-  #conky-sidebar { position: fixed; top: 100px; left: 80px; width: 260px; background: transparent; color: #ff00ff; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; padding: 0; border: none; z-index: 700; text-align: left; pointer-events: auto; display: none; text-shadow: 0 0 5px rgba(255, 0, 255, 0.6); }
-  .conky-line { margin: 2px 0; }
+#conky-sidebar {
+  position: fixed;
+
+  top: 8%;
+  left: 4%;
+
+  width: clamp(220px, 18vw, 340px);
+
+  color: #ff00ff;
+  font-family: 'Courier New', monospace;
+
+  font-size: clamp(12px, 1.2vw, 18px);
+
+  background: transparent;
+  z-index: 700;
+  display: none;
+
+  text-shadow: 0 0 5px rgba(255,0,255,0.6);
+}
+
+  .conky-line { margin: 0.15em 0; }
   .conky-link { color: #ff00ff !important; text-decoration: none; text-shadow: 0 0 5px rgba(255, 0, 255, 0.6); }
   .conky-link:hover { opacity: 0.7; }
   .conky-invert { background-color: #ff00ff; color: #000 !important; padding: 0 4px; display: inline-block; font-weight: bold; line-height: 1.1; box-shadow: 0 0 5px rgba(255, 0, 255, 0.6); }
@@ -59,8 +88,7 @@
   #legalNotice { margin-top: 1rem; padding-top: 0.4rem; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.45rem; line-height: 1.2; color: rgba(200,200,200,0.6);opacity: 0.7}
   .responsive-image { max-width: 100%; height: auto; margin-bottom: 15px; opacity: 0.7}
   
-  /* Perimeter RSS Tickers */
-  .ticker-wrap { position: fixed; z-index: 750; overflow: hidden; background: transparent; color: #ff00ff; font-family: 'Courier New', monospace; font-size: 0.75rem; text-shadow: 0 0 5px rgba(255, 0, 255, 0.6); pointer-events: none; display: none; }
+  .ticker-wrap { position: fixed; z-index: 750; overflow: hidden; background: transparent; color: #ff00ff; font-family: 'Courier New', monospace; font-size: 0.95rem; text-shadow: 0 0 5px rgba(255, 0, 255, 0.6); pointer-events: none; display: none; }
   .ticker-wrap.top { top: 0; left: 0; width: 100vw; height: 18px; line-height: 18px; }
   .ticker-wrap.bottom { bottom: 0; left: 0; width: 100vw; height: 18px; line-height: 18px; }
   .ticker-wrap.left { top: 0; left: 0; width: 18px; height: 100vh; writing-mode: vertical-rl; transform: rotate(180deg); }
@@ -73,20 +101,8 @@
 
   @keyframes ticker-h { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
   @keyframes ticker-v { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(0, -50%, 0); } }
-  
-  @keyframes glowPulse {
-    0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.1); }
-    50% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), 0 0 20px rgba(0, 255, 255, 0.2); }
-    100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.1); }
-  }
-
-  .glow-active {
-    animation: glowPulse 1.5s infinite ease-in-out;
-    border-color: rgba(0, 255, 255, 0.6); 
-    border-radius: 50%; 
-  }
 </style>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdCATEbK-IG7f_8SXtqe1IhWSiARQCPHw&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCprDCcZDIqfl92MoMDv_OAJ2bxBSkQ0JA&libraries=places"></script>
 </head>
 <body>
 
@@ -99,7 +115,7 @@
       <img id="layer-gif" src="files/img/aerial.gif" draggable="false">
       <img id="layer-png" src="files/img/aerial.png" draggable="false">
   </div>
-  <img id="enter-button" src="files/img/enter-button.png" onclick="enterSite()">
+  <img id="enter-button" src="files/img/enter-button.gif" onmousedown="enterSite()" ontouchend="enterSite()">
 </div>
 
 <img id="secret-button" src="files/img/buttin.png" onclick="toggleConky()">
@@ -116,14 +132,16 @@
     <div class="separator">-----------------------</div>
     <div class="conky-line">UPCOMING SHOWS</div>
     <div class="separator">-----------------------</div>
-    (n/a)
-    <br><br><br><br>
+    (n/a)<br><br>
+    BOOKING EUROPE <br>
+    SUMMER 2026
+    LATE JUNE - EARLY/MID JULY    <div style="height:0.6em;"></div><div style="height:0.6em;"></div>
     <div class="separator">-----------------------</div>
     <div class="conky-line">CONTACT</div>
     <div class="separator">-----------------------</div>
-    <div class="conky-line"><a href="mailto:boettke@djspeedsick.com" class="conky-link">>> BOOKING</a></div>
-    <div class="conky-line"><a href="mailto:dj@djspeedsick.com" class="conky-link">>> PRESS</a></div>
-    <div class="conky-line"><a href="mailto:777paranoia@gmail.com" class="conky-link">>> COMMISSIONS</a></div>
+    <div class="conky-line"><a href="/cdn-cgi/l/email-protection#e88a878d9c9c838da88c829b988d8d8c9b818b83c68b8785" class="conky-link">>> BOOKING</a></div>
+    <div class="conky-line"><a href="/cdn-cgi/l/email-protection#0d69674d69677e7d6868697e646e66236e6260" class="conky-link">>> PRESS</a></div>
+    <div class="conky-line"><a href="/cdn-cgi/l/email-protection#6b5c5c5c1b0a190a0504020a2b0c060a020745080406" class="conky-link">>> COMMISSIONS</a></div>
     <div class="separator">-----------------------</div><BR>
     <div class="separator">-----------------------</div>
     <div class="conky-line"><a href="http://escalation.ist" class="conky-link">>> ESCALATIONIST</a></div>
@@ -151,7 +169,25 @@
     <div class="separator">------------------------</div>
 </div>
 
-<div class="ticker-wrap top" id="wrap-top"><div class="ticker" id="rss-top"></div></div>
+#hollywood-box {
+  position: fixed;
+
+  bottom: calc(100 * var(--ui-scale));
+  right: calc(80 * var(--ui-scale));
+
+  width: calc(520 * var(--ui-scale));
+  height: calc(320 * var(--ui-scale));
+
+  z-index: 700;
+  display: none;
+
+  background: transparent;
+
+  border: 1px solid rgba(255,0,255,0.35);
+  box-shadow: 0 0 calc(12 * var(--ui-scale)) rgba(255,0,255,0.25);
+
+  pointer-events: none;
+}<div class="ticker-wrap top" id="wrap-top"><div class="ticker" id="rss-top"></div></div>
 <div class="ticker-wrap bottom" id="wrap-bottom"><div class="ticker" id="rss-bottom"></div></div>
 <div class="ticker-wrap left" id="wrap-left"><div class="ticker" id="rss-left"></div></div>
 <div class="ticker-wrap right" id="wrap-right"><div class="ticker" id="rss-right"></div></div>
@@ -161,9 +197,9 @@
     <img src="files/img/me.jpg" alt="" class="responsive-image">
     <p id="aboutText">
       <span style="font-size: 2rem;">DJ Speedsick</span><br>
-      <span style="font-size: 1rem; font-style: italic;">a.k.a. "**** *********"</span><br><br>
+      <span style="font-size: 1rem; font-style: italic;">a.k.a. "A*** E********"</span><div style="height:0.6em;"></div>
       <span style="font-size: 0.75rem;">b. 1992</span><br>
-      <span style="font-size: 0.75rem;">d. ????</span><br><br>
+      <span style="font-size: 0.75rem;">d. ????</span><div style="height:0.6em;"></div>
       <span style="font-size: 0.65rem;">current location: Chicago, IL</span>
     </p>
 
@@ -180,7 +216,7 @@
 
 <audio id="audioPlayer"></audio>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const IPINFO_TOKEN = '4b45867ce7c229';
 const RSS_SOURCES = [
     "https://thegrayzone.com/feed/",
@@ -230,15 +266,31 @@ function updateIntelligence() {
 function toggleConky() {
     const sidebar = document.getElementById('conky-sidebar');
     const tickers = document.querySelectorAll('.ticker-wrap');
+    const hw = document.getElementById('hollywood-box');
     
     if (sidebar.style.display === 'none' || sidebar.style.display === '') {
         sidebar.style.display = 'block';
         tickers.forEach(t => t.style.display = 'block');
+        if (hw) hw.style.display = 'block';
+
         updateSystemParams(); 
         updateIntelligence();
+
+        if (!window.__hollywoodInit) {
+            window.__hollywoodInit = true;
+            setTimeout(initHollywood, 50);
+        }
+
+        // Brain monitor — init on first open, restart on re-open
+        setTimeout(function() {
+            if (typeof initBrainMonitor === 'function') initBrainMonitor();
+        }, 100);
+
     } else {
         sidebar.style.display = 'none';
         tickers.forEach(t => t.style.display = 'none');
+        if (hw) hw.style.display = 'none';
+        if (typeof stopBrainMonitor === 'function') stopBrainMonitor();
     }
 }
 
@@ -251,6 +303,7 @@ function toggleAbout() {
     };
     setTimeout(() => { window.addEventListener('click', closeHandler); }, 50);
 }
+
 
 async function updateSystemParams() {
     const hostEl = document.getElementById('host-val');
@@ -275,54 +328,102 @@ async function updateSystemParams() {
 function getNearestSmokes(lat, lng) {
     const display = document.getElementById('cig-display');
     const linkDiv = document.getElementById('cig-link');
-    if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
-    try {
-        let dummyDiv = document.getElementById('maps-dummy');
-        if (!dummyDiv) {
-            dummyDiv = document.createElement('div');
-            dummyDiv.id = 'maps-dummy';
-            dummyDiv.style.display = 'none';
-            document.body.appendChild(dummyDiv);
-        }
-
-        const service = new google.maps.places.PlacesService(dummyDiv);
-        const request = {
-            location: new google.maps.LatLng(lat, lng),
-            radius: 5000,
-            keyword: 'cigarettes tobacco convenience'
-        };
-        const failSafe = setTimeout(() => {
-            if (display.innerText === "SCANNING...") display.innerText = "NETWORK_BLOCKED";
-        }, 8000);
+    
+    // Try Google Places first, fall back to Overpass (OpenStreetMap)
+    let resolved = false;
+    
+    function showResult(name, rlat, rlng) {
+        if (resolved) return;
+        resolved = true;
+        if (display) display.innerText = name.toUpperCase();
+        if (linkDiv) linkDiv.innerHTML = '<a href="https://www.google.com/maps/dir/?api=1&destination=' + rlat + ',' + rlng + '" target="_blank" class="conky-link">>> NAVIGATE</a>';
+    }
+    
+    function tryOverpass() {
+        if (resolved) return;
+        // Overpass API — query convenience stores and tobacco shops within 3km
+        var query = '[out:json][timeout:10];('
+            + 'node["shop"="tobacco"](around:3000,' + lat + ',' + lng + ');'
+            + 'node["shop"="convenience"](around:3000,' + lat + ',' + lng + ');'
+            + 'node["vending"="cigarettes"](around:3000,' + lat + ',' + lng + ');'
+            + ');out body 5;';
         
-        service.nearbySearch(request, (results, status) => {
-            clearTimeout(failSafe);
-            if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                const store = results[0];
-                display.innerText = store.name.toUpperCase();
-                linkDiv.innerHTML = `<a href="http://googleusercontent.com/maps.google.com/7{store.geometry.location.lat()},${store.geometry.location.lng()}" target="_blank" class="conky-link">>> NAVIGATE</a>`;
-            } else {
-                display.innerText = "NONE_FOUND";
+        fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (resolved) return;
+                var elements = data.elements || [];
+                if (elements.length > 0) {
+                    // Sort by distance
+                    elements.sort(function(a, b) {
+                        var da = (a.lat - lat) * (a.lat - lat) + (a.lon - lng) * (a.lon - lng);
+                        var db = (b.lat - lat) * (b.lat - lat) + (b.lon - lng) * (b.lon - lng);
+                        return da - db;
+                    });
+                    var best = elements[0];
+                    var name = (best.tags && (best.tags.name || best.tags['brand'])) || 'CONVENIENCE STORE';
+                    showResult(name, best.lat, best.lon);
+                } else {
+                    if (!resolved && display) display.innerText = 'NONE_IN_RANGE';
+                }
+            })
+            .catch(function() {
+                if (!resolved && display) display.innerText = 'SCAN_FAILED';
+            });
+    }
+    
+    // Try Google Places if available
+    if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        try {
+            var dummyDiv = document.getElementById('maps-dummy');
+            if (!dummyDiv) {
+                dummyDiv = document.createElement('div');
+                dummyDiv.id = 'maps-dummy';
+                dummyDiv.style.display = 'none';
+                document.body.appendChild(dummyDiv);
             }
-        });
-    } catch (e) {
-        if (display) display.innerText = "SCAN_ERROR";
+            var service = new google.maps.places.PlacesService(dummyDiv);
+            var request = {
+                location: new google.maps.LatLng(lat, lng),
+                radius: 5000,
+                keyword: 'cigarettes tobacco convenience'
+            };
+            // If Google doesn't respond in 6s, fall back
+            var googleTimeout = setTimeout(function() { tryOverpass(); }, 6000);
+            
+            service.nearbySearch(request, function(results, status) {
+                clearTimeout(googleTimeout);
+                if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                    var store = results[0];
+                    showResult(store.name, store.geometry.location.lat(), store.geometry.location.lng());
+                } else {
+                    tryOverpass();
+                }
+            });
+        } catch (e) {
+            tryOverpass();
+        }
+    } else {
+        // Google not loaded at all — go straight to Overpass
+        tryOverpass();
     }
 }
+function sizeHollywoodBox() {
+    const conky = document.getElementById('conky-sidebar');
+    const hw = document.getElementById('hollywood-box');
 
-window.splashStartTime = Date.now(); 
+    if (!conky || !hw) return;
+
+    const rect = conky.getBoundingClientRect();
+
+    // scale relative to conky
+    hw.style.width = (rect.width * 1.8) + "px";
+    hw.style.height = (rect.height * 0.6) + "px";
+}
 
 window.addEventListener('load', () => {
   const loader = document.getElementById("loading-screen");
   if (loader) loader.style.display = "none";
-  window.splashStartTime = Date.now(); 
-
-  setTimeout(() => {
-    const enterBtn = document.getElementById('enter-button');
-    if (enterBtn && !_entered) {
-      enterBtn.classList.add('glow-active');
-    }
-  }, 10000);
 });
 
 const bgContainer = document.getElementById('background-container');
@@ -330,7 +431,7 @@ const splashScreen = document.getElementById('splash-screen');
 let sDrag = false, sStartX = 0, sStartY = 0, sPanX = 0, sPanY = 0;
 
 const startSplashDrag = (e) => {
-    if(e.target.id === 'enter-button') return;
+    if(e.target.id === 'enter-button' || e.target.closest('#enter-button')) return;
     if (e.cancelable) e.preventDefault(); 
     sDrag = true;
     let clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -359,20 +460,15 @@ const endSplashDrag = () => { sDrag = false; };
 splashScreen.addEventListener('mousedown', startSplashDrag);
 window.addEventListener('mousemove', doSplashDrag);
 window.addEventListener('mouseup', endSplashDrag);
-
 splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false});
 window.addEventListener('touchmove', doSplashDrag, {passive: false});
 window.addEventListener('touchend', endSplashDrag);
 
-let __dHeld=false;
-let __debugAllowed=false;
+var __dHeld = false;
+var __debugAllowed = false;
 
-window.addEventListener("keydown",e=>{
-  if(e.key==="d"||e.key==="D") __dHeld=true;
-});
-window.addEventListener("keyup",e=>{
-  if(e.key==="d"||e.key==="D") __dHeld=false;
-});
+window.addEventListener("keydown", e => { if (e.key === "d" || e.key === "D") __dHeld = true; });
+window.addEventListener("keyup", e => { if (e.key === "d" || e.key === "D") __dHeld = false; });
 
 let _entered = false;
 
@@ -380,106 +476,158 @@ window.enterSite = function() {
   if (_entered) return;
   _entered = true;
 
-  if(__dHeld) {
-      __debugAllowed=true;
+  if (__dHeld) {
+      __debugAllowed = true;
       if (typeof window.makeUI === 'function') window.makeUI(); 
   }
 
   document.getElementById("splash-screen").style.display = "none";
+  const bgc = document.getElementById("background-container"); if(bgc) bgc.style.display = "none";
 
   window._siteEntered = true;
-  if (window.__primeVideoPool) window.__primeVideoPool();
-  if (window.__unlockAllVideos) window.__unlockAllVideos();
-
-  const timeWaited = Date.now() - window.splashStartTime;
-  const isSecret = timeWaited >= 10000;
+  
+  try {
+      if (window.__primeVideoPool) window.__primeVideoPool();
+      if (window.__unlockAllVideos) window.__unlockAllVideos();
+  } catch(e) { console.error("Video pool error:", e); }
 
   const audio = document.getElementById("audioPlayer");
   const tracks = window.audioTracks || (typeof audioTracks !== 'undefined' ? audioTracks : []);
   
-  if (audio && tracks.length > 0) {
-    if (!window.__audioSetupDone) {
-        window.__audioSetupDone = true;
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioCtx.createMediaElementSource(audio);
-        const filter = audioCtx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 520;
-        const dryGain = audioCtx.createGain(); dryGain.gain.value = 0.3;
-        const wetGain = audioCtx.createGain(); wetGain.gain.value = 0.7;
+ try {
+      if (audio && tracks.length > 0) {
+        if (!window.__audioSetupDone) {
+            window.__audioSetupDone = true;
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(audio);
+            
+            const filter = audioCtx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 520;
+            window.__audioFilter = filter; 
 
-        const reverb = audioCtx.createConvolver();
-        const rate = audioCtx.sampleRate;
-        const len = rate * 2.0;
-        const buffer = audioCtx.createBuffer(2, len, rate);
-        for (let channel = 0; channel < 2; channel++) {
-          let data = buffer.getChannelData(channel);
-          for (let i = 0; i < len; i++) {
-            data[i] = ((Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * Math.sin(i * 0.005));
-          }
+            const merger = audioCtx.createChannelMerger(2);
+            const rightDelay = audioCtx.createDelay();
+            rightDelay.delayTime.value = 0.0;
+            window.__audioRightDelay = rightDelay;
+
+            const dryGain = audioCtx.createGain(); dryGain.gain.value = 0.3;
+            window.__audioDryGain = dryGain;
+            
+            const wetGain = audioCtx.createGain(); wetGain.gain.value = 0.7;
+            window.__audioWetGain = wetGain;
+            
+            const reverb = audioCtx.createConvolver();
+            const rate = audioCtx.sampleRate;
+            const len = rate * 2.0;
+            const buffer = audioCtx.createBuffer(2, len, rate);
+            for (let channel = 0; channel < 2; channel++) {
+              let data = buffer.getChannelData(channel);
+              for (let i = 0; i < len; i++) {
+                data[i] = ((Math.random() * 2 - 1) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.pow(1 - i / len, 2.5) * (1.0 + 0.1 * Math.sin(i * 0.005));
+              }
+            }
+            reverb.buffer = buffer;
+
+            source.connect(filter); 
+            
+            filter.connect(dryGain); 
+            filter.connect(reverb); reverb.connect(wetGain);
+            
+            const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256; source.connect(analyser);
+            window.audioAnalyser = analyser; window.audioData = new Uint8Array(analyser.frequencyBinCount);
+            
+            dryGain.connect(audioCtx.destination); wetGain.connect(audioCtx.destination);
+            window.__audioCtx = audioCtx;
+            
+            const refCanvas = document.getElementById('c');
+            const cWidth = refCanvas ? refCanvas.width : window.innerWidth;
+            const cHeight = refCanvas ? refCanvas.height : window.innerHeight;
+            
+            window.bcCanvas = document.createElement('canvas');
+            window.bcCanvas.width = cWidth;
+            window.bcCanvas.height = cHeight;
+            
+            const bcLib = typeof butterchurn !== 'undefined' && butterchurn.default ? butterchurn.default : (typeof butterchurn !== 'undefined' ? butterchurn : null);
+            const bcPresetsLib = typeof butterchurnPresets !== 'undefined' && butterchurnPresets.default ? butterchurnPresets.default : (typeof butterchurnPresets !== 'undefined' ? butterchurnPresets : null);
+            
+            if (bcLib && bcPresetsLib) {
+                window.butterchurnVisualizer = bcLib.createVisualizer(window.__audioCtx, window.bcCanvas, { width: cWidth, height: cHeight });
+                
+                const presets = bcPresetsLib.getPresets();
+                const presetKeys = Object.keys(presets);
+                const randomPreset = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+                window.butterchurnVisualizer.loadPreset(presets[randomPreset], 0.0);
+
+                setInterval(() => {
+                    const nextPreset = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+                    window.butterchurnVisualizer.loadPreset(presets[nextPreset], 2.0); 
+                }, 15000);
+            }
         }
-        reverb.buffer = buffer;
-
-        source.connect(filter); filter.connect(dryGain); filter.connect(reverb); reverb.connect(wetGain);
         
-        const analyser = audioCtx.createAnalyser(); analyser.fftSize = 256; source.connect(analyser);
-        window.audioAnalyser = analyser; window.audioData = new Uint8Array(analyser.frequencyBinCount);
-        
-        dryGain.connect(audioCtx.destination); wetGain.connect(audioCtx.destination);
-        window.__audioCtx = audioCtx;
-    }
-    
-    if (window.__audioCtx && window.__audioCtx.state === 'suspended') window.__audioCtx.resume();
+        if (window.__audioCtx && window.__audioCtx.state === 'suspended') window.__audioCtx.resume();
 
-    const playRandomTrack = () => {
-      const currentTracks = window.audioTracks || (typeof audioTracks !== 'undefined' ? audioTracks : []);
-      
-      if (!window.__activePlaylist || window.__activePlaylist !== currentTracks) {
-          window.__activePlaylist = currentTracks;
-          window.__shuffledTracks = [...currentTracks].sort(() => Math.random() - 0.5);
-          window.__trackIndex = 0;
+        const playRandomTrack = () => {
+          const currentTracks = window.audioTracks || (typeof audioTracks !== 'undefined' ? audioTracks : []);
+          if (!window.__activePlaylist || window.__activePlaylist !== currentTracks) {
+              window.__activePlaylist = currentTracks;
+              window.__shuffledTracks = [...currentTracks].sort(() => Math.random() - 0.5);
+              window.__trackIndex = 0;
+          }
+          audio.src = window.__shuffledTracks[window.__trackIndex];
+          window.__trackIndex++;
+          if (window.__trackIndex >= window.__shuffledTracks.length) {
+              window.__shuffledTracks = [...currentTracks].sort(() => Math.random() - 0.5);
+              window.__trackIndex = 0;
+          }
+          const playPromise = audio.play();
+          if (playPromise !== undefined) { playPromise.catch(() => {}); }
+        };
+
+        window.unmuteMainAudio = () => {
+          audio.pause();
+          audio.loop = false;
+          audio.removeEventListener('ended', playRandomTrack);
+          audio.addEventListener('ended', playRandomTrack);
+          playRandomTrack();
+        };
+
+        if (!window.startTestSequence) {
+          window.unmuteMainAudio();
+        }
       }
+  } catch(e) { console.error("Audio engine failed to start:", e); }
 
-      audio.src = window.__shuffledTracks[window.__trackIndex];
-      window.__trackIndex++;
-      
-      if (window.__trackIndex >= window.__shuffledTracks.length) {
-          window.__shuffledTracks = [...currentTracks].sort(() => Math.random() - 0.5);
-          window.__trackIndex = 0;
-      }
-      
-      audio.play().catch(() => {});
-    };
-
-    window.playFlyAudio = () => {
-      audio.pause();
-      audio.src = 'files/aud/jump.mp3';
-      audio.loop = false;
-      audio.play().catch(() => {});
-    };
-
-    window.unmuteMainAudio = () => {
-      audio.pause();
-      audio.loop = false;
-      audio.removeEventListener('ended', playRandomTrack);
-      audio.addEventListener('ended', playRandomTrack);
-      playRandomTrack();
-    };
-
-    if (!isSecret) {
-      playRandomTrack();
-      audio.addEventListener('ended', playRandomTrack);
-    }
-  }
-
-  if (isSecret) {
-      window.startSecretFlySequence = true;
+  if (window.startTestSequence) {
   } else {
       window.startWakeSequence = true;
   }
+
+  // Auto-open conky sidebar + brain monitor on entry
+  setTimeout(function() {
+      var sidebar = document.getElementById('conky-sidebar');
+      if (sidebar && (sidebar.style.display === 'none' || sidebar.style.display === '')) {
+          toggleConky();
+      }
+  }, 300);
 };
+
+// Resume AudioContext and re-unlock videos on any touch after entry
+// Handles iOS suspending context mid-session and late-created videos (zone2/3)
+document.addEventListener('touchstart', function() {
+    if (!window._siteEntered) return;
+    if (window.__audioCtx && window.__audioCtx.state === 'suspended') {
+        window.__audioCtx.resume().catch(() => {});
+    }
+    if (window.__unlockAllVideos) window.__unlockAllVideos();
+}, { passive: true });
 </script>
 
+<script src="lodash.js"></script>
+<script src="butterchurn.js"></script>
+<script src="butterchurnPresets.min.js"></script>
 <script src="player.js"></script>
 <script src="modes/modes_core.js"></script>
+<script src="modes/mode0.js"></script>
 <script src="modes/mode1.js"></script>
 <script src="modes/mode2.js"></script>
 <script src="modes/mode3.js"></script>
@@ -488,95 +636,432 @@ window.enterSite = function() {
 <script src="modes/mode6.js"></script>
 <script src="modes/mode7.js"></script>
 <script src="modes/mode8.js"></script>
+<script src="modes/mode9.js"></script>
+<script src="modes/mode10.js"></script>
 <script src="modes/mode-right.js"></script>
+<script src="modes/mode-back.js"></script>
 <script src="modes/mode-left.js"></script>
+
 <script src="engine.js"></script>
+<script src="engine2.js"></script>
+<script src="engine3.js"></script>
+
+<script src="modes/mode-left2.js"></script>
+<script src="modes/mode-right2.js"></script>
+<script src="modes/mode-left3.js"></script>
+<script src="mode-hallway3.js"></script>
+<script src="modes/mode-cabin.js"></script>
+<script src="modes/mode-fall.js"></script>
+<script src="brain-monitor.js"></script>
+
 
 <script>
+window.switchToMode = function(n) {
+    if (window.currentZone2) {
+        window.currentZone2.destroy();
+        window.currentZone2 = null;
+    }
+    if (typeof currentEngine !== 'undefined' && currentEngine) {
+        currentEngine.destroy();
+    }
+    mode = n;
+};
+
+// --- MASTER ORCHESTRATOR FOR ZONE HANDOFFS ---
+window.startZone2 = function() {
+    // Hard-flush all WebGL texture units to prevent sludge bleed
+    const glCvs = document.getElementById("c");
+    if (glCvs) {
+        const glCtx = glCvs.getContext("webgl");
+        if (glCtx) {
+            for(let i=0; i<16; i++) {
+                glCtx.activeTexture(glCtx.TEXTURE0 + i);
+                glCtx.bindTexture(glCtx.TEXTURE_2D, null);
+            }
+        }
+    }
+    
+    // FIX 2: Explicitly clear the exported variables on the window object
+    window.mx = 0; window.my = 0; window.cx = 0; window.cy = 0;
+    
+    if (window.currentZone2) window.currentZone2.destroy();
+    window.currentZone2 = new Zone2Engine();
+    
+    const fInt = window.FRAME_INTERVAL || (1000 / (/Mobi|Android/i.test(navigator.userAgent) ? 20 : 30));
+    let z2Last = 0;
+    
+    function z2Loop(now) {
+        if (!window.currentZone2 || window.currentZone2.isDead) return;
+        requestAnimationFrame(z2Loop);
+        if (now - z2Last < fInt) return;
+        z2Last = now;
+
+        if (window.currentZone2.readyForZone3) {
+            window.currentZone2.destroy();
+            window.currentZone2 = null;
+            
+            let redFader = document.createElement("div");
+            redFader.style.cssText = "position:fixed;inset:0;background:#990000;z-index:99999;transition:opacity 2.0s ease-in-out;pointer-events:none;";
+            document.body.appendChild(redFader);
+            
+            window.startZone3('left');
+            
+            setTimeout(() => {
+                redFader.style.opacity = "0";
+                setTimeout(() => redFader.remove(), 2000);
+            }, 50);
+            return;
+        }
+        
+        // Pass window variables downward to Engine 2
+        window.currentZone2.render(now, window.mx || 0, window.my || 0, 0, 0, 0, 0);
+    }
+    requestAnimationFrame(z2Loop);
+};
+
+window.startZone3 = function(startPOV, startPhase) {
+    const glCvs = document.getElementById("c");
+    if (glCvs) {
+        const glCtx = glCvs.getContext("webgl");
+        if (glCtx) {
+            for(let i=0; i<16; i++) {
+                glCtx.activeTexture(glCtx.TEXTURE0 + i);
+                glCtx.bindTexture(glCtx.TEXTURE_2D, null);
+            }
+        }
+    }
+    
+    window.mx = 0; window.my = 0; window.cx = 0; window.cy = 0;
+    if (window.currentZone3) window.currentZone3.destroy();
+    window.currentZone3 = new Zone3Engine();
+    window.currentZone3.activePOV = startPOV || 'left';
+    if (startPhase === 'cabin') {
+        window.currentZone3.centerPhase = 'cabin';
+        window.currentZone3.cabinState = 'walking_forward';
+    }
+    
+    const fInt = window.FRAME_INTERVAL || (1000 / (/Mobi|Android/i.test(navigator.userAgent) ? 20 : 30));
+    let z3Last = 0;
+    
+    function z3Loop(now) {
+        if (!window.currentZone3 || window.currentZone3.isDead) return;
+        requestAnimationFrame(z3Loop);
+        if (now - z3Last < fInt) return;
+        z3Last = now;
+        
+        window.currentZone3.render(now, window.mx || 0, window.my || 0);
+    }
+    requestAnimationFrame(z3Loop);
+};
+
 window.makeUI = function() {
-  if(!__debugAllowed) return;
-  if(document.getElementById('debug-menu-box')) return; 
+  if (!__debugAllowed) return;
+  const existingBox = document.getElementById('debug-menu-box');
+  if (existingBox) {
+      existingBox.style.display = existingBox.style.display === 'none' ? 'block' : 'none';
+      return;
+  }
 
   const box = document.createElement("div");
   box.id = "debug-menu-box";
   box.style.cssText = `
-    position:fixed;
-    top:10px;
-    left:10px;
-    z-index:2147483647;
-    background:rgba(0,0,0,.85);
-    color:#0f0;
-    font:12px monospace;
-    padding:8px;
-    border:1px solid #0f0;
+    position:fixed; top:10px; left:10px; z-index:2147483647;
+    background:rgba(0,0,0,.85); color:#0f0; font:12px monospace;
+    padding:8px; border:1px solid #0f0;
   `;
+  const btnCSS = 'background:#111;color:#0f0;border:1px solid #0f0;font:11px monospace;cursor:pointer;margin:1px;padding:2px 6px;';
   box.innerHTML = `
     <div>POV: <span id="pov">?</span></div>
     <div>MODE: <span id="mode">?</span></div>
+    <div>SEQ: <span id="seq">?</span></div>
     <div style="margin-top:6px">
       <button id="prev">◀</button>
       <select id="sel">
-        <option value="0">0: City</option>
-        <option value="1">1: Fractal</option>
-        <option value="2">2: BH</option>
-        <option value="3">3: Mirror</option>
-        <option value="4">4: City 2</option>
-        <option value="5">5: Ocean</option>
-        <option value="6">6: Earth</option>
-        <option value="7">7: Deadcity</option>
+        <option value="1">1: City</option>
+        <option value="2">2: Fractal</option>
+        <option value="3">3: BH</option>
+        <option value="4">4: Mirror</option>
+        <option value="5">5: City 2</option>
+        <option value="6">6: Ocean</option>
+        <option value="7">7: Earth</option>
+        <option value="8">8: Goreville</option>
+        <option value="9">9: Plane</option>
+        <option value="97">97: Back</option>
+        <option value="98">98: Left Room</option>
+        <option value="99">99: Right Room</option>
       </select>
       <button id="next">▶</button>
+    </div>
+    <div style="margin-top:6px;border-top:1px solid #0f0;padding-top:4px;">
+      <div style="color:#0ff;margin-bottom:3px;">ZONE SKIP:</div>
+      <button id="z2hall">Z2: Hallway</button>
+      <button id="z2bath">Z2: Bathroom</button><br>
+      <button id="z2bed">Z2: Bedroom</button><br>
+      <button id="z3bath">Z3: Bathroom</button>
+      <button id="z3hall">Z3: Hallway</button><br>
+      <button id="z3cabin">Z3: Cabin</button>
     </div>
   `;
 
   document.body.appendChild(box);
-
+  box.querySelectorAll('button').forEach(b => b.style.cssText = btnCSS);
   const sel = box.querySelector("#sel");
+  sel.style.cssText = 'background:#111;color:#0f0;border:1px solid #0f0;font:11px monospace;';
   const btnPrev = box.querySelector("#prev");
   const btnNext = box.querySelector("#next");
 
+  function killAll() {
+    window.isEngine1Dead = true;
+    if (typeof currentEngine !== 'undefined' && currentEngine) { currentEngine.destroy(); currentEngine = null; }
+    if (typeof leftEngine !== 'undefined' && leftEngine) { leftEngine.destroy(); leftEngine = null; }
+    if (typeof rightEngine !== 'undefined' && rightEngine) { rightEngine.destroy(); rightEngine = null; }
+    if (typeof backEngine !== 'undefined' && backEngine) { backEngine.destroy(); backEngine = null; }
+    if (window.currentZone2) { window.currentZone2.destroy(); window.currentZone2 = null; }
+    if (window.currentZone3) { window.currentZone3.destroy(); window.currentZone3 = null; }
+    const fader = document.getElementById('pov-fader');
+    if (fader) fader.style.opacity = '0';
+  }
+
   function setMode(n){
-    n = Math.max(0, Math.min(9, n|0)); 
-    if(typeof currentEngine !== 'undefined' && currentEngine) currentEngine.destroy() 
+    killAll();
+    window.isEngine1Dead = false;
+    n = parseInt(n);
+    if (n !== 97 && n !== 98 && n !== 99 && n !== 100) n = Math.max(1, Math.min(9, n|0)); 
     if (typeof phase !== 'undefined') phase = "open";
     if (typeof blink !== 'undefined') blink = 0;
-    if (typeof flash !== 'undefined') flash = 0;
-    if (typeof shake !== 'undefined') shake = 0;
-
+    if (typeof timer !== 'undefined') timer = performance.now();
     if (typeof lastMode !== 'undefined' && typeof mode !== 'undefined') lastMode = mode;
-    mode = n;
-    modeSeed++;
-    
-    if (mode !== 8) sel.value = mode; 
+    mode = n; modeSeed++;
+    if (mode !== 0) sel.value = mode; 
+
+    if (n === 97) activePOV = 'back';
+    else if (n === 98) activePOV = 'left';
+    else if (n === 99) activePOV = 'right';
+    else activePOV = 'center';
+
     currentEngine = new ActiveMode(mode);
+    if (typeof initSideEngines === 'function') initSideEngines(); 
+    if (typeof __lastFrameTime !== 'undefined') __lastFrameTime = 0;
+    if (typeof __frameGovernor === 'function') requestAnimationFrame(__frameGovernor);
   }
 
   sel.onchange = () => setMode(+sel.value);
-
-  // EXPLICITLY SKIP 8
   btnPrev.onclick = () => {
-    let prevMode = mode - 1;
-    if (prevMode === 7) prevMode = 6;
-    if (prevMode < 0) prevMode = 9;
-    setMode(prevMode);
+    let p = mode - 1; if (p < 1) p = 9; if (mode === 97 || mode === 98 || mode === 99 || mode === 100) p = 9;
+    setMode(p);
   };
-
   btnNext.onclick = () => {
-    let nextMode = mode + 1;
-    if (nextMode === 7) nextMode = 0;
-    setMode(nextMode);
+    let n = mode + 1; if (n > 9) n = 1; if (mode === 97 || mode === 98 || mode === 99 || mode === 100) n = 1;
+    setMode(n);
   };
 
-  setInterval(()=>{
+  const names = {1:'city',2:'fractal',3:'bh',4:'mirror',5:'ocean',6:'earth',7:'deadcity',8:'goreville',9:'plane',97:'back',98:'left',99:'right',100:'back'};
+  setInterval(() => {
     try {
-      box.querySelector("#mode").textContent = mode;
-      box.querySelector("#pov").textContent = activePOV; 
-      if (sel.value != mode && mode <= 7 && mode !== 8) {
-          sel.value = mode;
+      const povEl = document.getElementById("pov");
+      const modeEl = document.getElementById("mode");
+      const seqEl = document.getElementById("seq");
+      if (povEl) povEl.innerText = typeof activePOV !== 'undefined' ? activePOV : '?';
+      if (modeEl) modeEl.innerText = typeof mode !== 'undefined' ? mode + ' (' + (names[mode]||'?') + ')' : '?';
+      if (seqEl) {
+        const z2 = window.currentZone2;
+        const z3 = window.currentZone3;
+        if (z3) {
+          let info = 'z3 ' + z3.centerPhase + '/' + z3.cabinState;
+          info += ' pov:' + z3.activePOV;
+          if (z3.centerPhase === 'hallway') info += ' hallZ:' + z3.camZ.toFixed(1);
+          else info += ' walk:' + (z3.cabinProgress||z3.fallProgress||0).toFixed(2);
+          seqEl.innerText = info;
+        } else if (z2) {
+          seqEl.innerText = 'z2 ' + (z2.seqState||'?') + ' pov:' + z2.activePOV;
+        } else {
+          seqEl.innerText = 'engine1';
+        }
       }
-    } catch(e) {} 
-  }, 100);
+    } catch(err) {}
+  }, 500);
+
+  box.querySelector('#z2hall').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{window.currentZone2.activePOV = 'center'; window.currentZone2.intersectionReached = false; window.currentZone2.camZ = window.currentZone2.START_Z;}, 50); };
+  box.querySelector('#z2bath').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{window.currentZone2.activePOV = 'left';}, 50); };
+  box.querySelector('#z2bed').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{window.currentZone2.activePOV = 'right';}, 50); };
+  box.querySelector('#z3bath').onclick = () => { killAll(); window.startZone3('left'); };
+  box.querySelector('#z3hall').onclick = () => { killAll(); window.startZone3('center', 'hallway'); };
+  box.querySelector('#z3cabin').onclick = () => { killAll(); window.startZone3('center', 'cabin'); };
+};
+
+</script>
+<script>
+(function(){
+
+let canvas, ctx;
+let cols = [];
+let COLS = 6;
+let LINE = 12;
+
+let rssCache = [];
+let lastGen = 0;
+let running = false;
+
+/* ---------- INIT ---------- */
+
+window.initHollywood = function(){
+    const box = document.getElementById('hollywood-box');
+    if (!box) return;
+
+    const rect = box.getBoundingClientRect();
+
+    canvas = document.createElement('canvas');
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+
+    box.innerHTML = '';
+    box.appendChild(canvas);
+
+    ctx = canvas.getContext('2d');
+
+    cols = [];
+    for(let i=0;i<COLS;i++){
+        cols.push({
+            lines: [],
+            offset: Math.random()*canvas.height,
+            speed: 0.5 + Math.random()*1.5
+        });
+    }
+
+    if (!running){
+        running = true;
+        requestAnimationFrame(loop);
+    }
+};
+
+/* ---------- AUDIO ---------- */
+
+function audioLevel(){
+    if (!window.audioAnalyser) return 0.3; // fallback so it STILL animates
+    window.audioAnalyser.getByteFrequencyData(window.audioData);
+    let s=0;
+    for(let i=0;i<window.audioData.length;i++) s+=window.audioData[i];
+    return (s/window.audioData.length)/255;
 }
+
+/* ---------- DATA ---------- */
+
+function genLine(){
+    const rss = rssCache.length ? rssCache[Math.floor(Math.random()*rssCache.length)] : null;
+
+    if (rss && Math.random()<0.35){
+        return "> INTEL: " + rss.slice(0,60);
+    }
+
+    const pool = [
+        "TRACE NODE "+Math.floor(Math.random()*255),
+        "SIGNAL LOST",
+        "BUFFER OVERFLOW",
+        "CAMERA OFFSET",
+        "UV FAILURE",
+        "RENDER DESYNC",
+        "AUDIO SPIKE",
+        "PACKET INJECTION",
+        "LATENCY "+(Math.random()*80).toFixed(1)+"ms"
+    ];
+
+    return "> " + pool[Math.floor(Math.random()*pool.length)];
+}
+
+function feed(intensity){
+    const now = performance.now();
+
+    if (now-lastGen < (120 - intensity*100)) return;
+    lastGen = now;
+
+    cols.forEach(c=>{
+        if (Math.random()<0.9) c.lines.unshift(genLine());
+        if (c.lines.length>80) c.lines.pop();
+    });
+}
+
+/* ---------- DRAW ---------- */
+
+function draw(){
+    if (!ctx) return;
+
+    // NO FILL — just ghost trails
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.font = "10px monospace";
+
+    const w = canvas.width / COLS;
+
+    cols.forEach((c,i)=>{
+        let x = i*w + 4;
+
+        c.offset += c.speed;
+        if (c.offset > LINE) c.offset = 0;
+
+        c.lines.forEach((line,j)=>{
+            let y = c.offset + j*LINE;
+            if (y<0 || y>canvas.height) return;
+
+            let glitch = Math.random()<0.02;
+
+            const base = getComputedStyle(document.getElementById('conky-sidebar')).color;
+ctx.fillStyle = glitch ? "#ffffff" : base;
+            ctx.globalAlpha = 0.5 + Math.random()*0.5;
+
+            let jitter = glitch ? (Math.random()*4-2) : 0;
+
+            ctx.fillText(line, x + jitter, y);
+        });
+    });
+
+    ctx.globalAlpha = 1;
+}
+
+/* ---------- LOOP ---------- */
+
+function loop(){
+    const intensity = audioLevel();
+    feed(intensity);
+    draw();
+    requestAnimationFrame(loop);
+}
+
+/* ---------- RSS HOOK ---------- */
+
+const orig = window.updateIntelligence;
+window.updateIntelligence = function(){
+    orig();
+
+    rssCache = [];
+
+    document.querySelectorAll('.ticker').forEach(el=>{
+        const t = el.innerText || "";
+        t.split("+++").forEach(x=>{
+            x = x.trim();
+            if (x.length > 10) rssCache.push(x);
+        });
+    });
+};
+
+/* ---------- FORCE INIT ON TOGGLE ---------- */
+
+const origToggle = window.toggleConky;
+
+window.toggleConky = function(){
+    origToggle();
+
+    const hw = document.getElementById('hollywood-box');
+
+    if (hw && hw.style.display !== 'none'){
+        setTimeout(()=> {
+            initHollywood();
+        }, 80);
+    }
+};
+
+})();
 </script>
 </body>
 </html>

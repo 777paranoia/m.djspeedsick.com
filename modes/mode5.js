@@ -1,3 +1,7 @@
+
+
+
+
 window.GLSL = window.GLSL || {};
 window.GLSL.modules = window.GLSL.modules || {};
 
@@ -9,7 +13,7 @@ void main() {
   float t_w = u_time * 0.5; 
   vec2 waveOffset = vec2(sin(envUV.y * 10.0 + t_w) * 0.02 + sin(envUV.y * 25.0 - t_w * 1.5) * 0.01, cos(envUV.x * 8.0 + t_w * 0.8) * 0.015 + cos(envUV.x * 30.0 + t_w * 2.0) * 0.008);
   
-  // The Fix: smoothstep(0.45, 0.7, envUV.y) isolates the bottom half of the screen
+
   vec2 distUV = clamp(envUV + waveOffset * smoothstep(0.45, 0.7, envUV.y), 0.0, 1.0);
   distUV.y = 1.0 - distUV.y; 
   
