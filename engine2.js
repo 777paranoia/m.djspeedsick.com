@@ -376,7 +376,7 @@ class Zone2Engine {
         this.voidVid.preload = "auto";
         this.voidVid.setAttribute("playsinline", "");
         this.voidVid.setAttribute("webkit-playsinline", "");
-        this.voidVid.src = "files/mov/bh3.webm";
+        this.voidVid.src = "files/mov/bh3.mp4";
         // Register with global video pool so iOS unlock applies
         if (window.__ALL_VIDEOS) window.__ALL_VIDEOS.push(this.voidVid);
         this.voidVid.play().catch(() => {});
