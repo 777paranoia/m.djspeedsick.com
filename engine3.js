@@ -140,12 +140,7 @@ float exitDoor(vec3 p){
 }
 
 bool inExitHole(vec3 p){
-    if(u_doorOpen < 0.85) return false;
-    float camPull = clamp(abs(u_camX) / 1.1, 0.0, 1.0);
-    if(camPull < 0.35) return false;
-    return abs(p.z - EXIT_ROW_Z) < 0.48 &&
-           p.y > FLOOR_Y + 0.05 && p.y < FLOOR_Y + 1.95 &&
-           p.x < -FUSE_R + 0.25;
+    return false;
 }
 
 bool isWindowHit(vec3 p){
@@ -181,8 +176,6 @@ vec2 scene(vec3 p){
 
     float d  = min(min(toWall, toFloor), toBack);
     float id = (d == toFloor) ? 2.0 : 1.0;
-
-    if(inExitHole(p)){ d = max(d, 0.05); }
 
     float s = seatRows(p);
     if(s<d){ d=s; id=3.0; }
@@ -402,8 +395,7 @@ void main() {
                         vec4 dTex = (u_doorSwitched > 0.5)
                             ? texture2D(u_doorOpenTex, doorUV)
                             : texture2D(u_doorClosedTex, doorUV);
-                        float camPull = clamp(abs(u_camX) / 1.1, 0.0, 1.0);
-                        if(u_doorOpen > 0.85 && camPull > 0.35 && dTex.a < 0.3) {
+                        if(u_doorSwitched > 0.5 && dTex.a < 0.3) {
                             vec2 vuv = gl_FragCoord.xy / u_resolution.xy;
                             col = texture2D(u_voidTex, vuv).rgb * 1.2;
                         } else {
@@ -641,7 +633,6 @@ class Zone3Engine {
         this.bathroomProg  = this._buildProg('z3_bathroom');
         this.bedroomProg   = this._buildProg('z3_bedroom');
         this.centerProg    = this._buildProg('z3_merged');
-        this.hallwayProg   = this._buildProg('z3_hallway');
         this.fallProg      = this._buildProg('z3_fall');
         this.voidScreenProg = this._buildProg('z2_seq_hole');
         this.blackholeProg = this._buildProg('z3_alt_blackhole_walk');
@@ -662,7 +653,6 @@ class Zone3Engine {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
 
         this.voidFBO = this._makeFBO();
-        this.cabinFBO = this._makeFBO();
         this.voidMode = (!this.isAltRoute && typeof ActiveMode !== 'undefined') ? new ActiveMode(2) : null;
         if(this.voidMode) this.voidMode.maskTex = this._makeBlankTex();
 
@@ -957,23 +947,18 @@ class Zone3Engine {
             this.slideOffset = 0;
             return;
         }
-
         const elapsed = now - this.slideStart;
         const SLIDE_MS = 340;
         const EDGE_SNAP_MS = 80;
-
         if (this.slideState === 'out') {
             const t = Math.min(elapsed / SLIDE_MS, 1.0);
             this.slideOffset = (t * t) * window.innerWidth * this.slideDir;
-
             if (t >= 1.0) {
                 this.slideOffset = window.innerWidth * this.slideDir;
                 this.slideState = 'black';
                 this.slideStart = now;
                 this.activePOV = this.pendingPOV;
-                this.cx = 0;
-                this.cy = 0;
-                this.povSwitchTime = now;
+                this.cx = 0; this.cy = 0; this.povSwitchTime = now;
                 window.dispatchEvent(new Event('mouseup'));
                 window.dispatchEvent(new Event('touchend'));
             }
@@ -987,107 +972,74 @@ class Zone3Engine {
             const t = Math.min(elapsed / SLIDE_MS, 1.0);
             const ease = 1.0 - (1.0 - t) * (1.0 - t);
             this.slideOffset = -window.innerWidth * this.slideDir * (1.0 - ease);
-
             if (t >= 1.0) {
                 this.slideOffset = 0;
                 this.slideState = 'idle';
                 this.pendingPOV = null;
             }
         }
-
         const cvs = document.getElementById('c');
         if (cvs) {
             cvs.style.transform = this.slideOffset !== 0
-                ? `translateX(${this.slideOffset.toFixed(1)}px)`
-                : '';
+                ? `translateX(${this.slideOffset.toFixed(1)}px)` : '';
         }
     }
 
     checkPOVThreshold(now, currentMx) {
         if (this.slideState !== 'idle' || (now - this.povSwitchTime) < 600) return;
-
         if (this.centerPhase === 'hallway') {
             if (this.isAltRoute) {
                 if (this.activePOV === 'right') {
                     if (currentMx >= 0.75) {
-                        this.pendingPOV = 'center';
-                        this.slideDir = +1;
-                        this.slideState = 'out';
-                        this.slideStart = now;
-                        this.povSwitchTime = now;
-                        window.dispatchEvent(new Event('mouseup'));
-                        window.dispatchEvent(new Event('touchend'));
+                        this.pendingPOV = 'center'; this.slideDir = +1;
+                        this.slideState = 'out'; this.slideStart = now; this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                     }
                 } else if (this.activePOV === 'center') {
                     if (currentMx <= -0.75) {
-                        this.pendingPOV = 'right';
-                        this.slideDir = -1;
-                        this.slideState = 'out';
-                        this.slideStart = now;
-                        this.povSwitchTime = now;
-                        window.dispatchEvent(new Event('mouseup'));
-                        window.dispatchEvent(new Event('touchend'));
+                        this.pendingPOV = 'right'; this.slideDir = -1;
+                        this.slideState = 'out'; this.slideStart = now; this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                     }
                 }
             } else {
                 if (this.activePOV === 'left') {
                     if (currentMx <= -0.75) {
-                        this.pendingPOV = 'center';
-                        this.slideDir = -1;
-                        this.slideState = 'out';
-                        this.slideStart = now;
-                        this.povSwitchTime = now;
-                        window.dispatchEvent(new Event('mouseup'));
-                        window.dispatchEvent(new Event('touchend'));
+                        this.pendingPOV = 'center'; this.slideDir = -1;
+                        this.slideState = 'out'; this.slideStart = now; this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                     }
                 } else if (this.activePOV === 'center') {
                     if (currentMx >= 0.75) {
-                        this.pendingPOV = 'left';
-                        this.slideDir = +1;
-                        this.slideState = 'out';
-                        this.slideStart = now;
-                        this.povSwitchTime = now;
-                        window.dispatchEvent(new Event('mouseup'));
-                        window.dispatchEvent(new Event('touchend'));
+                        this.pendingPOV = 'left'; this.slideDir = +1;
+                        this.slideState = 'out'; this.slideStart = now; this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                     }
                 }
             }
             return;
         }
-
         if (this.centerPhase === 'cabin' && Math.abs(this.camZ - this.EXIT_ROW_Z) < 1.5) {
             if (this.cabinState !== 'door_look' && this.cabinState !== 'suction') {
                 if (currentMx <= -0.5) {
                     this.previousState = this.cabinState;
                     this.cabinState = 'door_look';
                     this.yawTarget = (this.previousState === 'backward') ? 1.5 * Math.PI : Math.PI / 2;
-                    this.zoomTarget = 2.0;
-                    this.cx = 0;
-                    this.cy = 0;
-                    this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup'));
-                    window.dispatchEvent(new Event('touchend'));
+                    this.zoomTarget = 2.0; this.cx = 0; this.cy = 0; this.povSwitchTime = now;
+                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                 } else if (currentMx >= 0.5) {
                     this.previousState = this.cabinState;
                     this.cabinState = 'door_look';
                     this.yawTarget = (this.previousState === 'backward') ? Math.PI / 2 : -Math.PI / 2;
-                    this.zoomTarget = 2.0;
-                    this.cx = 0;
-                    this.cy = 0;
-                    this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup'));
-                    window.dispatchEvent(new Event('touchend'));
+                    this.zoomTarget = 2.0; this.cx = 0; this.cy = 0; this.povSwitchTime = now;
+                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                 }
             } else if (this.cabinState === 'door_look') {
                 if (Math.abs(currentMx) >= 0.5) {
                     this.cabinState = this.previousState || 'forward';
                     this.yawTarget = (this.cabinState === 'backward') ? Math.PI : 0.0;
-                    this.zoomTarget = 1.0;
-                    this.cx = 0;
-                    this.cy = 0;
-                    this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup'));
-                    window.dispatchEvent(new Event('touchend'));
+                    this.zoomTarget = 1.0; this.cx = 0; this.cy = 0; this.povSwitchTime = now;
+                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
                 }
             }
         }
@@ -1141,25 +1093,19 @@ class Zone3Engine {
                     this.flashVal = (tElapsed > 500 && Math.random() > 0.7) ? 0.8 : 0.0;
                     if (tElapsed > 3000) { this.cabinState = 'backward'; this.yawTarget = Math.PI; this.suctionShake = 0.0; this.flashVal = 0.0; this.cx=0; this.cy=0; this.fractalActive = 1.0; this.doorSwitched = 1.0; }
                     break;
-                             case 'backward':
-                    if (isWalking)
-                        this.camZ = Math.max(this.EXIT_ROW_Z, this.camZ - walkSpeed);
-
-                    if (this.camZ <= this.EXIT_ROW_Z + 0.2) {
-                        this.cabinState = 'suction';
+                case 'backward':
+                    if (isWalking) this.camZ = Math.max(this.EXIT_ROW_Z, this.camZ - walkSpeed);
+                    if (this.camZ <= this.EXIT_ROW_Z + 0.2) { 
+                        this.cabinState = 'suction'; 
                         this.doorOpen = 1.0;
                         this.zoomTarget = 1.1;
-                        this.cx = 0;
-                        this.cy = 0;
+                        this.cx = 0; this.cy = 0;
                     }
                     break;
-
                 case 'suction':
                     this.suctionShake = 0.015;
-
                     if (!this.suctionYawSnapped) {
                         this.camX += (-1.1 - this.camX) * Math.min(1.0, 0.004 * timeScale);
-
                         if (this.camX < -0.55) {
                             this.suctionYawSnapped = true;
                             this.yawTarget = Math.PI * 0.5;
@@ -1167,12 +1113,10 @@ class Zone3Engine {
                         }
                     } else {
                         this.camX += (-1.4 - this.camX) * Math.min(1.0, 0.006 * timeScale);
-
                         if (this.camX < -1.2) {
                             this.centerPhase = 'falling';
                             this.fallStart = now;
-                            this.cx = 0;
-                            this.cy = 0;
+                            this.cx = 0; this.cy = 0;
                         }
                     }
                     break;
@@ -1373,13 +1317,12 @@ class Zone3Engine {
 
         gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
 
-        const needFBO = this.activePOV !== 'center' || this.centerPhase !== 'void';
-        if (this.voidFBO && this.centerPhase !== 'falling' && needFBO) {
+        if (this.voidFBO && this.centerPhase !== 'falling') {
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.voidFBO.fbo);
             gl.viewport(0, 0, cWidth, cHeight);
             gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-            if (this.isAltRoute && this.blackholeProg) {
-                this._renderBlackholePass(this.blackholeProg, cWidth, cHeight, now);
+            if (this.isAltRoute && this.blackholeProg && this.centerPhase !== 'void') {
+                this._renderBlackholePass(this.blackholeProg, cWidth, cHeight, now, true);
             } else if (this.voidMode) {
                 this.voidMode.render(now, 0, 0, 0, 0, 0, 0, 1.0, 0);
             }
@@ -1467,80 +1410,7 @@ class Zone3Engine {
                 gl.uniform1f(gl.getUniformLocation(this.fallProg, "u_blink"), this.rBlink);
                 this._drawQuad(this.fallProg);
 
-            } else if (this.centerPhase === 'hallway' && this.hallwayProg && this.centerProg) {
-                // ── HALLWAY: render cabin into FBO, then hallway shader with cabin as u_cabinTex ──
-                gl.bindFramebuffer(gl.FRAMEBUFFER, this.cabinFBO.fbo);
-                gl.viewport(0, 0, cWidth, cHeight);
-                gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-
-                gl.useProgram(this.centerProg);
-                gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.voidFBO.tex);
-                gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texDoorClosed);
-                gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.texDoorOpen);
-                gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, this.texHallLeft);
-                gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.texHallRight);
-                gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, this.texHallTop);
-                gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, this.texHallBottom);
-                gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, this.texCockpit);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_voidTex"), 0);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_doorClosedTex"), 1);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_doorOpenTex"), 2);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texLeft"), 3);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texRight"), 4);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texTop"), 5);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texBottom"), 6);
-                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_cockpitTex"), 7);
-                gl.uniform2f(gl.getUniformLocation(this.centerProg, "u_resolution"), cWidth, cHeight);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_time"), now*0.001);
-                gl.uniform2f(gl.getUniformLocation(this.centerProg, "u_mouse"), this.cx, this.cy);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_camZ"), this.HALL_END_Z + 0.5);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_camX"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_isWalking"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_blink"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_wake"), 1.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_shake"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_flash"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_yawOffset"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_doorOpen"), this.doorOpen);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_doorSwitched"), this.doorSwitched);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_zoom"), 1.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_suctionFade"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_trip"), this.z3Trip);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_modeSeed"), this.z3ModeSeed);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_modeTime"), this.z3ModeTime);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_isOOB"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalActive"), 0.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalSeed"), this.z3ModeSeed);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_blinkAge"), 99.0);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_altRoute"), this.isAltRoute ? 1.0 : 0.0);
-                this._drawQuad(this.centerProg);
-
-                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                gl.viewport(0, 0, cWidth, cHeight);
-
-                // Now render hallway to screen with cabin FBO as u_cabinTex
-                gl.useProgram(this.hallwayProg);
-                gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texHallLeft);
-                gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texHallRight);
-                gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.texHallTop);
-                gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, this.texHallBottom);
-                gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.cabinFBO.tex);
-                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texLeft"), 0);
-                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texRight"), 1);
-                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texTop"), 2);
-                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texBottom"), 3);
-                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_cabinTex"), 4);
-                gl.uniform2f(gl.getUniformLocation(this.hallwayProg, "u_resolution"), cWidth, cHeight);
-                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_time"), now*0.001);
-                gl.uniform2f(gl.getUniformLocation(this.hallwayProg, "u_mouse"), this.cx, this.cy);
-                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_camZ"), this.camZ);
-                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_blink"), this.rBlink);
-                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_shake"), this.suctionShake);
-                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_isWalking"), (z3SpaceHeld || z3TouchHeld) ? 1.0 : 0.0);
-                this._drawQuad(this.hallwayProg);
-
             } else if (this.centerProg) {
-                // ── CABIN (and fallback): z3_merged directly ──
                 gl.useProgram(this.centerProg);
                 gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.voidFBO.tex);
                 gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texDoorClosed);
@@ -1614,13 +1484,12 @@ class Zone3Engine {
         if (cvs) cvs.style.transform = '';
         if (this.voidMode) this.voidMode.destroy();
         if (this.voidFBO) { gl.deleteTexture(this.voidFBO.tex); gl.deleteFramebuffer(this.voidFBO.fbo); }
-        if (this.cabinFBO) { gl.deleteTexture(this.cabinFBO.tex); gl.deleteFramebuffer(this.cabinFBO.fbo); }
         gl.deleteProgram(this.bathroomProg); gl.deleteProgram(this.centerProg); gl.deleteProgram(this.fallProg);
-        if (this.hallwayProg) gl.deleteProgram(this.hallwayProg);
         if (this.bedroomProg) gl.deleteProgram(this.bedroomProg);
         if (this.voidScreenProg) gl.deleteProgram(this.voidScreenProg);
         if (this.blackholeProg) gl.deleteProgram(this.blackholeProg);
         if (this._overlayProg) gl.deleteProgram(this._overlayProg);
+        if (this._portalCompositeProg) gl.deleteProgram(this._portalCompositeProg);
         gl.deleteTexture(this.texBathroomHole);
         if (this.texBedroom) gl.deleteTexture(this.texBedroom);
         gl.deleteTexture(this.texDoorClosed);
