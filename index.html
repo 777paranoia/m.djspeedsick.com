@@ -1,5 +1,4 @@
-
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <script src="videos.js"></script>
@@ -464,6 +463,47 @@ splashScreen.addEventListener('touchstart', startSplashDrag, {passive: false});
 window.addEventListener('touchmove', doSplashDrag, {passive: false});
 window.addEventListener('touchend', endSplashDrag);
 
+window.showTransientCenterOverlay = function(src, holdMs, fadeMs) {
+  holdMs = holdMs || 1800;
+  fadeMs = fadeMs || 1350;
+  let el = document.getElementById("__center_control_hint");
+  if (!el) {
+    el = document.createElement("img");
+    el.id = "__center_control_hint";
+    el.style.cssText = [
+      "position:fixed",
+      "left:50%",
+      "top:50%",
+      "transform:translate(-50%,-50%)",
+      "max-width:min(72vw,1180px)",
+      "max-height:min(34vh,420px)",
+      "width:auto",
+      "height:auto",
+      "opacity:0",
+      "display:none",
+      "pointer-events:none",
+      "z-index:100000",
+      "transition:opacity 220ms ease",
+      "filter:drop-shadow(0 0 18px rgba(0,0,0,0.32))"
+    ].join(";");
+    document.body.appendChild(el);
+  }
+  clearTimeout(window.__centerControlHintHold);
+  clearTimeout(window.__centerControlHintHide);
+  el.src = src;
+  el.style.display = "block";
+  el.style.opacity = "0";
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { el.style.opacity = "0.18"; });
+  });
+  window.__centerControlHintHold = setTimeout(function() {
+    el.style.opacity = "0";
+    window.__centerControlHintHide = setTimeout(function() {
+      el.style.display = "none";
+    }, fadeMs + 40);
+  }, holdMs);
+};
+
 var __dHeld = false;
 var __debugAllowed = false;
 
@@ -485,6 +525,11 @@ window.enterSite = function() {
   const bgc = document.getElementById("background-container"); if(bgc) bgc.style.display = "none";
 
   window._siteEntered = true;
+  setTimeout(function() {
+    if (typeof window.showTransientCenterOverlay === 'function') {
+      window.showTransientCenterOverlay("files/img/z1-ctrls.png", 1800, 1350);
+    }
+  }, 120);
   
   try {
       if (window.__primeVideoPool) window.__primeVideoPool();
@@ -651,7 +696,8 @@ document.addEventListener('touchstart', function() {
 <script src="modes/mode-left3.js"></script>
 <script src="mode-hallway3.js"></script>
 <script src="modes/mode-cabin.js"></script>
-<script src="modes/mode-fall.js"></script>
+<script src="modes/mode-bedroom3.js"></script>
+<script src="modes/mode-blackhole.js"></script>
 <script src="brain-monitor.js"></script>
 
 
@@ -686,6 +732,12 @@ window.startZone2 = function() {
     
     if (window.currentZone2) window.currentZone2.destroy();
     window.currentZone2 = new Zone2Engine();
+
+    setTimeout(() => {
+        if (typeof window.showTransientCenterOverlay === 'function') {
+            window.showTransientCenterOverlay("files/img/z2-ctrls.png", 1800, 1350);
+        }
+    }, 180);
     
     const fInt = window.FRAME_INTERVAL || (1000 / (/Mobi|Android/i.test(navigator.userAgent) ? 20 : 30));
     let z2Last = 0;
@@ -697,6 +749,7 @@ window.startZone2 = function() {
         z2Last = now;
 
         if (window.currentZone2.readyForZone3) {
+            const route = window.currentZone2.zone3Route || 'z3';
             window.currentZone2.destroy();
             window.currentZone2 = null;
             
@@ -704,7 +757,7 @@ window.startZone2 = function() {
             redFader.style.cssText = "position:fixed;inset:0;background:#990000;z-index:99999;transition:opacity 2.0s ease-in-out;pointer-events:none;";
             document.body.appendChild(redFader);
             
-            window.startZone3('left');
+            window.startZone3(route);
             
             setTimeout(() => {
                 redFader.style.opacity = "0";
@@ -719,7 +772,7 @@ window.startZone2 = function() {
     requestAnimationFrame(z2Loop);
 };
 
-window.startZone3 = function(startPOV, startPhase) {
+window.startZone3 = function(route, startPhase) {
     const glCvs = document.getElementById("c");
     if (glCvs) {
         const glCtx = glCvs.getContext("webgl");
@@ -733,8 +786,27 @@ window.startZone3 = function(startPOV, startPhase) {
     
     window.mx = 0; window.my = 0; window.cx = 0; window.cy = 0;
     if (window.currentZone3) window.currentZone3.destroy();
+
+    // z3b route → black hole — Zone3Engine handles it via isAltRoute
+    if (route === 'z3b') {
+        window.currentZone3 = new Zone3Engine('z3b');
+        const fInt = window.FRAME_INTERVAL || (1000 / (/Mobi|Android/i.test(navigator.userAgent) ? 20 : 30));
+        let bhLast = 0;
+        function bhLoop(now) {
+            if (!window.currentZone3 || window.currentZone3.isDead) return;
+            requestAnimationFrame(bhLoop);
+            if (now - bhLast < fInt) return;
+            bhLast = now;
+            window.currentZone3.render(now, window.mx || 0, window.my || 0);
+        }
+        requestAnimationFrame(bhLoop);
+        return;
+    }
+
+    // default route → normal Zone3Engine
+    const startPOV = (route === 'z3' || !route) ? 'left' : route;
     window.currentZone3 = new Zone3Engine();
-    window.currentZone3.activePOV = startPOV || 'left';
+    window.currentZone3.activePOV = startPOV;
     if (startPhase === 'cabin') {
         window.currentZone3.centerPhase = 'cabin';
         window.currentZone3.cabinState = 'walking_forward';
@@ -797,9 +869,11 @@ window.makeUI = function() {
       <button id="z2hall">Z2: Hallway</button>
       <button id="z2bath">Z2: Bathroom</button><br>
       <button id="z2bed">Z2: Bedroom</button><br>
+      <button id="z2bh">Z2: BH path</button><br>
       <button id="z3bath">Z3: Bathroom</button>
       <button id="z3hall">Z3: Hallway</button><br>
       <button id="z3cabin">Z3: Cabin</button>
+      <button id="z3bh">Z3: Black hole</button>
     </div>
   `;
 
@@ -884,9 +958,11 @@ window.makeUI = function() {
   box.querySelector('#z2hall').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{window.currentZone2.activePOV = 'center'; window.currentZone2.intersectionReached = false; window.currentZone2.camZ = window.currentZone2.START_Z;}, 50); };
   box.querySelector('#z2bath').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{window.currentZone2.activePOV = 'left';}, 50); };
   box.querySelector('#z2bed').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{window.currentZone2.activePOV = 'right';}, 50); };
+  box.querySelector('#z2bh').onclick = () => { killAll(); window.startZone2(); setTimeout(()=>{ const z2 = window.currentZone2; z2.seqState = 'bedroom_2'; z2.zone3Route = 'z3b'; z2.intersectionReached = false; z2.camZ = z2.START_Z; z2.activePOV = 'right'; }, 50); };
   box.querySelector('#z3bath').onclick = () => { killAll(); window.startZone3('left'); };
   box.querySelector('#z3hall').onclick = () => { killAll(); window.startZone3('center', 'hallway'); };
   box.querySelector('#z3cabin').onclick = () => { killAll(); window.startZone3('center', 'cabin'); };
+  box.querySelector('#z3bh').onclick = () => { killAll(); window.startZone3('z3b'); };
 };
 
 </script>

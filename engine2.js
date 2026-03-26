@@ -355,7 +355,8 @@ class Zone2Engine {
         gl.uniform1i(gl.getUniformLocation(this.prog, "u_texDoorRight"), 8);
         gl.uniform1i(gl.getUniformLocation(this.prog, "u_voidVid"), 6);
         
-        this.texFront = loadStaticTex("files/img/rooms/hallway/FORWARD.png"); 
+        this.texFront = loadStaticTex("files/img/rooms/hallway/FORWARD.png");
+        this.texFrontAlt = loadStaticTex("files/img/rooms/hallway/FORWARD-alt.png");
         this.texBack = loadStaticTex("files/img/rooms/hallway/BACK.png"); 
         this.texLeft = loadStaticTex("files/img/rooms/hallway/LEFTWALL.png"); 
         this.texRight = loadStaticTex("files/img/rooms/hallway/RIGHTWALL.png"); 
@@ -410,6 +411,9 @@ class Zone2Engine {
         this.lastRenderTime = performance.now();
         this.seqState = 'initial';
         this.leftBlinkCount = 0;
+        this.rightBlinkCount = 0;
+        this.zone3Route = 'z3';
+        this.z3bTurbulenceStart = -1;
         
         this.texBathroomBlood = loadStaticTex("files/img/rooms/bathroom-blood.png");
         this.texBathroomHole = loadStaticTex("files/img/rooms/bathroom-hole.png");
@@ -427,6 +431,13 @@ class Zone2Engine {
         this.windowFBO = this.makeFBO();
         this.holeFBO = this.makeFBO();
         this.mirrorFBO = this.makeFBO();
+        this.rightHoleFBO = this.makeFBO();
+        this.rightHolePostFBO = this.makeFBO();
+
+        if (typeof ActiveMode !== 'undefined') {
+            this.modeBH = new ActiveMode(3);
+            this.modeBH.maskTex = this.noWindowTex;
+        }
 
         this.blankMask = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.blankMask);
@@ -555,10 +566,19 @@ class Zone2Engine {
                 
                 if (this.seqState === 'blood' && this.activePOV === 'right') {
                     this.seqState = 'bedroom_visited';
+                    this.zone3Route = 'z3';
                 } else if (this.seqState === 'bedroom_visited' && this.activePOV === 'left') {
+                    // Option A: back to bathroom → normal z3 plane crash
                     this.seqState = 'hole';
+                    this.zone3Route = 'z3';
                     if (this.leftRoom) this.leftRoom.tex = this.texBathroomHole;
                     this.mode9_T_hole = performance.now();
+                } else if (this.seqState === 'bedroom_visited' && this.activePOV === 'right') {
+                    // Option B: back to bedroom a second time → black hole route
+                    this.seqState = 'bedroom_2';
+                    this.zone3Route = 'z3b';
+                    this.rightBlinkCount = 0;
+                    this.z3bTurbulenceStart = -1;
                 }
 
                 window.dispatchEvent(new Event('mouseup'));
@@ -592,7 +612,7 @@ class Zone2Engine {
     }
 
     checkPOVThreshold(now, currentMx) {
-        if (this.seqState === 'red') return;
+        if (this.seqState === 'red' || this.seqState === 'bedroom_2' || this.seqState === 'z3b_turbulence' || this.seqState === 'z3b_red') return;
         if (this.slideState !== 'idle') return;
         if ((now - this.povSwitchTime) < 600) return;
         if (this.activePOV === 'center') {
@@ -619,13 +639,17 @@ class Zone2Engine {
         
         if (this.readyForZone3 && !this.z3TransitionStarted) {
             this.z3TransitionStarted = true;
-            // WebGL red overlay already fills the screen — no CSS fade needed.
-            // Destroy engine2 and start engine3 immediately while red is still up.
+            const route = (
+                this.seqState === 'bedroom_2' ||
+                this.seqState === 'z3b_turbulence' ||
+                this.seqState === 'z3b_red' ||
+                this.zone3Route === 'z3b'
+            ) ? 'z3b' : 'z3';
             this.destroy();
             if (typeof window.startZone3 === 'function') {
-                window.startZone3();
+                window.startZone3(route);
             } else if (typeof Zone3Engine !== 'undefined') {
-                window.currentZone3 = new Zone3Engine();
+                window.currentZone3 = new Zone3Engine(route);
             }
             return;
         }
@@ -652,10 +676,13 @@ class Zone2Engine {
 
         // ── Composite neural intensity — exposed for brain monitor ──
         var seqBoost = 0;
-        if (this.seqState === 'blood')    seqBoost = 0.4;
-        if (this.seqState === 'hole')     seqBoost = 1.2;
-        if (this.seqState === 'red')      seqBoost = 1.8;
-        if (this.seqState === 'bedroom_visited') seqBoost = 0.2;
+        if (this.seqState === 'blood')             seqBoost = 0.4;
+        if (this.seqState === 'hole')              seqBoost = 1.2;
+        if (this.seqState === 'red')               seqBoost = 1.8;
+        if (this.seqState === 'bedroom_visited')   seqBoost = 0.2;
+        if (this.seqState === 'bedroom_2')         seqBoost = 0.8;
+        if (this.seqState === 'z3b_turbulence')    seqBoost = 1.3;
+        if (this.seqState === 'z3b_red')           seqBoost = 1.8;
         // leftBlinkCount escalation — each bathroom visit ratchets it
         var visitBoost = Math.min(1.0, this.leftBlinkCount * 0.15);
         this.neuralIntensity = this.z2Trip + seqBoost + visitBoost + audioIntensity * 0.3;
@@ -709,6 +736,14 @@ class Zone2Engine {
                         this.seqState = 'blood';
                     }
                 }
+
+                if (this.activePOV === 'right' && this.seqState === 'bedroom_2') {
+                    this.rightBlinkCount++;
+                    if (this.rightBlinkCount >= 2) {
+                        this.seqState = 'z3b_turbulence';
+                        this.z3bTurbulenceStart = now;
+                    }
+                }
             }
         }
 
@@ -716,6 +751,8 @@ class Zone2Engine {
             if (this.windowFBO) { gl.deleteTexture(this.windowFBO.tex); gl.deleteFramebuffer(this.windowFBO.fbo); this.windowFBO = this.makeFBO(); }
             if (this.holeFBO) { gl.deleteTexture(this.holeFBO.tex); gl.deleteFramebuffer(this.holeFBO.fbo); this.holeFBO = this.makeFBO(); }
             if (this.mirrorFBO) { gl.deleteTexture(this.mirrorFBO.tex); gl.deleteFramebuffer(this.mirrorFBO.fbo); this.mirrorFBO = this.makeFBO(); }
+            if (this.rightHoleFBO) { gl.deleteTexture(this.rightHoleFBO.tex); gl.deleteFramebuffer(this.rightHoleFBO.fbo); this.rightHoleFBO = this.makeFBO(); }
+            if (this.rightHolePostFBO) { gl.deleteTexture(this.rightHolePostFBO.tex); gl.deleteFramebuffer(this.rightHolePostFBO.fbo); this.rightHolePostFBO = this.makeFBO(); }
             this.lastCvsW = cWidth;
             this.lastCvsH = cHeight;
         }
@@ -852,10 +889,42 @@ class Zone2Engine {
             if (this.rBlink > 0.001) this.drawOverlay(0.0, 0.0, 0.0, this.rBlink);
             
         } else if (this.activePOV === 'right' && this.rightRoom) {
-            this.rightRoom.render(now, this.cx, this.cy, 0.0, this.windowFBO.tex, shake, 0.0, audioIntensity, this.z2Trip, this.z2ModeSeed);
+            const altTurbulence = this.seqState === 'z3b_turbulence';
+            const altRed = this.seqState === 'z3b_red';
+            const rightShake = shake + (altTurbulence ? (0.12 + 0.06 * Math.sin(now * 0.03)) : 0.0);
+            const rightFlash = altTurbulence ? (0.15 + 0.10 * Math.abs(Math.sin(now * 0.021))) : 0.0;
+
+            this.rightRoom.render(now, this.cx, this.cy, 0.0, this.windowFBO.tex, rightShake, rightFlash, audioIntensity, this.z2Trip, this.z2ModeSeed);
             
             if (this.seqState === 'blood' || this.seqState === 'bedroom_visited' || this.seqState === 'hole' || this.seqState === 'red') {
                 this.drawOverlay(0.0, 0.0, 0.05, 0.65);
+            }
+            if (this.seqState === 'bedroom_2') {
+                this.drawOverlay(0.0, 0.0, 0.03, 0.45);
+            }
+            if (altTurbulence && this.z3bTurbulenceStart > 0) {
+                const tAlt = now - this.z3bTurbulenceStart;
+                const pulse = 0.28 + 0.18 * Math.abs(Math.sin(now * 0.035));
+                this.drawOverlay(0.16, 0.0, 0.0, pulse);
+                if (tAlt >= 2600) {
+                    this.seqState = 'z3b_red';
+                    this.redStartTime = now;
+                }
+            }
+            if (altRed && this.redStartTime > 0) {
+                const redElapsed = now - this.redStartTime;
+                let redAlpha = 0.0;
+                if (redElapsed < 450) {
+                    redAlpha = redElapsed / 450.0;
+                } else if (redElapsed < 2100) {
+                    redAlpha = 1.0;
+                } else if (redElapsed < 3100) {
+                    redAlpha = 1.0 - ((redElapsed - 2100) / 1000.0);
+                } else {
+                    this.readyForZone3 = true;
+                    this.zone3Route = 'z3b';
+                }
+                if (redAlpha > 0.001) this.drawOverlay(0.85, 0.0, 0.0, redAlpha);
             }
             if (typeof drawHallucinationOverlay === 'function')
                 drawHallucinationOverlay(now, this.z2Trip, this.z2FractalSeed, (now - this.z2BlinkPeakTime) * 0.001);
@@ -886,14 +955,17 @@ class Zone2Engine {
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.voidVid);
             }
 
-            // Painter layer 1: video fills canvas — hallway renders on top with blend,
-            // forward green portal is alpha=0 so video shows through at exact screen position.
+            // Painter layer 1: video backdrop
             this._blitTex(this.texVoidVid, cWidth, cHeight);
+
+            // FORWARD-alt swaps in once sequence has progressed past initial
+            const useAltForward = (this.seqState !== 'initial');
+            const hallFrontTex = useAltForward ? (this.texFrontAlt || this.texFront) : this.texFront;
 
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             gl.useProgram(this.prog);
-            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texFront);
+            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, hallFrontTex);
             gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texBack);
             gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.texLeft);
             gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, this.texRight);
@@ -937,10 +1009,13 @@ class Zone2Engine {
         if (this.rightRoom) this.rightRoom.destroy();
         if (this.windowActiveMode) this.windowActiveMode.destroy();
         if (this.mode9) this.mode9.destroy();
+        if (this.modeBH) this.modeBH.destroy();
         
         if (this.windowFBO) { gl.deleteTexture(this.windowFBO.tex); gl.deleteFramebuffer(this.windowFBO.fbo); }
         if (this.holeFBO) { gl.deleteTexture(this.holeFBO.tex); gl.deleteFramebuffer(this.holeFBO.fbo); }
         if (this.mirrorFBO) { gl.deleteTexture(this.mirrorFBO.tex); gl.deleteFramebuffer(this.mirrorFBO.fbo); }
+        if (this.rightHoleFBO) { gl.deleteTexture(this.rightHoleFBO.tex); gl.deleteFramebuffer(this.rightHoleFBO.fbo); }
+        if (this.rightHolePostFBO) { gl.deleteTexture(this.rightHolePostFBO.tex); gl.deleteFramebuffer(this.rightHolePostFBO.fbo); }
         if (this.quadBuffer) gl.deleteBuffer(this.quadBuffer);
         if (this.blankMask) gl.deleteTexture(this.blankMask);
         if (this.noWindowTex) gl.deleteTexture(this.noWindowTex);
@@ -951,7 +1026,9 @@ class Zone2Engine {
             try { this.voidVid.load(); } catch(e){}
         }
         
-        gl.deleteTexture(this.texFront); gl.deleteTexture(this.texBack);
+        gl.deleteTexture(this.texFront);
+        if (this.texFrontAlt) gl.deleteTexture(this.texFrontAlt);
+        gl.deleteTexture(this.texBack);
         gl.deleteTexture(this.texLeft); gl.deleteTexture(this.texRight);
         gl.deleteTexture(this.texTop); gl.deleteTexture(this.texBottom);
         gl.deleteTexture(this.texVoidVid); 
