@@ -136,14 +136,7 @@ float cockpitDoor(vec3 p) {
 }
 
 float exitDoor(vec3 p){
-    if(u_doorOpen > 0.5) return 8.0;
-    if(p.x > 0.0) return 8.0;
-    float doorH = 1.8;
-    float doorD = 0.95;
-    float distToWall = abs(length(p.xy) - FUSE_R);
-    float dZ = abs(p.z - EXIT_ROW_Z) - doorD * 0.5;
-    float dY = abs(p.y - (FLOOR_Y + 0.1 + doorH * 0.5)) - doorH * 0.5;
-    return max(max(dZ, dY), distToWall - 0.12);
+    return 8.0;
 }
 
 bool inExitHole(vec3 p){
@@ -648,6 +641,7 @@ class Zone3Engine {
         this.bathroomProg  = this._buildProg('z3_bathroom');
         this.bedroomProg   = this._buildProg('z3_bedroom');
         this.centerProg    = this._buildProg('z3_merged');
+        this.hallwayProg   = this._buildProg('z3_hallway');
         this.fallProg      = this._buildProg('z3_fall');
         this.voidScreenProg = this._buildProg('z2_seq_hole');
         this.blackholeProg = this._buildProg('z3_alt_blackhole_walk');
@@ -668,6 +662,7 @@ class Zone3Engine {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
 
         this.voidFBO = this._makeFBO();
+        this.cabinFBO = this._makeFBO();
         this.voidMode = (!this.isAltRoute && typeof ActiveMode !== 'undefined') ? new ActiveMode(2) : null;
         if(this.voidMode) this.voidMode.maskTex = this._makeBlankTex();
 
@@ -690,6 +685,10 @@ class Zone3Engine {
         this.isResetting = false;
 
         this.slideState = 'in'; this.slideStart = performance.now();
+        this.pendingPOV = null;
+        this.slideDir = 0;
+        this.slideOffset = 0;
+        this.povSwitchTime = -9999;
         this.cx = 0; this.cy = 0;
         this.lastRenderTime = performance.now();
 
@@ -718,6 +717,12 @@ class Zone3Engine {
         this.z3RedStart = performance.now();
         this.z3RedDone = false;
 
+        // ── Black hole escape sequence (z3b void + conky toggle) ──
+        this.bhEscapeArmed = false;
+        this.bhEscapeBlinkCount = 0;
+        this.bhEscapePhase = 'none';  // none → rising → sucking → warp → black → falling
+        this.bhEscapeStart = 0;
+
         this._initAudio();
     }
 
@@ -745,6 +750,12 @@ class Zone3Engine {
         const filt = window.__audioFilter;
 
         if (this.centerPhase === 'hallway') {
+            const p = Math.max(0, Math.min(1, (this.camZ - this.HALL_START_Z) / (this.HALL_END_Z - this.HALL_START_Z)));
+            if (wet)  wet.gain.setTargetAtTime((this.isAltRoute ? 0.28 : 0.20) + p * (this.isAltRoute ? 0.18 : 0.10), t, 1.0);
+            if (dry)  dry.gain.setTargetAtTime((this.isAltRoute ? 0.44 : 0.50) - p * 0.16, t, 1.0);
+            if (filt) filt.frequency.setTargetAtTime((this.isAltRoute ? 520.0 : 650.0) - p * (this.isAltRoute ? 260.0 : 180.0), t, 1.0);
+            if (this._humGain) this._humGain.gain.setTargetAtTime((this.isAltRoute ? 0.008 : 0.004) + p * (this.isAltRoute ? 0.020 : 0.010), t, 1.0);
+            if (this._humOsc)  this._humOsc.frequency.setTargetAtTime((this.isAltRoute ? 52.0 : 62.0) + p * (this.isAltRoute ? 18.0 : 8.0), t, 1.0);
 
         } else if (this.centerPhase === 'cabin') {
             const p = Math.max(0, Math.min(1,
@@ -766,13 +777,56 @@ class Zone3Engine {
                 if (this._humOsc)  this._humOsc.frequency.setTargetAtTime(62 + pull * 30, t, 0.4);
             }
 
-        } else if (this.centerPhase === 'void' && this.isAltRoute) {
-            const bhProgress = Math.max(0, Math.min(1, (-this.bhCamPos.z - 260.0) / 2940.0));
-            if (wet)  wet.gain.setTargetAtTime(0.15 - bhProgress * 0.15, t, 3.0);
-            if (filt) filt.frequency.setTargetAtTime(Math.max(60, 280 - bhProgress * 220), t, 2.0);
-            if (this._humGain) this._humGain.gain.setTargetAtTime(0.01 + bhProgress * 0.04, t, 3.0);
-            if (this._humOsc)  this._humOsc.frequency.setTargetAtTime(62 + bhProgress * 18, t, 3.0);
+        } else if (this.centerPhase === 'void') {
+            if (this.isAltRoute) {
+                let ai = 0.0;
+                try {
+                    if (window.audioAnalyser && window.audioData) {
+                        window.audioAnalyser.getByteFrequencyData(window.audioData);
+                        let sum = 0.0;
+                        const n = Math.min(12, window.audioData.length);
+                        for (let i = 0; i < n; i++) sum += window.audioData[i];
+                        ai = n > 0 ? sum / (n * 255.0) : 0.0;
+                    }
+                } catch(_) {}
 
+                // ── BH escape audio override ──
+                if (this.bhEscapePhase === 'rising') {
+                    const ep = Math.min((now - this.bhEscapeStart) / 3000.0, 1.0);
+                    if (wet)  wet.gain.setTargetAtTime(0.34 + ep * 0.15, t, 0.3);
+                    if (filt) filt.frequency.setTargetAtTime(180.0 - ep * 80.0, t, 0.3);
+                    if (this._humGain) this._humGain.gain.setTargetAtTime(0.025 + ep * 0.03, t, 0.3);
+                    if (this._humOsc)  this._humOsc.frequency.setTargetAtTime(42.0 + ep * 20.0, t, 0.3);
+                } else if (this.bhEscapePhase === 'sucking') {
+                    const ep = Math.min((now - this.bhEscapeStart) / 4000.0, 1.0);
+                    if (wet)  wet.gain.setTargetAtTime(0.49 + ep * 0.20, t, 0.2);
+                    if (dry)  dry.gain.setTargetAtTime(0.30 - ep * 0.20, t, 0.2);
+                    if (filt) filt.frequency.setTargetAtTime(100.0 - ep * 50.0, t, 0.2);
+                    if (this._humGain) this._humGain.gain.setTargetAtTime(0.055 + ep * 0.04, t, 0.2);
+                    if (this._humOsc)  this._humOsc.frequency.setTargetAtTime(62.0 + ep * 40.0, t, 0.2);
+                } else if (this.bhEscapePhase === 'warp') {
+                    if (wet)  wet.gain.setTargetAtTime(0.69, t, 0.08);
+                    if (dry)  dry.gain.setTargetAtTime(0.05, t, 0.08);
+                    if (filt) filt.frequency.setTargetAtTime(40.0, t, 0.08);
+                    if (this._humGain) this._humGain.gain.setTargetAtTime(0.10, t, 0.08);
+                    if (this._humOsc)  this._humOsc.frequency.setTargetAtTime(120.0, t, 0.08);
+                } else if (this.bhEscapePhase === 'black' || this.bhEscapePhase === 'falling') {
+                    if (wet) wet.gain.setTargetAtTime(0.0, t, 0.3);
+                    if (dry) dry.gain.setTargetAtTime(0.0, t, 0.3);
+                    if (this._humGain) this._humGain.gain.setTargetAtTime(0.0, t, 0.2);
+                } else {
+                    // Normal void audio
+                    if (wet)  wet.gain.setTargetAtTime(0.34 + ai * 0.18, t, 0.45);
+                    if (dry)  dry.gain.setTargetAtTime(0.22 + ai * 0.08, t, 0.45);
+                    if (filt) filt.frequency.setTargetAtTime(180.0 + ai * 260.0 + Math.sin(now * 0.0017) * 25.0, t, 0.35);
+                    if (this._humGain) this._humGain.gain.setTargetAtTime(0.020 + ai * 0.028, t, 0.35);
+                    if (this._humOsc)  this._humOsc.frequency.setTargetAtTime(42.0 + ai * 18.0, t, 0.35);
+                }
+            } else {
+                if (wet) wet.gain.setTargetAtTime(0.0, t, 0.7);
+                if (dry) dry.gain.setTargetAtTime(0.0, t, 0.7);
+                if (this._humGain) this._humGain.gain.setTargetAtTime(0.0, t, 0.3);
+            }
         } else if (this.centerPhase === 'falling') {
             if (wet) wet.gain.setTargetAtTime(0.0, t, 0.5);
             if (dry) dry.gain.setTargetAtTime(0.0, t, 0.5);
@@ -897,14 +951,55 @@ class Zone3Engine {
     }
 
     tickSlide(now) {
-        if (this.slideState === 'idle') return;
+        if (this.slideState === 'idle') {
+            const cvs = document.getElementById('c');
+            if (cvs) cvs.style.transform = '';
+            this.slideOffset = 0;
+            return;
+        }
+
         const elapsed = now - this.slideStart;
+        const SLIDE_MS = 340;
+        const EDGE_SNAP_MS = 80;
+
         if (this.slideState === 'out') {
-            if (elapsed >= 180) { this.slideState = 'black'; this.slideStart = now; this.activePOV = this.pendingPOV; this.cx = 0; this.cy = 0; }
+            const t = Math.min(elapsed / SLIDE_MS, 1.0);
+            this.slideOffset = (t * t) * window.innerWidth * this.slideDir;
+
+            if (t >= 1.0) {
+                this.slideOffset = window.innerWidth * this.slideDir;
+                this.slideState = 'black';
+                this.slideStart = now;
+                this.activePOV = this.pendingPOV;
+                this.cx = 0;
+                this.cy = 0;
+                this.povSwitchTime = now;
+                window.dispatchEvent(new Event('mouseup'));
+                window.dispatchEvent(new Event('touchend'));
+            }
         } else if (this.slideState === 'black') {
-            if (elapsed >= 50) { this.slideState = 'in'; this.slideStart = now; }
+            if (elapsed >= EDGE_SNAP_MS) {
+                this.slideOffset = -window.innerWidth * this.slideDir;
+                this.slideState = 'in';
+                this.slideStart = now;
+            }
         } else if (this.slideState === 'in') {
-            if (elapsed >= 180) { this.slideState = 'idle'; }
+            const t = Math.min(elapsed / SLIDE_MS, 1.0);
+            const ease = 1.0 - (1.0 - t) * (1.0 - t);
+            this.slideOffset = -window.innerWidth * this.slideDir * (1.0 - ease);
+
+            if (t >= 1.0) {
+                this.slideOffset = 0;
+                this.slideState = 'idle';
+                this.pendingPOV = null;
+            }
+        }
+
+        const cvs = document.getElementById('c');
+        if (cvs) {
+            cvs.style.transform = this.slideOffset !== 0
+                ? `translateX(${this.slideOffset.toFixed(1)}px)`
+                : '';
         }
     }
 
@@ -913,18 +1008,48 @@ class Zone3Engine {
 
         if (this.centerPhase === 'hallway') {
             if (this.isAltRoute) {
-                if (this.activePOV === 'right' && currentMx >= 0.75) {
-                    this.pendingPOV = 'center'; this.slideDir = +1;
-                    this.slideState = 'out'; this.slideStart = now; this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
-                } else if (this.activePOV === 'center' && currentMx <= -0.75) {
-                    this.pendingPOV = 'right'; this.slideDir = -1;
-                    this.slideState = 'out'; this.slideStart = now; this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
+                if (this.activePOV === 'right') {
+                    if (currentMx >= 0.75) {
+                        this.pendingPOV = 'center';
+                        this.slideDir = +1;
+                        this.slideState = 'out';
+                        this.slideStart = now;
+                        this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup'));
+                        window.dispatchEvent(new Event('touchend'));
+                    }
+                } else if (this.activePOV === 'center') {
+                    if (currentMx <= -0.75) {
+                        this.pendingPOV = 'right';
+                        this.slideDir = -1;
+                        this.slideState = 'out';
+                        this.slideStart = now;
+                        this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup'));
+                        window.dispatchEvent(new Event('touchend'));
+                    }
                 }
             } else {
-                if (this.activePOV === 'left' && Math.abs(currentMx) >= 0.75) {
-                    this.pendingPOV = 'center'; this.slideState = 'out'; this.slideStart = now;
+                if (this.activePOV === 'left') {
+                    if (currentMx <= -0.75) {
+                        this.pendingPOV = 'center';
+                        this.slideDir = -1;
+                        this.slideState = 'out';
+                        this.slideStart = now;
+                        this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup'));
+                        window.dispatchEvent(new Event('touchend'));
+                    }
+                } else if (this.activePOV === 'center') {
+                    if (currentMx >= 0.75) {
+                        this.pendingPOV = 'left';
+                        this.slideDir = +1;
+                        this.slideState = 'out';
+                        this.slideStart = now;
+                        this.povSwitchTime = now;
+                        window.dispatchEvent(new Event('mouseup'));
+                        window.dispatchEvent(new Event('touchend'));
+                    }
                 }
             }
             return;
@@ -937,29 +1062,34 @@ class Zone3Engine {
                     this.cabinState = 'door_look';
                     this.yawTarget = (this.previousState === 'backward') ? 1.5 * Math.PI : Math.PI / 2;
                     this.zoomTarget = 2.0;
-                    this.cx = 0; this.cy = 0; this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
+                    this.cx = 0;
+                    this.cy = 0;
+                    this.povSwitchTime = now;
+                    window.dispatchEvent(new Event('mouseup'));
+                    window.dispatchEvent(new Event('touchend'));
                 } else if (currentMx >= 0.5) {
                     this.previousState = this.cabinState;
                     this.cabinState = 'door_look';
                     this.yawTarget = (this.previousState === 'backward') ? Math.PI / 2 : -Math.PI / 2;
                     this.zoomTarget = 2.0;
-                    this.cx = 0; this.cy = 0; this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
+                    this.cx = 0;
+                    this.cy = 0;
+                    this.povSwitchTime = now;
+                    window.dispatchEvent(new Event('mouseup'));
+                    window.dispatchEvent(new Event('touchend'));
                 }
             } else if (this.cabinState === 'door_look') {
                 if (Math.abs(currentMx) >= 0.5) {
                     this.cabinState = this.previousState || 'forward';
                     this.yawTarget = (this.cabinState === 'backward') ? Math.PI : 0.0;
                     this.zoomTarget = 1.0;
-                    this.cx = 0; this.cy = 0; this.povSwitchTime = now;
-                    window.dispatchEvent(new Event('mouseup')); window.dispatchEvent(new Event('touchend'));
+                    this.cx = 0;
+                    this.cy = 0;
+                    this.povSwitchTime = now;
+                    window.dispatchEvent(new Event('mouseup'));
+                    window.dispatchEvent(new Event('touchend'));
                 }
             }
-        }
-
-        if (this.activePOV === 'left') {
-            if (Math.abs(currentMx) >= 0.75) { this.pendingPOV = 'center'; this.slideState = 'out'; this.slideStart = now; }
         }
     }
 
@@ -969,7 +1099,7 @@ class Zone3Engine {
         }
 
         let isWalking = z3SpaceHeld || z3TouchHeld;
-        let walkSpeed = 0.034 * timeScale;
+        let walkSpeed = 0.020 * timeScale;
 
         if (this.centerPhase === 'hallway') {
             if (this.isAltRoute) {
@@ -1011,20 +1141,25 @@ class Zone3Engine {
                     this.flashVal = (tElapsed > 500 && Math.random() > 0.7) ? 0.8 : 0.0;
                     if (tElapsed > 3000) { this.cabinState = 'backward'; this.yawTarget = Math.PI; this.suctionShake = 0.0; this.flashVal = 0.0; this.cx=0; this.cy=0; this.fractalActive = 1.0; this.doorSwitched = 1.0; }
                     break;
-                case 'backward':
-                    if (isWalking) this.camZ = Math.max(this.EXIT_ROW_Z, this.camZ - walkSpeed);
+                             case 'backward':
+                    if (isWalking)
+                        this.camZ = Math.max(this.EXIT_ROW_Z, this.camZ - walkSpeed);
+
                     if (this.camZ <= this.EXIT_ROW_Z + 0.2) {
                         this.cabinState = 'suction';
                         this.doorOpen = 1.0;
-                        this.suctionYawSnapped = false;
                         this.zoomTarget = 1.1;
-                        this.cx = 0; this.cy = 0;
+                        this.cx = 0;
+                        this.cy = 0;
                     }
                     break;
+
                 case 'suction':
                     this.suctionShake = 0.015;
+
                     if (!this.suctionYawSnapped) {
                         this.camX += (-1.1 - this.camX) * Math.min(1.0, 0.004 * timeScale);
+
                         if (this.camX < -0.55) {
                             this.suctionYawSnapped = true;
                             this.yawTarget = Math.PI * 0.5;
@@ -1032,17 +1167,81 @@ class Zone3Engine {
                         }
                     } else {
                         this.camX += (-1.4 - this.camX) * Math.min(1.0, 0.006 * timeScale);
+
                         if (this.camX < -1.2) {
                             this.centerPhase = 'falling';
                             this.fallStart = now;
-                            this.cx = 0; this.cy = 0;
+                            this.cx = 0;
+                            this.cy = 0;
                         }
                     }
                     break;
             }
+
             this.yawOffset += (this.yawTarget - this.yawOffset) * Math.min(1.0, 0.08 * timeScale);
             this.zoom += (this.zoomTarget - this.zoom) * Math.min(1.0, 0.08 * timeScale);
         } else if (this.centerPhase === 'void' && this.isAltRoute) {
+
+            // ── BLACK HOLE ESCAPE SEQUENCE ──
+            if (this.bhEscapePhase !== 'none') {
+                const escElapsed = now - this.bhEscapeStart;
+
+                if (this.bhEscapePhase === 'rising') {
+                    const t = Math.min(escElapsed / 3000.0, 1.0);
+                    const ease = t * t;
+                    this.bhCamPos.y = this._bhPathCenterY(this.bhCamPos.z) + 3.85 + ease * 25.0;
+                    this.bhCamPos.z -= 2.0 * (timeScale / 60.0) * ease;
+                    this.bhPitch = -0.05 - ease * 0.15;
+                    this.suctionShake = ease * 0.03;
+                    this.bhMovePhase += 2.0 * (timeScale / 60.0);
+                    this.bhSpeed = 0.3 + ease * 0.4;
+                    if (t >= 1.0) { this.bhEscapePhase = 'sucking'; this.bhEscapeStart = now; }
+
+                } else if (this.bhEscapePhase === 'sucking') {
+                    const t = Math.min(escElapsed / 4000.0, 1.0);
+                    const ease = t * t * t;
+                    const pullSpeed = 30.0 + ease * 200.0;
+                    this.bhCamPos.z -= pullSpeed * (timeScale / 60.0);
+                    this.bhCamPos.y += ease * 8.0 * (timeScale / 60.0);
+                    this.bhPitch = -0.20 + ease * 0.15;
+                    this.bhYaw += ease * 0.02 * timeScale;
+                    this.suctionShake = 0.03 + ease * 0.06;
+                    this.z3Trip = Math.min(3.0, this.z3Trip + 0.008 * timeScale);
+                    this.bhMovePhase += (10.0 + ease * 40.0) * (timeScale / 60.0);
+                    this.bhSpeed = 0.7 + ease * 0.8;
+                    this.bhCamPos.x = this._bhPathCenterX(this.bhCamPos.z);
+                    if (t >= 1.0) { this.bhEscapePhase = 'warp'; this.bhEscapeStart = now; }
+
+                } else if (this.bhEscapePhase === 'warp') {
+                    const t = Math.min(escElapsed / 1500.0, 1.0);
+                    this.bhCamPos.z -= 800.0 * (timeScale / 60.0);
+                    this.bhMovePhase += 120.0 * (timeScale / 60.0);
+                    this.bhSpeed = 1.5;
+                    this.suctionShake = 0.09;
+                    this.z3Trip = 3.0;
+                    this.bhYaw += 0.06 * timeScale;
+                    this.bhPitch += 0.02 * timeScale;
+                    if (t >= 1.0) {
+                        this.bhEscapePhase = 'black';
+                        this.bhEscapeStart = now;
+                        this.suctionShake = 0.0;
+                        this.bhSpeed = 0.0;
+                    }
+
+                } else if (this.bhEscapePhase === 'black') {
+                    const t = Math.min(escElapsed / 1200.0, 1.0);
+                    if (t >= 1.0) {
+                        this.bhEscapePhase = 'falling';
+                        this.centerPhase = 'falling';
+                        this.fallStart = now;
+                        this.cx = 0; this.cy = 0;
+                    }
+                }
+
+                this.z3IsOOB = 1.0;
+
+            } else {
+                // ── Normal z3b void walking ──
             const walkAmt = isWalking ? (1.20 * timeScale) : 0.0;
             if (walkAmt > 0.0) {
                 this.bhCamPos.z -= 18.0 * (timeScale / 60.0);
@@ -1065,6 +1264,7 @@ class Zone3Engine {
             this.bhYaw   += (yawT   - this.bhYaw)   * Math.min(1.0, 0.10 * timeScale);
             this.bhPitch += (pitchT - this.bhPitch) * Math.min(1.0, 0.10 * timeScale);
             this.z3IsOOB = 1.0;
+            }
         } else if (this.centerPhase === 'falling') {
             let elapsedFall = now - this.fallStart;
             this.fallProgress = Math.min(1.0, elapsedFall / 10000.0);
@@ -1082,8 +1282,7 @@ class Zone3Engine {
             }
         }
     }
-
-    render(now, currentMx, currentMy) {
+        render(now, currentMx, currentMy) {
         if (this.isResetting) return;
 
         let dt = now - this.lastRenderTime;
@@ -1096,8 +1295,13 @@ class Zone3Engine {
         if (typeof this.cx === 'undefined') { this.cx = currentMx; this.cy = currentMy; }
 
         if (this.centerPhase !== 'falling') {
+            // Freeze mouse during late escape phases
+            if (this.bhEscapePhase === 'warp' || this.bhEscapePhase === 'black') {
+                // Lock camera - no mouse input
+            } else {
             this.cx += (currentMx - this.cx) * Math.min(1.0, 0.12 * timeScale);
             this.cy += (currentMy - this.cy) * Math.min(1.0, 0.12 * timeScale);
+            }
         } else {
             this.cx = currentMx;
             this.cy = currentMy;
@@ -1127,6 +1331,16 @@ class Zone3Engine {
                     this.z3IsOOB    = Math.random() > 0.4 ? 1.0 : 0.0;
                     this.z3ModeStart = now;
                     this.z3BlinkPeakTime = now;
+
+                    // ── BH escape blink counting ──
+                    if (this.bhEscapeArmed && this.bhEscapePhase === 'none' &&
+                        this.isAltRoute && this.centerPhase === 'void') {
+                        this.bhEscapeBlinkCount++;
+                        if (this.bhEscapeBlinkCount >= 2) {
+                            this.bhEscapePhase = 'rising';
+                            this.bhEscapeStart = now;
+                        }
+                    }
                 }
             }
             else if (el < 320) this.rBlink = 1.0-((el-200)/120);
@@ -1146,6 +1360,10 @@ class Zone3Engine {
         if (this.centerPhase === 'void' && this.isAltRoute) {
             stateBoost = 1.0 + Math.max(0, Math.min(2.0, (-this.bhCamPos.z - 260.0) / 1500.0)) * 2.0;
         }
+        // BH escape escalation
+        if (this.bhEscapePhase === 'rising') stateBoost = 2.0;
+        else if (this.bhEscapePhase === 'sucking') stateBoost = 3.5;
+        else if (this.bhEscapePhase === 'warp') stateBoost = 5.0;
         if (this.fractalActive > 0.5) stateBoost += 0.5;
         var depthBoost = 0;
         if (this.centerPhase === 'cabin') {
@@ -1155,12 +1373,13 @@ class Zone3Engine {
 
         gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
 
-        if (this.voidFBO && this.centerPhase !== 'falling') {
+        const needFBO = this.activePOV !== 'center' || this.centerPhase !== 'void';
+        if (this.voidFBO && this.centerPhase !== 'falling' && needFBO) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.voidFBO.fbo);
             gl.viewport(0, 0, cWidth, cHeight);
             gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-            if (this.isAltRoute && this.blackholeProg && this.centerPhase !== 'void') {
-                this._renderBlackholePass(this.blackholeProg, cWidth, cHeight, now, true);
+            if (this.isAltRoute && this.blackholeProg) {
+                this._renderBlackholePass(this.blackholeProg, cWidth, cHeight, now);
             } else if (this.voidMode) {
                 this.voidMode.render(now, 0, 0, 0, 0, 0, 0, 1.0, 0);
             }
@@ -1203,6 +1422,23 @@ class Zone3Engine {
                 const redPulse = Math.max(0.0, Math.min(0.25, voidAge * 0.03));
                 if (redPulse > 0.001) this._drawOverlay(0.16, 0.0, 0.0, redPulse);
 
+                // ── BH escape visual overlays ──
+                if (this.bhEscapePhase === 'rising') {
+                    const t = Math.min((now - this.bhEscapeStart) / 3000.0, 1.0);
+                    this._drawOverlay(0.0, 0.0, 0.02, t * 0.15);
+                } else if (this.bhEscapePhase === 'sucking') {
+                    const t = Math.min((now - this.bhEscapeStart) / 4000.0, 1.0);
+                    this._drawOverlay(0.06, 0.0, 0.08, t * 0.4);
+                } else if (this.bhEscapePhase === 'warp') {
+                    const t = Math.min((now - this.bhEscapeStart) / 1500.0, 1.0);
+                    const whiteFlash = Math.max(0.0, 1.0 - t * 4.0);
+                    const blackFade = Math.max(0.0, (t - 0.3) / 0.7);
+                    if (whiteFlash > 0.001) this._drawOverlay(1.0, 1.0, 1.0, whiteFlash * 0.7);
+                    if (blackFade > 0.001) this._drawOverlay(0.0, 0.0, 0.0, blackFade);
+                } else if (this.bhEscapePhase === 'black') {
+                    this._drawOverlay(0.0, 0.0, 0.0, 1.0);
+                }
+
             } else if (this.centerPhase === 'void' && this.voidScreenProg) {
                 gl.useProgram(this.voidScreenProg);
                 gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.voidFBO.tex);
@@ -1231,7 +1467,80 @@ class Zone3Engine {
                 gl.uniform1f(gl.getUniformLocation(this.fallProg, "u_blink"), this.rBlink);
                 this._drawQuad(this.fallProg);
 
+            } else if (this.centerPhase === 'hallway' && this.hallwayProg && this.centerProg) {
+                // ── HALLWAY: render cabin into FBO, then hallway shader with cabin as u_cabinTex ──
+                gl.bindFramebuffer(gl.FRAMEBUFFER, this.cabinFBO.fbo);
+                gl.viewport(0, 0, cWidth, cHeight);
+                gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+
+                gl.useProgram(this.centerProg);
+                gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.voidFBO.tex);
+                gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texDoorClosed);
+                gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.texDoorOpen);
+                gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, this.texHallLeft);
+                gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.texHallRight);
+                gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, this.texHallTop);
+                gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, this.texHallBottom);
+                gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, this.texCockpit);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_voidTex"), 0);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_doorClosedTex"), 1);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_doorOpenTex"), 2);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texLeft"), 3);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texRight"), 4);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texTop"), 5);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_texBottom"), 6);
+                gl.uniform1i(gl.getUniformLocation(this.centerProg, "u_cockpitTex"), 7);
+                gl.uniform2f(gl.getUniformLocation(this.centerProg, "u_resolution"), cWidth, cHeight);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_time"), now*0.001);
+                gl.uniform2f(gl.getUniformLocation(this.centerProg, "u_mouse"), this.cx, this.cy);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_camZ"), this.HALL_END_Z + 0.5);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_camX"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_isWalking"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_blink"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_wake"), 1.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_shake"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_flash"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_yawOffset"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_doorOpen"), this.doorOpen);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_doorSwitched"), this.doorSwitched);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_zoom"), 1.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_suctionFade"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_trip"), this.z3Trip);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_modeSeed"), this.z3ModeSeed);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_modeTime"), this.z3ModeTime);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_isOOB"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalActive"), 0.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalSeed"), this.z3ModeSeed);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_blinkAge"), 99.0);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_altRoute"), this.isAltRoute ? 1.0 : 0.0);
+                this._drawQuad(this.centerProg);
+
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.viewport(0, 0, cWidth, cHeight);
+
+                // Now render hallway to screen with cabin FBO as u_cabinTex
+                gl.useProgram(this.hallwayProg);
+                gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texHallLeft);
+                gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texHallRight);
+                gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.texHallTop);
+                gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, this.texHallBottom);
+                gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.cabinFBO.tex);
+                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texLeft"), 0);
+                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texRight"), 1);
+                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texTop"), 2);
+                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_texBottom"), 3);
+                gl.uniform1i(gl.getUniformLocation(this.hallwayProg, "u_cabinTex"), 4);
+                gl.uniform2f(gl.getUniformLocation(this.hallwayProg, "u_resolution"), cWidth, cHeight);
+                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_time"), now*0.001);
+                gl.uniform2f(gl.getUniformLocation(this.hallwayProg, "u_mouse"), this.cx, this.cy);
+                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_camZ"), this.camZ);
+                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_blink"), this.rBlink);
+                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_shake"), this.suctionShake);
+                gl.uniform1f(gl.getUniformLocation(this.hallwayProg, "u_isWalking"), (z3SpaceHeld || z3TouchHeld) ? 1.0 : 0.0);
+                this._drawQuad(this.hallwayProg);
+
             } else if (this.centerProg) {
+                // ── CABIN (and fallback): z3_merged directly ──
                 gl.useProgram(this.centerProg);
                 gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.voidFBO.tex);
                 gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.texDoorClosed);
@@ -1270,8 +1579,8 @@ class Zone3Engine {
                 gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_trip"),     this.z3Trip);
                 gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_modeSeed"), this.z3ModeSeed);
                 gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_modeTime"), this.z3ModeTime);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_isOOB"),    this.z3IsOOB);
-                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalActive"), this.fractalActive);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_isOOB"),    IS_MOBILE ? 0.0 : this.z3IsOOB);
+                gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalActive"), IS_MOBILE ? 0.0 : this.fractalActive);
                 gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_fractalSeed"), this.z3ModeSeed);
                 gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_blinkAge"), (now - (this.z3BlinkPeakTime || now)) * 0.001);
                 gl.uniform1f(gl.getUniformLocation(this.centerProg, "u_altRoute"), this.isAltRoute ? 1.0 : 0.0);
@@ -1293,7 +1602,7 @@ class Zone3Engine {
             if (redAlpha > 0.001) this._drawOverlay(0.8, 0.0, 0.0, redAlpha);
         }
 
-        if (typeof drawHallucinationOverlay === 'function' && this.centerPhase !== 'falling') {
+        if (!IS_MOBILE && typeof drawHallucinationOverlay === 'function' && this.centerPhase !== 'falling') {
             drawHallucinationOverlay(now, this.z3Trip, this.z3ModeSeed, (now - this.z3BlinkPeakTime) * 0.001);
         }
     }
@@ -1301,12 +1610,17 @@ class Zone3Engine {
     destroy() {
         this.isDead = true;
         this._destroyAudio();
+        const cvs = document.getElementById('c');
+        if (cvs) cvs.style.transform = '';
         if (this.voidMode) this.voidMode.destroy();
         if (this.voidFBO) { gl.deleteTexture(this.voidFBO.tex); gl.deleteFramebuffer(this.voidFBO.fbo); }
+        if (this.cabinFBO) { gl.deleteTexture(this.cabinFBO.tex); gl.deleteFramebuffer(this.cabinFBO.fbo); }
         gl.deleteProgram(this.bathroomProg); gl.deleteProgram(this.centerProg); gl.deleteProgram(this.fallProg);
+        if (this.hallwayProg) gl.deleteProgram(this.hallwayProg);
         if (this.bedroomProg) gl.deleteProgram(this.bedroomProg);
         if (this.voidScreenProg) gl.deleteProgram(this.voidScreenProg);
         if (this.blackholeProg) gl.deleteProgram(this.blackholeProg);
+        if (this._overlayProg) gl.deleteProgram(this._overlayProg);
         gl.deleteTexture(this.texBathroomHole);
         if (this.texBedroom) gl.deleteTexture(this.texBedroom);
         gl.deleteTexture(this.texDoorClosed);
@@ -1316,3 +1630,22 @@ class Zone3Engine {
         gl.deleteBuffer(this.quadBuf);
     }
 }
+
+window.startZone3 = function(route) {
+    window.currentZone3 = new Zone3Engine(route);
+
+    const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+    const TARGET_FPS = IS_MOBILE ? 20 : 30;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
+    let lastZ3Frame = 0;
+
+    window.__zone3Governor = function(now) {
+        requestAnimationFrame(window.__zone3Governor);
+        if (now - lastZ3Frame < FRAME_INTERVAL) return;
+        lastZ3Frame = now;
+        if (window.currentZone3 && !window.currentZone3.isDead) {
+            window.currentZone3.render(now, window.mx || 0, window.my || 0);
+        }
+    };
+    requestAnimationFrame(window.__zone3Governor);
+};

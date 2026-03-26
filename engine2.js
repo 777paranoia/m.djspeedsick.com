@@ -840,7 +840,7 @@ class Zone2Engine {
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
                 this.leftRoom.render(now, this.cx, this.cy, 0.0, this.mirrorFBO.tex, shake, 0.0, audioIntensity, this.z2Trip, this.z2ModeSeed);
                 gl.disable(gl.BLEND);
-                if (typeof drawHallucinationOverlay === 'function')
+                if (!IS_MOBILE && typeof drawHallucinationOverlay === 'function')
                     drawHallucinationOverlay(now, this.z2Trip, this.z2FractalSeed, (now - this.z2BlinkPeakTime) * 0.001);
 
             } else if (this.seqState === 'red') {
@@ -881,7 +881,7 @@ class Zone2Engine {
                     let throb = 0.5 + 0.5 * Math.sin(now * 0.001);
                     this.drawOverlay(0.05 * throb, 0.0, 0.0, 0.65);
                 }
-                if (typeof drawHallucinationOverlay === 'function')
+                if (!IS_MOBILE && typeof drawHallucinationOverlay === 'function')
                     drawHallucinationOverlay(now, this.z2Trip, this.z2FractalSeed, (now - this.z2BlinkPeakTime) * 0.001);
             }
 
@@ -926,7 +926,7 @@ class Zone2Engine {
                 }
                 if (redAlpha > 0.001) this.drawOverlay(0.85, 0.0, 0.0, redAlpha);
             }
-            if (typeof drawHallucinationOverlay === 'function')
+            if (!IS_MOBILE && typeof drawHallucinationOverlay === 'function')
                 drawHallucinationOverlay(now, this.z2Trip, this.z2FractalSeed, (now - this.z2BlinkPeakTime) * 0.001);
             if (this.rBlink > 0.001) this.drawOverlay(0.0, 0.0, 0.0, this.rBlink);
             
@@ -993,7 +993,7 @@ class Zone2Engine {
             gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
             gl.drawArrays(gl.TRIANGLES, 0, 3);
             gl.disable(gl.BLEND);
-            if (typeof drawHallucinationOverlay === 'function')
+            if (!IS_MOBILE && typeof drawHallucinationOverlay === 'function')
                 drawHallucinationOverlay(now, this.z2Trip, this.z2FractalSeed, (now - this.z2BlinkPeakTime) * 0.001);
             if (this.rBlink > 0.001) this.drawOverlay(0.0, 0.0, 0.0, this.rBlink);
         }

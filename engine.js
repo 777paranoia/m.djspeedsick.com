@@ -40,11 +40,11 @@ window.__ALL_VIDEOS = window.__ALL_VIDEOS || [];
 
   window.__primeVideoPool = function() {
     const pool = { fixed: {}, mapped: [] };
-    pool.fixed["files/mov/bh2.webm"]   = [makePoolVid("files/mov/bh2.webm",  true),
-                                           makePoolVid("files/mov/bh2.webm",  true),
-                                           makePoolVid("files/mov/bh2.webm",  true)];
-    pool.fixed["files/mov/earth.webm"] = [makePoolVid("files/mov/earth.webm", true)];
-    pool.fixed["files/mov/fly.webm"]   = [makePoolVid("files/mov/fly.webm",  false)];
+    pool.fixed["files/mov/bh2.mp4"]   = [makePoolVid("files/mov/bh2.mp4",  true),
+                                           makePoolVid("files/mov/bh2.mp4",  true),
+                                           makePoolVid("files/mov/bh2.mp4",  true)];
+    pool.fixed["files/mov/earth.mp4"] = [makePoolVid("files/mov/earth.mp4", true)];
+    pool.fixed["files/mov/fly.mp4"]   = [makePoolVid("files/mov/fly.mp4",  false)];
     
     const mappedFiles = window.MAPPED_VIDEOS || [];
     if (mappedFiles.length && !IS_MOBILE) {
@@ -365,10 +365,10 @@ class ActiveMode {
                 this.textures.push(this.env1, this.env2, this.env3, this.env4, this.env5);
             }
             else if (fragKey === 'ocean') this.env1 = loadStaticTex("files/img/ocean.jpg");
-            else if (fragKey === 'deadcity') { this.env1 = this.loadVideo("files/mov/bh2.webm"); this.env2 = loadStaticTex("files/img/deadcity.png"); this.textures.push(this.env2); }
-            else if (fragKey === 'bh') this.env1 = this.loadVideo("files/mov/bh2.webm");
-            else if (fragKey === 'earth') this.env1 = this.loadVideo("files/mov/earth.webm");
-            else if (fragKey === 'fly') this.env1 = this.loadVideo("files/mov/fly.webm"); 
+            else if (fragKey === 'deadcity') { this.env1 = this.loadVideo("files/mov/bh2.mp4"); this.env2 = loadStaticTex("files/img/deadcity.png"); this.textures.push(this.env2); }
+            else if (fragKey === 'bh') this.env1 = this.loadVideo("files/mov/bh2.mp4");
+            else if (fragKey === 'earth') this.env1 = this.loadVideo("files/mov/earth.mp4");
+            else if (fragKey === 'fly') this.env1 = this.loadVideo("files/mov/fly.mp4"); 
             if (this.env1 && !['deadcity','bh','earth','fly','goreville'].includes(fragKey)) this.textures.push(this.env1);
         }
     }
@@ -424,7 +424,7 @@ class ActiveMode {
             vid = document.createElement("video");
             vid.muted = true; vid.playsInline = true;
             vid.loop = !srcFile.includes("fly");
-            const s = document.createElement("source"); s.src = srcFile; s.type = "video/webm";
+            const s = document.createElement("source"); s.src = srcFile; s.type = "video/mp4";
             vid.appendChild(s);
             window.__registerVideo && window.__registerVideo(vid);
         }
@@ -1052,11 +1052,11 @@ function render(now){
   cy += (my - cy) * Math.min(1.0, 0.12 * timeScale);
 
   if (activePOV === 'back' && isDragging && mx < -0.72) {
-    backZoomTarget = Math.min(1.0, backZoomTarget + (-mx - 1.0) * 0.049 * timeScale);
+    backZoomTarget = Math.min(1.0, backZoomTarget + (-mx - 1.0) * 0.022 * timeScale);
   } else {
     backZoomTarget = 0.0;
   }
-  backZoom += (backZoomTarget - backZoom) * Math.min(1.0, 0.06 * timeScale);
+  backZoom += (backZoomTarget - backZoom) * Math.min(1.0, 0.03 * timeScale);
 
   if (activePOV === 'back' && backZoom > 0.88) {
     const loader = document.getElementById("loading-screen");
@@ -1114,11 +1114,11 @@ function render(now){
     }
 
     if(currentEngine) currentEngine.render(now, cx, cy, audioIntensity, blink, flash, shake, wakeVal, modeSeed);
-    drawHallucinationOverlay(now);
+    if (!IS_MOBILE) drawHallucinationOverlay(now);
   } else if (activePOV === 'left') {
     gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
     if (leftEngine) leftEngine.render(now, cx, cy, audioIntensity, blink, flash, shake, wakeVal, modeSeed);
-    drawHallucinationOverlay(now);
+    if (!IS_MOBILE) drawHallucinationOverlay(now);
   } else if (activePOV === 'right') {
     gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
     simStep(now);
@@ -1130,7 +1130,7 @@ function render(now){
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
     if (rightEngine) rightEngine.render(now, cx, cy, audioIntensity, blink, flash, shake, wakeVal, modeSeed);
-    drawHallucinationOverlay(now);
+    if (!IS_MOBILE) drawHallucinationOverlay(now);
   }
   if (activePOV === 'back') {
     gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -1152,7 +1152,7 @@ function render(now){
             if (loc) { gl.useProgram(backEngine.prog); gl.uniform2f(loc, window.bcCanvas.width, window.bcCanvas.height); }
         }
     }
-    drawHallucinationOverlay(now);
+    if (!IS_MOBILE) drawHallucinationOverlay(now);
   }
   lastNow = now;
 }
