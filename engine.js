@@ -1051,7 +1051,7 @@ function render(now){
   cx += (mx - cx) * Math.min(1.0, 0.12 * timeScale); 
   cy += (my - cy) * Math.min(1.0, 0.12 * timeScale);
 
-  if (activePOV === 'back' && isDragging && mx < -0.72) {
+  if (activePOV === 'back' && isDragging && mx < -0.40) {
     backZoomTarget = Math.min(1.0, backZoomTarget + (-mx - 1.0) * 0.022 * timeScale);
   } else {
     backZoomTarget = 0.0;
