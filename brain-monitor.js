@@ -420,7 +420,7 @@ window.initBrainMonitor = function() {
             + 'right:clamp(20px, 2vw, 50px);'
             + 'width:clamp(280px, 28vw, 440px);'
             + 'z-index:700;'
-            + 'pointer-events:none;'
+            + 'pointer-events:auto;cursor:crosshair;'
             + 'font-family:"Courier New",monospace;'
             + 'color:#ff00ff;'
             + 'text-shadow:0 0 5px rgba(255,0,255,0.6);'
@@ -475,5 +475,115 @@ window.stopBrainMonitor = function() {
     var el = document.getElementById('brain-monitor-wrap');
     if (el) el.style.display = 'none';
 };
+
+// ── HINT OVERLAY SYSTEM ──
+// h1-h5 images shown in top-right of RSS box while holding brain-scanner
+(function(){
+    var hintEl = null;
+    var hintVisible = false;
+    var hintFadeRAF = null;
+    var currentHintSrc = '';
+
+    function getHintImage() {
+        var z3 = window.currentZone3;
+        var z2 = window.currentZone2;
+
+        // h5: the plane (z3 cabin phase)
+        if (z3 && z3.centerPhase === 'cabin') return 'files/img/h/h5.png';
+
+        // h4: alternate black-hole route (z3b, or z2 bedroom_2/z3b_turbulence/z3b_red)
+        if (z3 && z3.isAltRoute) return 'files/img/h/h4.png';
+        if (z2 && (z2.seqState === 'bedroom_2' || z2.seqState === 'z3b_turbulence' || z2.seqState === 'z3b_red'))
+            return 'files/img/h/h4.png';
+
+        // h3: after the two-blinks sequence begins (bathroom blood state onward)
+        if (z2 && (z2.seqState === 'blood' || z2.seqState === 'hole' || z2.seqState === 'red'))
+            return 'files/img/h/h3.png';
+
+        // h2: before bathroom two-blinks (z2 exists, still in initial or bedroom_visited)
+        if (z2 && (z2.seqState === 'initial' || z2.seqState === 'bedroom_visited'))
+            return 'files/img/h/h2.png';
+
+        // h1: Zone 1 (no z2 or z3 active)
+        if (!z2 && !z3) return 'files/img/h/h1.png';
+
+        // z3 normal route (hallway, fall, void, etc) — show h3
+        if (z3 && !z3.isAltRoute) return 'files/img/h/h3.png';
+
+        return '';
+    }
+
+    function ensureHintEl() {
+        if (hintEl) return hintEl;
+        hintEl = document.createElement('img');
+        hintEl.id = '__rss-hint-overlay';
+        hintEl.style.cssText = [
+            'position:fixed',
+            'top:22px',
+            'right:22px',
+            'max-width:clamp(420px, 48vw, 800px)',
+            'max-height:clamp(320px, 38vh, 620px)',
+            'width:auto',
+            'height:auto',
+            'opacity:0',
+            'pointer-events:none',
+            'z-index:760',
+            'transition:opacity 0.15s ease-in',
+            'image-rendering:auto',
+            'filter:drop-shadow(0 0 6px rgba(255,0,255,0.25))'
+        ].join(';');
+        document.body.appendChild(hintEl);
+        return hintEl;
+    }
+
+    function showHint() {
+        var src = getHintImage();
+        if (!src) return;
+        var el = ensureHintEl();
+        if (currentHintSrc !== src) {
+            currentHintSrc = src;
+            el.src = src;
+        }
+        el.style.display = 'block';
+        el.style.transition = 'opacity 0.15s ease-in';
+        cancelAnimationFrame(hintFadeRAF);
+        hintFadeRAF = requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ el.style.opacity = '0.85'; });
+        });
+        hintVisible = true;
+    }
+
+    function hideHint() {
+        if (!hintEl) return;
+        hintEl.style.transition = 'opacity 0.45s ease-out';
+        hintEl.style.opacity = '0';
+        hintVisible = false;
+        setTimeout(function(){
+            if (!hintVisible && hintEl) hintEl.style.display = 'none';
+        }, 500);
+    }
+
+    var _hintObserver = new MutationObserver(function(){
+        var wrap = document.getElementById('brain-monitor-wrap');
+        if (!wrap || wrap.__hintBound) return;
+        wrap.__hintBound = true;
+        wrap.addEventListener('mousedown', function(e){ e.stopPropagation(); showHint(); });
+        wrap.addEventListener('touchstart', function(e){ showHint(); }, {passive: true});
+        window.addEventListener('mouseup', hideHint);
+        window.addEventListener('touchend', hideHint);
+        window.addEventListener('touchcancel', hideHint);
+    });
+    _hintObserver.observe(document.body, {childList: true, subtree: true});
+
+    var existing = document.getElementById('brain-monitor-wrap');
+    if (existing && !existing.__hintBound) {
+        existing.__hintBound = true;
+        existing.addEventListener('mousedown', function(e){ e.stopPropagation(); showHint(); });
+        existing.addEventListener('touchstart', function(e){ showHint(); }, {passive: true});
+        window.addEventListener('mouseup', hideHint);
+        window.addEventListener('touchend', hideHint);
+        window.addEventListener('touchcancel', hideHint);
+    }
+})();
 
 })();
