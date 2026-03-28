@@ -1391,17 +1391,12 @@
    * lodash.mixin({ 'bar': lodash.constant('bar') });
    *
    * _.isFunction(_.foo);
-   * // => true
-   * _.isFunction(_.bar);
-   * // => false
-   *
+   *    * _.isFunction(_.bar);
+   *    *
    * lodash.isFunction(lodash.foo);
-   * // => false
-   * lodash.isFunction(lodash.bar);
-   * // => true
-   *
-   * // Create a suped-up `defer` in Node.js.
-   * var defer = _.runInContext({ 'setTimeout': setImmediate }).defer;
+   *    * lodash.isFunction(lodash.bar);
+   *    *
+   *    * var defer = _.runInContext({ 'setTimeout': setImmediate }).defer;
    */
   var runInContext = (function runInContext(context) {
     context = context == null ? root : _.defaults(root.Object(), context, _.pick(root, contextProps));
@@ -1632,19 +1627,14 @@
      *
      * var wrapped = _([1, 2, 3]);
      *
-     * // Returns an unwrapped value.
-     * wrapped.reduce(_.add);
-     * // => 6
-     *
-     * // Returns a wrapped value.
-     * var squares = wrapped.map(square);
+     *      * wrapped.reduce(_.add);
+     *      *
+     *      * var squares = wrapped.map(square);
      *
      * _.isArray(squares);
-     * // => false
-     *
+     *      *
      * _.isArray(squares.value());
-     * // => true
-     */
+     *      */
     function lodash(value) {
       if (isObjectLike(value) && !isArray(value) && !(value instanceof LazyWrapper)) {
         if (value instanceof LodashWrapper) {
@@ -6833,11 +6823,9 @@
      * @example
      *
      * _.chunk(['a', 'b', 'c', 'd'], 2);
-     * // => [['a', 'b'], ['c', 'd']]
-     *
+     *      *
      * _.chunk(['a', 'b', 'c', 'd'], 3);
-     * // => [['a', 'b', 'c'], ['d']]
-     */
+     *      */
     function chunk(array, size, guard) {
       if ((guard ? isIterateeCall(array, size, guard) : size === undefined)) {
         size = 1;
@@ -6871,8 +6859,7 @@
      * @example
      *
      * _.compact([0, 1, false, 2, '', 3]);
-     * // => [1, 2, 3]
-     */
+     *      */
     function compact(array) {
       var index = -1,
           length = array == null ? 0 : array.length,
@@ -6905,11 +6892,9 @@
      * var other = _.concat(array, 2, [3], [[4]]);
      *
      * console.log(other);
-     * // => [1, 2, 3, [4]]
-     *
+     *      *
      * console.log(array);
-     * // => [1]
-     */
+     *      */
     function concat() {
       var length = arguments.length;
       if (!length) {
@@ -6944,8 +6929,7 @@
      * @example
      *
      * _.difference([2, 1], [2, 3]);
-     * // => [1]
-     */
+     *      */
     var difference = baseRest(function(array, values) {
       return isArrayLikeObject(array)
         ? baseDifference(array, baseFlatten(values, 1, isArrayLikeObject, true))
@@ -6972,12 +6956,9 @@
      * @example
      *
      * _.differenceBy([2.1, 1.2], [2.3, 3.4], Math.floor);
-     * // => [1.2]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.differenceBy([{ 'x': 2 }, { 'x': 1 }], [{ 'x': 1 }], 'x');
-     * // => [{ 'x': 2 }]
-     */
+     *      *
+     *      * _.differenceBy([{ 'x': 2 }, { 'x': 1 }], [{ 'x': 1 }], 'x');
+     *      */
     var differenceBy = baseRest(function(array, values) {
       var iteratee = last(values);
       if (isArrayLikeObject(iteratee)) {
@@ -7009,8 +6990,7 @@
      * var objects = [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }];
      *
      * _.differenceWith(objects, [{ 'x': 1, 'y': 2 }], _.isEqual);
-     * // => [{ 'x': 2, 'y': 1 }]
-     */
+     *      */
     var differenceWith = baseRest(function(array, values) {
       var comparator = last(values);
       if (isArrayLikeObject(comparator)) {
@@ -7035,17 +7015,13 @@
      * @example
      *
      * _.drop([1, 2, 3]);
-     * // => [2, 3]
-     *
+     *      *
      * _.drop([1, 2, 3], 2);
-     * // => [3]
-     *
+     *      *
      * _.drop([1, 2, 3], 5);
-     * // => []
-     *
+     *      *
      * _.drop([1, 2, 3], 0);
-     * // => [1, 2, 3]
-     */
+     *      */
     function drop(array, n, guard) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7069,17 +7045,13 @@
      * @example
      *
      * _.dropRight([1, 2, 3]);
-     * // => [1, 2]
-     *
+     *      *
      * _.dropRight([1, 2, 3], 2);
-     * // => [1]
-     *
+     *      *
      * _.dropRight([1, 2, 3], 5);
-     * // => []
-     *
+     *      *
      * _.dropRight([1, 2, 3], 0);
-     * // => [1, 2, 3]
-     */
+     *      */
     function dropRight(array, n, guard) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7111,20 +7083,13 @@
      * ];
      *
      * _.dropRightWhile(users, function(o) { return !o.active; });
-     * // => objects for ['barney']
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.dropRightWhile(users, { 'user': 'pebbles', 'active': false });
-     * // => objects for ['barney', 'fred']
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.dropRightWhile(users, ['active', false]);
-     * // => objects for ['barney']
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.dropRightWhile(users, 'active');
-     * // => objects for ['barney', 'fred', 'pebbles']
-     */
+     *      *
+     *      * _.dropRightWhile(users, { 'user': 'pebbles', 'active': false });
+     *      *
+     *      * _.dropRightWhile(users, ['active', false]);
+     *      *
+     *      * _.dropRightWhile(users, 'active');
+     *      */
     function dropRightWhile(array, predicate) {
       return (array && array.length)
         ? baseWhile(array, getIteratee(predicate, 3), true, true)
@@ -7152,20 +7117,13 @@
      * ];
      *
      * _.dropWhile(users, function(o) { return !o.active; });
-     * // => objects for ['pebbles']
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.dropWhile(users, { 'user': 'barney', 'active': false });
-     * // => objects for ['fred', 'pebbles']
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.dropWhile(users, ['active', false]);
-     * // => objects for ['pebbles']
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.dropWhile(users, 'active');
-     * // => objects for ['barney', 'fred', 'pebbles']
-     */
+     *      *
+     *      * _.dropWhile(users, { 'user': 'barney', 'active': false });
+     *      *
+     *      * _.dropWhile(users, ['active', false]);
+     *      *
+     *      * _.dropWhile(users, 'active');
+     *      */
     function dropWhile(array, predicate) {
       return (array && array.length)
         ? baseWhile(array, getIteratee(predicate, 3), true)
@@ -7193,14 +7151,11 @@
      *
      * _.fill(array, 'a');
      * console.log(array);
-     * // => ['a', 'a', 'a']
-     *
+     *      *
      * _.fill(Array(3), 2);
-     * // => [2, 2, 2]
-     *
+     *      *
      * _.fill([4, 6, 8, 10], '*', 1, 3);
-     * // => [4, '*', '*', 10]
-     */
+     *      */
     function fill(array, value, start, end) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7234,20 +7189,13 @@
      * ];
      *
      * _.findIndex(users, function(o) { return o.user == 'barney'; });
-     * // => 0
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.findIndex(users, { 'user': 'fred', 'active': false });
-     * // => 1
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.findIndex(users, ['active', false]);
-     * // => 0
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.findIndex(users, 'active');
-     * // => 2
-     */
+     *      *
+     *      * _.findIndex(users, { 'user': 'fred', 'active': false });
+     *      *
+     *      * _.findIndex(users, ['active', false]);
+     *      *
+     *      * _.findIndex(users, 'active');
+     *      */
     function findIndex(array, predicate, fromIndex) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7281,20 +7229,13 @@
      * ];
      *
      * _.findLastIndex(users, function(o) { return o.user == 'pebbles'; });
-     * // => 2
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.findLastIndex(users, { 'user': 'barney', 'active': true });
-     * // => 0
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.findLastIndex(users, ['active', false]);
-     * // => 2
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.findLastIndex(users, 'active');
-     * // => 0
-     */
+     *      *
+     *      * _.findLastIndex(users, { 'user': 'barney', 'active': true });
+     *      *
+     *      * _.findLastIndex(users, ['active', false]);
+     *      *
+     *      * _.findLastIndex(users, 'active');
+     *      */
     function findLastIndex(array, predicate, fromIndex) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7322,8 +7263,7 @@
      * @example
      *
      * _.flatten([1, [2, [3, [4]], 5]]);
-     * // => [1, 2, [3, [4]], 5]
-     */
+     *      */
     function flatten(array) {
       var length = array == null ? 0 : array.length;
       return length ? baseFlatten(array, 1) : [];
@@ -7341,8 +7281,7 @@
      * @example
      *
      * _.flattenDeep([1, [2, [3, [4]], 5]]);
-     * // => [1, 2, 3, 4, 5]
-     */
+     *      */
     function flattenDeep(array) {
       var length = array == null ? 0 : array.length;
       return length ? baseFlatten(array, INFINITY) : [];
@@ -7363,11 +7302,9 @@
      * var array = [1, [2, [3, [4]], 5]];
      *
      * _.flattenDepth(array, 1);
-     * // => [1, 2, [3, [4]], 5]
-     *
+     *      *
      * _.flattenDepth(array, 2);
-     * // => [1, 2, 3, [4], 5]
-     */
+     *      */
     function flattenDepth(array, depth) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7390,8 +7327,7 @@
      * @example
      *
      * _.fromPairs([['a', 1], ['b', 2]]);
-     * // => { 'a': 1, 'b': 2 }
-     */
+     *      */
     function fromPairs(pairs) {
       var index = -1,
           length = pairs == null ? 0 : pairs.length,
@@ -7417,11 +7353,9 @@
      * @example
      *
      * _.head([1, 2, 3]);
-     * // => 1
-     *
+     *      *
      * _.head([]);
-     * // => undefined
-     */
+     *      */
     function head(array) {
       return (array && array.length) ? array[0] : undefined;
     }
@@ -7443,12 +7377,9 @@
      * @example
      *
      * _.indexOf([1, 2, 1, 2], 2);
-     * // => 1
-     *
-     * // Search from the `fromIndex`.
-     * _.indexOf([1, 2, 1, 2], 2, 2);
-     * // => 3
-     */
+     *      *
+     *      * _.indexOf([1, 2, 1, 2], 2, 2);
+     *      */
     function indexOf(array, value, fromIndex) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7473,8 +7404,7 @@
      * @example
      *
      * _.initial([1, 2, 3]);
-     * // => [1, 2]
-     */
+     *      */
     function initial(array) {
       var length = array == null ? 0 : array.length;
       return length ? baseSlice(array, 0, -1) : [];
@@ -7495,8 +7425,7 @@
      * @example
      *
      * _.intersection([2, 1], [2, 3]);
-     * // => [2]
-     */
+     *      */
     var intersection = baseRest(function(arrays) {
       var mapped = arrayMap(arrays, castArrayLikeObject);
       return (mapped.length && mapped[0] === arrays[0])
@@ -7521,12 +7450,9 @@
      * @example
      *
      * _.intersectionBy([2.1, 1.2], [2.3, 3.4], Math.floor);
-     * // => [2.1]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.intersectionBy([{ 'x': 1 }], [{ 'x': 2 }, { 'x': 1 }], 'x');
-     * // => [{ 'x': 1 }]
-     */
+     *      *
+     *      * _.intersectionBy([{ 'x': 1 }], [{ 'x': 2 }, { 'x': 1 }], 'x');
+     *      */
     var intersectionBy = baseRest(function(arrays) {
       var iteratee = last(arrays),
           mapped = arrayMap(arrays, castArrayLikeObject);
@@ -7560,8 +7486,7 @@
      * var others = [{ 'x': 1, 'y': 1 }, { 'x': 1, 'y': 2 }];
      *
      * _.intersectionWith(objects, others, _.isEqual);
-     * // => [{ 'x': 1, 'y': 2 }]
-     */
+     *      */
     var intersectionWith = baseRest(function(arrays) {
       var comparator = last(arrays),
           mapped = arrayMap(arrays, castArrayLikeObject);
@@ -7588,8 +7513,7 @@
      * @example
      *
      * _.join(['a', 'b', 'c'], '~');
-     * // => 'a~b~c'
-     */
+     *      */
     function join(array, separator) {
       return array == null ? '' : nativeJoin.call(array, separator);
     }
@@ -7606,8 +7530,7 @@
      * @example
      *
      * _.last([1, 2, 3]);
-     * // => 3
-     */
+     *      */
     function last(array) {
       var length = array == null ? 0 : array.length;
       return length ? array[length - 1] : undefined;
@@ -7628,12 +7551,9 @@
      * @example
      *
      * _.lastIndexOf([1, 2, 1, 2], 2);
-     * // => 3
-     *
-     * // Search from the `fromIndex`.
-     * _.lastIndexOf([1, 2, 1, 2], 2, 2);
-     * // => 1
-     */
+     *      *
+     *      * _.lastIndexOf([1, 2, 1, 2], 2, 2);
+     *      */
     function lastIndexOf(array, value, fromIndex) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -7665,11 +7585,9 @@
      * var array = ['a', 'b', 'c', 'd'];
      *
      * _.nth(array, 1);
-     * // => 'b'
-     *
+     *      *
      * _.nth(array, -2);
-     * // => 'c';
-     */
+     *      */
     function nth(array, n) {
       return (array && array.length) ? baseNth(array, toInteger(n)) : undefined;
     }
@@ -7695,8 +7613,7 @@
      *
      * _.pull(array, 'a', 'c');
      * console.log(array);
-     * // => ['b', 'b']
-     */
+     *      */
     var pull = baseRest(pullAll);
 
     /**
@@ -7717,8 +7634,7 @@
      *
      * _.pullAll(array, ['a', 'c']);
      * console.log(array);
-     * // => ['b', 'b']
-     */
+     *      */
     function pullAll(array, values) {
       return (array && array.length && values && values.length)
         ? basePullAll(array, values)
@@ -7746,8 +7662,7 @@
      *
      * _.pullAllBy(array, [{ 'x': 1 }, { 'x': 3 }], 'x');
      * console.log(array);
-     * // => [{ 'x': 2 }]
-     */
+     *      */
     function pullAllBy(array, values, iteratee) {
       return (array && array.length && values && values.length)
         ? basePullAll(array, values, getIteratee(iteratee, 2))
@@ -7775,8 +7690,7 @@
      *
      * _.pullAllWith(array, [{ 'x': 3, 'y': 4 }], _.isEqual);
      * console.log(array);
-     * // => [{ 'x': 1, 'y': 2 }, { 'x': 5, 'y': 6 }]
-     */
+     *      */
     function pullAllWith(array, values, comparator) {
       return (array && array.length && values && values.length)
         ? basePullAll(array, values, undefined, comparator)
@@ -7802,11 +7716,9 @@
      * var pulled = _.pullAt(array, [1, 3]);
      *
      * console.log(array);
-     * // => ['a', 'c']
-     *
+     *      *
      * console.log(pulled);
-     * // => ['b', 'd']
-     */
+     *      */
     var pullAt = flatRest(function(array, indexes) {
       var length = array == null ? 0 : array.length,
           result = baseAt(array, indexes);
@@ -7841,11 +7753,9 @@
      * });
      *
      * console.log(array);
-     * // => [1, 3]
-     *
+     *      *
      * console.log(evens);
-     * // => [2, 4]
-     */
+     *      */
     function remove(array, predicate) {
       var result = [];
       if (!(array && array.length)) {
@@ -7885,11 +7795,9 @@
      * var array = [1, 2, 3];
      *
      * _.reverse(array);
-     * // => [3, 2, 1]
-     *
+     *      *
      * console.log(array);
-     * // => [3, 2, 1]
-     */
+     *      */
     function reverse(array) {
       return array == null ? array : nativeReverse.call(array);
     }
@@ -7941,8 +7849,7 @@
      * @example
      *
      * _.sortedIndex([30, 50], 40);
-     * // => 1
-     */
+     *      */
     function sortedIndex(array, value) {
       return baseSortedIndex(array, value);
     }
@@ -7966,12 +7873,9 @@
      * var objects = [{ 'x': 4 }, { 'x': 5 }];
      *
      * _.sortedIndexBy(objects, { 'x': 4 }, function(o) { return o.x; });
-     * // => 0
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.sortedIndexBy(objects, { 'x': 4 }, 'x');
-     * // => 0
-     */
+     *      *
+     *      * _.sortedIndexBy(objects, { 'x': 4 }, 'x');
+     *      */
     function sortedIndexBy(array, value, iteratee) {
       return baseSortedIndexBy(array, value, getIteratee(iteratee, 2));
     }
@@ -7990,8 +7894,7 @@
      * @example
      *
      * _.sortedIndexOf([4, 5, 5, 5, 6], 5);
-     * // => 1
-     */
+     *      */
     function sortedIndexOf(array, value) {
       var length = array == null ? 0 : array.length;
       if (length) {
@@ -8019,8 +7922,7 @@
      * @example
      *
      * _.sortedLastIndex([4, 5, 5, 5, 6], 5);
-     * // => 4
-     */
+     *      */
     function sortedLastIndex(array, value) {
       return baseSortedIndex(array, value, true);
     }
@@ -8044,12 +7946,9 @@
      * var objects = [{ 'x': 4 }, { 'x': 5 }];
      *
      * _.sortedLastIndexBy(objects, { 'x': 4 }, function(o) { return o.x; });
-     * // => 1
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.sortedLastIndexBy(objects, { 'x': 4 }, 'x');
-     * // => 1
-     */
+     *      *
+     *      * _.sortedLastIndexBy(objects, { 'x': 4 }, 'x');
+     *      */
     function sortedLastIndexBy(array, value, iteratee) {
       return baseSortedIndexBy(array, value, getIteratee(iteratee, 2), true);
     }
@@ -8068,8 +7967,7 @@
      * @example
      *
      * _.sortedLastIndexOf([4, 5, 5, 5, 6], 5);
-     * // => 3
-     */
+     *      */
     function sortedLastIndexOf(array, value) {
       var length = array == null ? 0 : array.length;
       if (length) {
@@ -8094,8 +7992,7 @@
      * @example
      *
      * _.sortedUniq([1, 1, 2]);
-     * // => [1, 2]
-     */
+     *      */
     function sortedUniq(array) {
       return (array && array.length)
         ? baseSortedUniq(array)
@@ -8116,8 +8013,7 @@
      * @example
      *
      * _.sortedUniqBy([1.1, 1.2, 2.3, 2.4], Math.floor);
-     * // => [1.1, 2.3]
-     */
+     *      */
     function sortedUniqBy(array, iteratee) {
       return (array && array.length)
         ? baseSortedUniq(array, getIteratee(iteratee, 2))
@@ -8136,8 +8032,7 @@
      * @example
      *
      * _.tail([1, 2, 3]);
-     * // => [2, 3]
-     */
+     *      */
     function tail(array) {
       var length = array == null ? 0 : array.length;
       return length ? baseSlice(array, 1, length) : [];
@@ -8157,17 +8052,13 @@
      * @example
      *
      * _.take([1, 2, 3]);
-     * // => [1]
-     *
+     *      *
      * _.take([1, 2, 3], 2);
-     * // => [1, 2]
-     *
+     *      *
      * _.take([1, 2, 3], 5);
-     * // => [1, 2, 3]
-     *
+     *      *
      * _.take([1, 2, 3], 0);
-     * // => []
-     */
+     *      */
     function take(array, n, guard) {
       if (!(array && array.length)) {
         return [];
@@ -8190,17 +8081,13 @@
      * @example
      *
      * _.takeRight([1, 2, 3]);
-     * // => [3]
-     *
+     *      *
      * _.takeRight([1, 2, 3], 2);
-     * // => [2, 3]
-     *
+     *      *
      * _.takeRight([1, 2, 3], 5);
-     * // => [1, 2, 3]
-     *
+     *      *
      * _.takeRight([1, 2, 3], 0);
-     * // => []
-     */
+     *      */
     function takeRight(array, n, guard) {
       var length = array == null ? 0 : array.length;
       if (!length) {
@@ -8232,20 +8119,13 @@
      * ];
      *
      * _.takeRightWhile(users, function(o) { return !o.active; });
-     * // => objects for ['fred', 'pebbles']
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.takeRightWhile(users, { 'user': 'pebbles', 'active': false });
-     * // => objects for ['pebbles']
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.takeRightWhile(users, ['active', false]);
-     * // => objects for ['fred', 'pebbles']
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.takeRightWhile(users, 'active');
-     * // => []
-     */
+     *      *
+     *      * _.takeRightWhile(users, { 'user': 'pebbles', 'active': false });
+     *      *
+     *      * _.takeRightWhile(users, ['active', false]);
+     *      *
+     *      * _.takeRightWhile(users, 'active');
+     *      */
     function takeRightWhile(array, predicate) {
       return (array && array.length)
         ? baseWhile(array, getIteratee(predicate, 3), false, true)
@@ -8273,20 +8153,13 @@
      * ];
      *
      * _.takeWhile(users, function(o) { return !o.active; });
-     * // => objects for ['barney', 'fred']
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.takeWhile(users, { 'user': 'barney', 'active': false });
-     * // => objects for ['barney']
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.takeWhile(users, ['active', false]);
-     * // => objects for ['barney', 'fred']
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.takeWhile(users, 'active');
-     * // => []
-     */
+     *      *
+     *      * _.takeWhile(users, { 'user': 'barney', 'active': false });
+     *      *
+     *      * _.takeWhile(users, ['active', false]);
+     *      *
+     *      * _.takeWhile(users, 'active');
+     *      */
     function takeWhile(array, predicate) {
       return (array && array.length)
         ? baseWhile(array, getIteratee(predicate, 3))
@@ -8307,8 +8180,7 @@
      * @example
      *
      * _.union([2], [1, 2]);
-     * // => [2, 1]
-     */
+     *      */
     var union = baseRest(function(arrays) {
       return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true));
     });
@@ -8330,12 +8202,9 @@
      * @example
      *
      * _.unionBy([2.1], [1.2, 2.3], Math.floor);
-     * // => [2.1, 1.2]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.unionBy([{ 'x': 1 }], [{ 'x': 2 }, { 'x': 1 }], 'x');
-     * // => [{ 'x': 1 }, { 'x': 2 }]
-     */
+     *      *
+     *      * _.unionBy([{ 'x': 1 }], [{ 'x': 2 }, { 'x': 1 }], 'x');
+     *      */
     var unionBy = baseRest(function(arrays) {
       var iteratee = last(arrays);
       if (isArrayLikeObject(iteratee)) {
@@ -8363,8 +8232,7 @@
      * var others = [{ 'x': 1, 'y': 1 }, { 'x': 1, 'y': 2 }];
      *
      * _.unionWith(objects, others, _.isEqual);
-     * // => [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }, { 'x': 1, 'y': 1 }]
-     */
+     *      */
     var unionWith = baseRest(function(arrays) {
       var comparator = last(arrays);
       comparator = typeof comparator == 'function' ? comparator : undefined;
@@ -8387,8 +8255,7 @@
      * @example
      *
      * _.uniq([2, 1, 2]);
-     * // => [2, 1]
-     */
+     *      */
     function uniq(array) {
       return (array && array.length) ? baseUniq(array) : [];
     }
@@ -8410,12 +8277,9 @@
      * @example
      *
      * _.uniqBy([2.1, 1.2, 2.3], Math.floor);
-     * // => [2.1, 1.2]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.uniqBy([{ 'x': 1 }, { 'x': 2 }, { 'x': 1 }], 'x');
-     * // => [{ 'x': 1 }, { 'x': 2 }]
-     */
+     *      *
+     *      * _.uniqBy([{ 'x': 1 }, { 'x': 2 }, { 'x': 1 }], 'x');
+     *      */
     function uniqBy(array, iteratee) {
       return (array && array.length) ? baseUniq(array, getIteratee(iteratee, 2)) : [];
     }
@@ -8438,8 +8302,7 @@
      * var objects = [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }, { 'x': 1, 'y': 2 }];
      *
      * _.uniqWith(objects, _.isEqual);
-     * // => [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }]
-     */
+     *      */
     function uniqWith(array, comparator) {
       comparator = typeof comparator == 'function' ? comparator : undefined;
       return (array && array.length) ? baseUniq(array, undefined, comparator) : [];
@@ -8459,11 +8322,9 @@
      * @example
      *
      * var zipped = _.zip(['a', 'b'], [1, 2], [true, false]);
-     * // => [['a', 1, true], ['b', 2, false]]
-     *
+     *      *
      * _.unzip(zipped);
-     * // => [['a', 'b'], [1, 2], [true, false]]
-     */
+     *      */
     function unzip(array) {
       if (!(array && array.length)) {
         return [];
@@ -8496,11 +8357,9 @@
      * @example
      *
      * var zipped = _.zip([1, 2], [10, 20], [100, 200]);
-     * // => [[1, 10, 100], [2, 20, 200]]
-     *
+     *      *
      * _.unzipWith(zipped, _.add);
-     * // => [3, 30, 300]
-     */
+     *      */
     function unzipWith(array, iteratee) {
       if (!(array && array.length)) {
         return [];
@@ -8532,8 +8391,7 @@
      * @example
      *
      * _.without([2, 1, 2, 3], 1, 2);
-     * // => [3]
-     */
+     *      */
     var without = baseRest(function(array, values) {
       return isArrayLikeObject(array)
         ? baseDifference(array, values)
@@ -8556,8 +8414,7 @@
      * @example
      *
      * _.xor([2, 1], [2, 3]);
-     * // => [1, 3]
-     */
+     *      */
     var xor = baseRest(function(arrays) {
       return baseXor(arrayFilter(arrays, isArrayLikeObject));
     });
@@ -8579,12 +8436,9 @@
      * @example
      *
      * _.xorBy([2.1, 1.2], [2.3, 3.4], Math.floor);
-     * // => [1.2, 3.4]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.xorBy([{ 'x': 1 }], [{ 'x': 2 }, { 'x': 1 }], 'x');
-     * // => [{ 'x': 2 }]
-     */
+     *      *
+     *      * _.xorBy([{ 'x': 1 }], [{ 'x': 2 }, { 'x': 1 }], 'x');
+     *      */
     var xorBy = baseRest(function(arrays) {
       var iteratee = last(arrays);
       if (isArrayLikeObject(iteratee)) {
@@ -8612,8 +8466,7 @@
      * var others = [{ 'x': 1, 'y': 1 }, { 'x': 1, 'y': 2 }];
      *
      * _.xorWith(objects, others, _.isEqual);
-     * // => [{ 'x': 2, 'y': 1 }, { 'x': 1, 'y': 1 }]
-     */
+     *      */
     var xorWith = baseRest(function(arrays) {
       var comparator = last(arrays);
       comparator = typeof comparator == 'function' ? comparator : undefined;
@@ -8634,8 +8487,7 @@
      * @example
      *
      * _.zip(['a', 'b'], [1, 2], [true, false]);
-     * // => [['a', 1, true], ['b', 2, false]]
-     */
+     *      */
     var zip = baseRest(unzip);
 
     /**
@@ -8652,8 +8504,7 @@
      * @example
      *
      * _.zipObject(['a', 'b'], [1, 2]);
-     * // => { 'a': 1, 'b': 2 }
-     */
+     *      */
     function zipObject(props, values) {
       return baseZipObject(props || [], values || [], assignValue);
     }
@@ -8671,8 +8522,7 @@
      * @example
      *
      * _.zipObjectDeep(['a.b[0].c', 'a.b[1].d'], [1, 2]);
-     * // => { 'a': { 'b': [{ 'c': 1 }, { 'd': 2 }] } }
-     */
+     *      */
     function zipObjectDeep(props, values) {
       return baseZipObject(props || [], values || [], baseSet);
     }
@@ -8695,8 +8545,7 @@
      * _.zipWith([1, 2], [10, 20], [100, 200], function(a, b, c) {
      *   return a + b + c;
      * });
-     * // => [111, 222]
-     */
+     *      */
     var zipWith = baseRest(function(arrays) {
       var length = arrays.length,
           iteratee = length > 1 ? arrays[length - 1] : undefined;
@@ -8734,8 +8583,7 @@
      *   })
      *   .head()
      *   .value();
-     * // => 'pebbles is 1'
-     */
+     *      */
     function chain(value) {
       var result = lodash(value);
       result.__chain__ = true;
@@ -8758,13 +8606,11 @@
      *
      * _([1, 2, 3])
      *  .tap(function(array) {
-     *    // Mutate input array.
-     *    array.pop();
+     *         *    array.pop();
      *  })
      *  .reverse()
      *  .value();
-     * // => [2, 1]
-     */
+     *      */
     function tap(value, interceptor) {
       interceptor(value);
       return value;
@@ -8791,8 +8637,7 @@
      *    return [value];
      *  })
      *  .value();
-     * // => ['abc']
-     */
+     *      */
     function thru(value, interceptor) {
       return interceptor(value);
     }
@@ -8811,8 +8656,7 @@
      * var object = { 'a': [{ 'b': { 'c': 3 } }, 4] };
      *
      * _(object).at(['a[0].b.c', 'a[1]']).value();
-     * // => [3, 4]
-     */
+     *      */
     var wrapperAt = flatRest(function(paths) {
       var length = paths.length,
           start = length ? paths[0] : 0,
@@ -8852,18 +8696,14 @@
      *   { 'user': 'fred',   'age': 40 }
      * ];
      *
-     * // A sequence without explicit chaining.
-     * _(users).head();
-     * // => { 'user': 'barney', 'age': 36 }
-     *
-     * // A sequence with explicit chaining.
-     * _(users)
+     *      * _(users).head();
+     *      *
+     *      * _(users)
      *   .chain()
      *   .head()
      *   .pick('user')
      *   .value();
-     * // => { 'user': 'barney' }
-     */
+     *      */
     function wrapperChain() {
       return chain(this);
     }
@@ -8882,18 +8722,14 @@
      * var wrapped = _(array).push(3);
      *
      * console.log(array);
-     * // => [1, 2]
-     *
+     *      *
      * wrapped = wrapped.commit();
      * console.log(array);
-     * // => [1, 2, 3]
-     *
+     *      *
      * wrapped.last();
-     * // => 3
-     *
+     *      *
      * console.log(array);
-     * // => [1, 2, 3]
-     */
+     *      */
     function wrapperCommit() {
       return new LodashWrapper(this.value(), this.__chain__);
     }
@@ -8912,14 +8748,11 @@
      * var wrapped = _([1, 2]);
      *
      * wrapped.next();
-     * // => { 'done': false, 'value': 1 }
-     *
+     *      *
      * wrapped.next();
-     * // => { 'done': false, 'value': 2 }
-     *
+     *      *
      * wrapped.next();
-     * // => { 'done': true, 'value': undefined }
-     */
+     *      */
     function wrapperNext() {
       if (this.__values__ === undefined) {
         this.__values__ = toArray(this.value());
@@ -8943,11 +8776,9 @@
      * var wrapped = _([1, 2]);
      *
      * wrapped[Symbol.iterator]() === wrapped;
-     * // => true
-     *
+     *      *
      * Array.from(wrapped);
-     * // => [1, 2]
-     */
+     *      */
     function wrapperToIterator() {
       return this;
     }
@@ -8971,11 +8802,9 @@
      * var other = wrapped.plant([3, 4]);
      *
      * other.value();
-     * // => [9, 16]
-     *
+     *      *
      * wrapped.value();
-     * // => [1, 4]
-     */
+     *      */
     function wrapperPlant(value) {
       var result,
           parent = this;
@@ -9011,11 +8840,9 @@
      * var array = [1, 2, 3];
      *
      * _(array).reverse().value()
-     * // => [3, 2, 1]
-     *
+     *      *
      * console.log(array);
-     * // => [3, 2, 1]
-     */
+     *      */
     function wrapperReverse() {
       var value = this.__wrapped__;
       if (value instanceof LazyWrapper) {
@@ -9046,8 +8873,7 @@
      * @example
      *
      * _([1, 2, 3]).value();
-     * // => [1, 2, 3]
-     */
+     *      */
     function wrapperValue() {
       return baseWrapperValue(this.__wrapped__, this.__actions__);
     }
@@ -9070,12 +8896,9 @@
      * @example
      *
      * _.countBy([6.1, 4.2, 6.3], Math.floor);
-     * // => { '4': 1, '6': 2 }
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.countBy(['one', 'two', 'three'], 'length');
-     * // => { '3': 2, '5': 1 }
-     */
+     *      *
+     *      * _.countBy(['one', 'two', 'three'], 'length');
+     *      */
     var countBy = createAggregator(function(result, value, key) {
       if (hasOwnProperty.call(result, key)) {
         ++result[key];
@@ -9106,25 +8929,18 @@
      * @example
      *
      * _.every([true, 1, null, 'yes'], Boolean);
-     * // => false
-     *
+     *      *
      * var users = [
      *   { 'user': 'barney', 'age': 36, 'active': false },
      *   { 'user': 'fred',   'age': 40, 'active': false }
      * ];
      *
-     * // The `_.matches` iteratee shorthand.
-     * _.every(users, { 'user': 'barney', 'active': false });
-     * // => false
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.every(users, ['active', false]);
-     * // => true
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.every(users, 'active');
-     * // => false
-     */
+     *      * _.every(users, { 'user': 'barney', 'active': false });
+     *      *
+     *      * _.every(users, ['active', false]);
+     *      *
+     *      * _.every(users, 'active');
+     *      */
     function every(collection, predicate, guard) {
       var func = isArray(collection) ? arrayEvery : baseEvery;
       if (guard && isIterateeCall(collection, predicate, guard)) {
@@ -9156,20 +8972,13 @@
      * ];
      *
      * _.filter(users, function(o) { return !o.active; });
-     * // => objects for ['fred']
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.filter(users, { 'age': 36, 'active': true });
-     * // => objects for ['barney']
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.filter(users, ['active', false]);
-     * // => objects for ['fred']
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.filter(users, 'active');
-     * // => objects for ['barney']
-     */
+     *      *
+     *      * _.filter(users, { 'age': 36, 'active': true });
+     *      *
+     *      * _.filter(users, ['active', false]);
+     *      *
+     *      * _.filter(users, 'active');
+     *      */
     function filter(collection, predicate) {
       var func = isArray(collection) ? arrayFilter : baseFilter;
       return func(collection, getIteratee(predicate, 3));
@@ -9197,20 +9006,13 @@
      * ];
      *
      * _.find(users, function(o) { return o.age < 40; });
-     * // => object for 'barney'
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.find(users, { 'age': 1, 'active': true });
-     * // => object for 'pebbles'
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.find(users, ['active', false]);
-     * // => object for 'fred'
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.find(users, 'active');
-     * // => object for 'barney'
-     */
+     *      *
+     *      * _.find(users, { 'age': 1, 'active': true });
+     *      *
+     *      * _.find(users, ['active', false]);
+     *      *
+     *      * _.find(users, 'active');
+     *      */
     var find = createFind(findIndex);
 
     /**
@@ -9230,8 +9032,7 @@
      * _.findLast([1, 2, 3, 4], function(n) {
      *   return n % 2 == 1;
      * });
-     * // => 3
-     */
+     *      */
     var findLast = createFind(findLastIndex);
 
     /**
@@ -9253,8 +9054,7 @@
      * }
      *
      * _.flatMap([1, 2], duplicate);
-     * // => [1, 1, 2, 2]
-     */
+     *      */
     function flatMap(collection, iteratee) {
       return baseFlatten(map(collection, iteratee), 1);
     }
@@ -9277,8 +9077,7 @@
      * }
      *
      * _.flatMapDeep([1, 2], duplicate);
-     * // => [1, 1, 2, 2]
-     */
+     *      */
     function flatMapDeep(collection, iteratee) {
       return baseFlatten(map(collection, iteratee), INFINITY);
     }
@@ -9302,8 +9101,7 @@
      * }
      *
      * _.flatMapDepth([1, 2], duplicate, 2);
-     * // => [[1, 1], [2, 2]]
-     */
+     *      */
     function flatMapDepth(collection, iteratee, depth) {
       depth = depth === undefined ? 1 : toInteger(depth);
       return baseFlatten(map(collection, iteratee), depth);
@@ -9332,13 +9130,11 @@
      * _.forEach([1, 2], function(value) {
      *   console.log(value);
      * });
-     * // => Logs `1` then `2`.
-     *
+     *      *
      * _.forEach({ 'a': 1, 'b': 2 }, function(value, key) {
      *   console.log(key);
      * });
-     * // => Logs 'a' then 'b' (iteration order is not guaranteed).
-     */
+     *      */
     function forEach(collection, iteratee) {
       var func = isArray(collection) ? arrayEach : baseEach;
       return func(collection, getIteratee(iteratee, 3));
@@ -9362,8 +9158,7 @@
      * _.forEachRight([1, 2], function(value) {
      *   console.log(value);
      * });
-     * // => Logs `2` then `1`.
-     */
+     *      */
     function forEachRight(collection, iteratee) {
       var func = isArray(collection) ? arrayEachRight : baseEachRight;
       return func(collection, getIteratee(iteratee, 3));
@@ -9386,12 +9181,9 @@
      * @example
      *
      * _.groupBy([6.1, 4.2, 6.3], Math.floor);
-     * // => { '4': [4.2], '6': [6.1, 6.3] }
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.groupBy(['one', 'two', 'three'], 'length');
-     * // => { '3': ['one', 'two'], '5': ['three'] }
-     */
+     *      *
+     *      * _.groupBy(['one', 'two', 'three'], 'length');
+     *      */
     var groupBy = createAggregator(function(result, value, key) {
       if (hasOwnProperty.call(result, key)) {
         result[key].push(value);
@@ -9419,17 +9211,13 @@
      * @example
      *
      * _.includes([1, 2, 3], 1);
-     * // => true
-     *
+     *      *
      * _.includes([1, 2, 3], 1, 2);
-     * // => false
-     *
+     *      *
      * _.includes({ 'a': 1, 'b': 2 }, 1);
-     * // => true
-     *
+     *      *
      * _.includes('abcd', 'bc');
-     * // => true
-     */
+     *      */
     function includes(collection, value, fromIndex, guard) {
       collection = isArrayLike(collection) ? collection : values(collection);
       fromIndex = (fromIndex && !guard) ? toInteger(fromIndex) : 0;
@@ -9461,11 +9249,9 @@
      * @example
      *
      * _.invokeMap([[5, 1, 7], [3, 2, 1]], 'sort');
-     * // => [[1, 5, 7], [1, 2, 3]]
-     *
+     *      *
      * _.invokeMap([123, 456], String.prototype.split, '');
-     * // => [['1', '2', '3'], ['4', '5', '6']]
-     */
+     *      */
     var invokeMap = baseRest(function(collection, path, args) {
       var index = -1,
           isFunc = typeof path == 'function',
@@ -9500,11 +9286,9 @@
      * _.keyBy(array, function(o) {
      *   return String.fromCharCode(o.code);
      * });
-     * // => { 'a': { 'dir': 'left', 'code': 97 }, 'd': { 'dir': 'right', 'code': 100 } }
-     *
+     *      *
      * _.keyBy(array, 'dir');
-     * // => { 'left': { 'dir': 'left', 'code': 97 }, 'right': { 'dir': 'right', 'code': 100 } }
-     */
+     *      */
     var keyBy = createAggregator(function(result, value, key) {
       baseAssignValue(result, key, value);
     });
@@ -9537,20 +9321,16 @@
      * }
      *
      * _.map([4, 8], square);
-     * // => [16, 64]
-     *
+     *      *
      * _.map({ 'a': 4, 'b': 8 }, square);
-     * // => [16, 64] (iteration order is not guaranteed)
-     *
+     *      *
      * var users = [
      *   { 'user': 'barney' },
      *   { 'user': 'fred' }
      * ];
      *
-     * // The `_.property` iteratee shorthand.
-     * _.map(users, 'user');
-     * // => ['barney', 'fred']
-     */
+     *      * _.map(users, 'user');
+     *      */
     function map(collection, iteratee) {
       var func = isArray(collection) ? arrayMap : baseMap;
       return func(collection, getIteratee(iteratee, 3));
@@ -9581,10 +9361,8 @@
      *   { 'user': 'barney', 'age': 36 }
      * ];
      *
-     * // Sort by `user` in ascending order and by `age` in descending order.
-     * _.orderBy(users, ['user', 'age'], ['asc', 'desc']);
-     * // => objects for [['barney', 36], ['barney', 34], ['fred', 48], ['fred', 40]]
-     */
+     *      * _.orderBy(users, ['user', 'age'], ['asc', 'desc']);
+     *      */
     function orderBy(collection, iteratees, orders, guard) {
       if (collection == null) {
         return [];
@@ -9621,20 +9399,13 @@
      * ];
      *
      * _.partition(users, function(o) { return o.active; });
-     * // => objects for [['fred'], ['barney', 'pebbles']]
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.partition(users, { 'age': 1, 'active': false });
-     * // => objects for [['pebbles'], ['barney', 'fred']]
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.partition(users, ['active', false]);
-     * // => objects for [['barney', 'pebbles'], ['fred']]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.partition(users, 'active');
-     * // => objects for [['fred'], ['barney', 'pebbles']]
-     */
+     *      *
+     *      * _.partition(users, { 'age': 1, 'active': false });
+     *      *
+     *      * _.partition(users, ['active', false]);
+     *      *
+     *      * _.partition(users, 'active');
+     *      */
     var partition = createAggregator(function(result, value, key) {
       result[key ? 0 : 1].push(value);
     }, function() { return [[], []]; });
@@ -9668,14 +9439,12 @@
      * _.reduce([1, 2], function(sum, n) {
      *   return sum + n;
      * }, 0);
-     * // => 3
-     *
+     *      *
      * _.reduce({ 'a': 1, 'b': 2, 'c': 1 }, function(result, value, key) {
      *   (result[value] || (result[value] = [])).push(key);
      *   return result;
      * }, {});
-     * // => { '1': ['a', 'c'], '2': ['b'] } (iteration order is not guaranteed)
-     */
+     *      */
     function reduce(collection, iteratee, accumulator) {
       var func = isArray(collection) ? arrayReduce : baseReduce,
           initAccum = arguments.length < 3;
@@ -9703,8 +9472,7 @@
      * _.reduceRight(array, function(flattened, other) {
      *   return flattened.concat(other);
      * }, []);
-     * // => [4, 5, 2, 3, 0, 1]
-     */
+     *      */
     function reduceRight(collection, iteratee, accumulator) {
       var func = isArray(collection) ? arrayReduceRight : baseReduce,
           initAccum = arguments.length < 3;
@@ -9732,20 +9500,13 @@
      * ];
      *
      * _.reject(users, function(o) { return !o.active; });
-     * // => objects for ['fred']
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.reject(users, { 'age': 40, 'active': true });
-     * // => objects for ['barney']
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.reject(users, ['active', false]);
-     * // => objects for ['fred']
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.reject(users, 'active');
-     * // => objects for ['barney']
-     */
+     *      *
+     *      * _.reject(users, { 'age': 40, 'active': true });
+     *      *
+     *      * _.reject(users, ['active', false]);
+     *      *
+     *      * _.reject(users, 'active');
+     *      */
     function reject(collection, predicate) {
       var func = isArray(collection) ? arrayFilter : baseFilter;
       return func(collection, negate(getIteratee(predicate, 3)));
@@ -9763,8 +9524,7 @@
      * @example
      *
      * _.sample([1, 2, 3, 4]);
-     * // => 2
-     */
+     *      */
     function sample(collection) {
       var func = isArray(collection) ? arraySample : baseSample;
       return func(collection);
@@ -9785,11 +9545,9 @@
      * @example
      *
      * _.sampleSize([1, 2, 3], 2);
-     * // => [3, 1]
-     *
+     *      *
      * _.sampleSize([1, 2, 3], 4);
-     * // => [2, 3, 1]
-     */
+     *      */
     function sampleSize(collection, n, guard) {
       if ((guard ? isIterateeCall(collection, n, guard) : n === undefined)) {
         n = 1;
@@ -9813,8 +9571,7 @@
      * @example
      *
      * _.shuffle([1, 2, 3, 4]);
-     * // => [4, 1, 3, 2]
-     */
+     *      */
     function shuffle(collection) {
       var func = isArray(collection) ? arrayShuffle : baseShuffle;
       return func(collection);
@@ -9833,14 +9590,11 @@
      * @example
      *
      * _.size([1, 2, 3]);
-     * // => 3
-     *
+     *      *
      * _.size({ 'a': 1, 'b': 2 });
-     * // => 2
-     *
+     *      *
      * _.size('pebbles');
-     * // => 7
-     */
+     *      */
     function size(collection) {
       if (collection == null) {
         return 0;
@@ -9872,25 +9626,18 @@
      * @example
      *
      * _.some([null, 0, 'yes', false], Boolean);
-     * // => true
-     *
+     *      *
      * var users = [
      *   { 'user': 'barney', 'active': true },
      *   { 'user': 'fred',   'active': false }
      * ];
      *
-     * // The `_.matches` iteratee shorthand.
-     * _.some(users, { 'user': 'barney', 'active': false });
-     * // => false
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.some(users, ['active', false]);
-     * // => true
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.some(users, 'active');
-     * // => true
-     */
+     *      * _.some(users, { 'user': 'barney', 'active': false });
+     *      *
+     *      * _.some(users, ['active', false]);
+     *      *
+     *      * _.some(users, 'active');
+     *      */
     function some(collection, predicate, guard) {
       var func = isArray(collection) ? arraySome : baseSome;
       if (guard && isIterateeCall(collection, predicate, guard)) {
@@ -9923,11 +9670,9 @@
      * ];
      *
      * _.sortBy(users, [function(o) { return o.user; }]);
-     * // => objects for [['barney', 36], ['barney', 34], ['fred', 48], ['fred', 40]]
-     *
+     *      *
      * _.sortBy(users, ['user', 'age']);
-     * // => objects for [['barney', 34], ['barney', 36], ['fred', 40], ['fred', 48]]
-     */
+     *      */
     var sortBy = baseRest(function(collection, iteratees) {
       if (collection == null) {
         return [];
@@ -9957,8 +9702,7 @@
      * _.defer(function(stamp) {
      *   console.log(_.now() - stamp);
      * }, _.now());
-     * // => Logs the number of milliseconds it took for the deferred invocation.
-     */
+     *      */
     var now = ctxNow || function() {
       return root.Date.now();
     };
@@ -9987,8 +9731,7 @@
      * _.forEach(saves, function(type) {
      *   asyncSave({ 'type': type, 'complete': done });
      * });
-     * // => Logs 'done saving!' after the two async saves have completed.
-     */
+     *      */
     function after(n, func) {
       if (typeof func != 'function') {
         throw new TypeError(FUNC_ERROR_TEXT);
@@ -10016,8 +9759,7 @@
      * @example
      *
      * _.map(['6', '8', '10'], _.ary(parseInt, 1));
-     * // => [6, 8, 10]
-     */
+     *      */
     function ary(func, n, guard) {
       n = guard ? undefined : n;
       n = (func && n == null) ? func.length : n;
@@ -10039,8 +9781,7 @@
      * @example
      *
      * jQuery(element).on('click', _.before(5, addContactToList));
-     * // => Allows adding up to 4 contacts to the list.
-     */
+     *      */
     function before(n, func) {
       var result;
       if (typeof func != 'function') {
@@ -10086,13 +9827,10 @@
      *
      * var bound = _.bind(greet, object, 'hi');
      * bound('!');
-     * // => 'hi fred!'
-     *
-     * // Bound with placeholders.
-     * var bound = _.bind(greet, object, _, '!');
+     *      *
+     *      * var bound = _.bind(greet, object, _, '!');
      * bound('hi');
-     * // => 'hi fred!'
-     */
+     *      */
     var bind = baseRest(function(func, thisArg, partials) {
       var bitmask = WRAP_BIND_FLAG;
       if (partials.length) {
@@ -10133,20 +9871,16 @@
      *
      * var bound = _.bindKey(object, 'greet', 'hi');
      * bound('!');
-     * // => 'hi fred!'
-     *
+     *      *
      * object.greet = function(greeting, punctuation) {
      *   return greeting + 'ya ' + this.user + punctuation;
      * };
      *
      * bound('!');
-     * // => 'hiya fred!'
-     *
-     * // Bound with placeholders.
-     * var bound = _.bindKey(object, 'greet', _, '!');
+     *      *
+     *      * var bound = _.bindKey(object, 'greet', _, '!');
      * bound('hi');
-     * // => 'hiya fred!'
-     */
+     *      */
     var bindKey = baseRest(function(object, key, partials) {
       var bitmask = WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG;
       if (partials.length) {
@@ -10185,18 +9919,13 @@
      * var curried = _.curry(abc);
      *
      * curried(1)(2)(3);
-     * // => [1, 2, 3]
-     *
+     *      *
      * curried(1, 2)(3);
-     * // => [1, 2, 3]
-     *
+     *      *
      * curried(1, 2, 3);
-     * // => [1, 2, 3]
-     *
-     * // Curried with placeholders.
-     * curried(1)(_, 3)(2);
-     * // => [1, 2, 3]
-     */
+     *      *
+     *      * curried(1)(_, 3)(2);
+     *      */
     function curry(func, arity, guard) {
       arity = guard ? undefined : arity;
       var result = createWrap(func, WRAP_CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
@@ -10230,18 +9959,13 @@
      * var curried = _.curryRight(abc);
      *
      * curried(3)(2)(1);
-     * // => [1, 2, 3]
-     *
+     *      *
      * curried(2, 3)(1);
-     * // => [1, 2, 3]
-     *
+     *      *
      * curried(1, 2, 3);
-     * // => [1, 2, 3]
-     *
-     * // Curried with placeholders.
-     * curried(3)(1, _)(2);
-     * // => [1, 2, 3]
-     */
+     *      *
+     *      * curried(3)(1, _)(2);
+     *      */
     function curryRight(func, arity, guard) {
       arity = guard ? undefined : arity;
       var result = createWrap(func, WRAP_CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
@@ -10286,22 +10010,18 @@
      * @returns {Function} Returns the new debounced function.
      * @example
      *
-     * // Avoid costly calculations while the window size is in flux.
-     * jQuery(window).on('resize', _.debounce(calculateLayout, 150));
+     *      * jQuery(window).on('resize', _.debounce(calculateLayout, 150));
      *
-     * // Invoke `sendMail` when clicked, debouncing subsequent calls.
-     * jQuery(element).on('click', _.debounce(sendMail, 300, {
+     *      * jQuery(element).on('click', _.debounce(sendMail, 300, {
      *   'leading': true,
      *   'trailing': false
      * }));
      *
-     * // Ensure `batchLog` is invoked once after 1 second of debounced calls.
-     * var debounced = _.debounce(batchLog, 250, { 'maxWait': 1000 });
+     *      * var debounced = _.debounce(batchLog, 250, { 'maxWait': 1000 });
      * var source = new EventSource('/stream');
      * jQuery(source).on('message', debounced);
      *
-     * // Cancel the trailing debounced invocation.
-     * jQuery(window).on('popstate', debounced.cancel);
+     *      * jQuery(window).on('popstate', debounced.cancel);
      */
     function debounce(func, wait, options) {
       var lastArgs,
@@ -10443,8 +10163,7 @@
      * _.defer(function(text) {
      *   console.log(text);
      * }, 'deferred');
-     * // => Logs 'deferred' after one millisecond.
-     */
+     *      */
     var defer = baseRest(function(func, args) {
       return baseDelay(func, 1, args);
     });
@@ -10466,8 +10185,7 @@
      * _.delay(function(text) {
      *   console.log(text);
      * }, 1000, 'later');
-     * // => Logs 'later' after one second.
-     */
+     *      */
     var delay = baseRest(function(func, wait, args) {
       return baseDelay(func, toNumber(wait) || 0, args);
     });
@@ -10488,8 +10206,7 @@
      * });
      *
      * flipped('a', 'b', 'c', 'd');
-     * // => ['d', 'c', 'b', 'a']
-     */
+     *      */
     function flip(func) {
       return createWrap(func, WRAP_FLIP_FLAG);
     }
@@ -10521,22 +10238,16 @@
      *
      * var values = _.memoize(_.values);
      * values(object);
-     * // => [1, 2]
-     *
+     *      *
      * values(other);
-     * // => [3, 4]
-     *
+     *      *
      * object.a = 2;
      * values(object);
-     * // => [1, 2]
-     *
-     * // Modify the result cache.
-     * values.cache.set(object, ['a', 'b']);
+     *      *
+     *      * values.cache.set(object, ['a', 'b']);
      * values(object);
-     * // => ['a', 'b']
-     *
-     * // Replace `_.memoize.Cache`.
-     * _.memoize.Cache = WeakMap;
+     *      *
+     *      * _.memoize.Cache = WeakMap;
      */
     function memoize(func, resolver) {
       if (typeof func != 'function' || (resolver != null && typeof resolver != 'function')) {
@@ -10579,8 +10290,7 @@
      * }
      *
      * _.filter([1, 2, 3, 4, 5, 6], _.negate(isEven));
-     * // => [1, 3, 5]
-     */
+     *      */
     function negate(predicate) {
       if (typeof predicate != 'function') {
         throw new TypeError(FUNC_ERROR_TEXT);
@@ -10613,8 +10323,7 @@
      * var initialize = _.once(createApplication);
      * initialize();
      * initialize();
-     * // => `createApplication` is invoked once
-     */
+     *      */
     function once(func) {
       return before(2, func);
     }
@@ -10645,11 +10354,9 @@
      * }, [square, doubled]);
      *
      * func(9, 3);
-     * // => [81, 6]
-     *
+     *      *
      * func(10, 5);
-     * // => [100, 10]
-     */
+     *      */
     var overArgs = castRest(function(func, transforms) {
       transforms = (transforms.length == 1 && isArray(transforms[0]))
         ? arrayMap(transforms[0], baseUnary(getIteratee()))
@@ -10693,13 +10400,10 @@
      *
      * var sayHelloTo = _.partial(greet, 'hello');
      * sayHelloTo('fred');
-     * // => 'hello fred'
-     *
-     * // Partially applied with placeholders.
-     * var greetFred = _.partial(greet, _, 'fred');
+     *      *
+     *      * var greetFred = _.partial(greet, _, 'fred');
      * greetFred('hi');
-     * // => 'hi fred'
-     */
+     *      */
     var partial = baseRest(function(func, partials) {
       var holders = replaceHolders(partials, getHolder(partial));
       return createWrap(func, WRAP_PARTIAL_FLAG, undefined, partials, holders);
@@ -10730,13 +10434,10 @@
      *
      * var greetFred = _.partialRight(greet, 'fred');
      * greetFred('hi');
-     * // => 'hi fred'
-     *
-     * // Partially applied with placeholders.
-     * var sayHelloTo = _.partialRight(greet, 'hello', _);
+     *      *
+     *      * var sayHelloTo = _.partialRight(greet, 'hello', _);
      * sayHelloTo('fred');
-     * // => 'hello fred'
-     */
+     *      */
     var partialRight = baseRest(function(func, partials) {
       var holders = replaceHolders(partials, getHolder(partialRight));
       return createWrap(func, WRAP_PARTIAL_RIGHT_FLAG, undefined, partials, holders);
@@ -10762,8 +10463,7 @@
      * }, [2, 0, 1]);
      *
      * rearged('b', 'c', 'a')
-     * // => ['a', 'b', 'c']
-     */
+     *      */
     var rearg = flatRest(function(func, indexes) {
       return createWrap(func, WRAP_REARG_FLAG, undefined, undefined, undefined, indexes);
     });
@@ -10791,8 +10491,7 @@
      * });
      *
      * say('hello', 'fred', 'barney', 'pebbles');
-     * // => 'hello fred, barney, & pebbles'
-     */
+     *      */
     function rest(func, start) {
       if (typeof func != 'function') {
         throw new TypeError(FUNC_ERROR_TEXT);
@@ -10823,8 +10522,7 @@
      * });
      *
      * say(['fred', 'hello']);
-     * // => 'fred says hello'
-     *
+     *      *
      * var numbers = Promise.all([
      *   Promise.resolve(40),
      *   Promise.resolve(36)
@@ -10833,8 +10531,7 @@
      * numbers.then(_.spread(function(x, y) {
      *   return x + y;
      * }));
-     * // => a Promise of 76
-     */
+     *      */
     function spread(func, start) {
       if (typeof func != 'function') {
         throw new TypeError(FUNC_ERROR_TEXT);
@@ -10885,15 +10582,12 @@
      * @returns {Function} Returns the new throttled function.
      * @example
      *
-     * // Avoid excessively updating the position while scrolling.
-     * jQuery(window).on('scroll', _.throttle(updatePosition, 100));
+     *      * jQuery(window).on('scroll', _.throttle(updatePosition, 100));
      *
-     * // Invoke `renewToken` when the click event is fired, but not more than once every 5 minutes.
-     * var throttled = _.throttle(renewToken, 300000, { 'trailing': false });
+     *      * var throttled = _.throttle(renewToken, 300000, { 'trailing': false });
      * jQuery(element).on('click', throttled);
      *
-     * // Cancel the trailing throttled invocation.
-     * jQuery(window).on('popstate', throttled.cancel);
+     *      * jQuery(window).on('popstate', throttled.cancel);
      */
     function throttle(func, wait, options) {
       var leading = true,
@@ -10926,8 +10620,7 @@
      * @example
      *
      * _.map(['6', '8', '10'], _.unary(parseInt));
-     * // => [6, 8, 10]
-     */
+     *      */
     function unary(func) {
       return ary(func, 1);
     }
@@ -10952,8 +10645,7 @@
      * });
      *
      * p('fred, barney, & pebbles');
-     * // => '<p>fred, barney, &amp; pebbles</p>'
-     */
+     *      */
     function wrap(value, wrapper) {
       return partial(castFunction(wrapper), value);
     }
@@ -10972,27 +10664,20 @@
      * @example
      *
      * _.castArray(1);
-     * // => [1]
-     *
+     *      *
      * _.castArray({ 'a': 1 });
-     * // => [{ 'a': 1 }]
-     *
+     *      *
      * _.castArray('abc');
-     * // => ['abc']
-     *
+     *      *
      * _.castArray(null);
-     * // => [null]
-     *
+     *      *
      * _.castArray(undefined);
-     * // => [undefined]
-     *
+     *      *
      * _.castArray();
-     * // => []
-     *
+     *      *
      * var array = [1, 2, 3];
      * console.log(_.castArray(array) === array);
-     * // => true
-     */
+     *      */
     function castArray() {
       if (!arguments.length) {
         return [];
@@ -11025,8 +10710,7 @@
      *
      * var shallow = _.clone(objects);
      * console.log(shallow[0] === objects[0]);
-     * // => true
-     */
+     *      */
     function clone(value) {
       return baseClone(value, CLONE_SYMBOLS_FLAG);
     }
@@ -11056,12 +10740,9 @@
      * var el = _.cloneWith(document.body, customizer);
      *
      * console.log(el === document.body);
-     * // => false
-     * console.log(el.nodeName);
-     * // => 'BODY'
-     * console.log(el.childNodes.length);
-     * // => 0
-     */
+     *      * console.log(el.nodeName);
+     *      * console.log(el.childNodes.length);
+     *      */
     function cloneWith(value, customizer) {
       customizer = typeof customizer == 'function' ? customizer : undefined;
       return baseClone(value, CLONE_SYMBOLS_FLAG, customizer);
@@ -11083,8 +10764,7 @@
      *
      * var deep = _.cloneDeep(objects);
      * console.log(deep[0] === objects[0]);
-     * // => false
-     */
+     *      */
     function cloneDeep(value) {
       return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG);
     }
@@ -11111,12 +10791,9 @@
      * var el = _.cloneDeepWith(document.body, customizer);
      *
      * console.log(el === document.body);
-     * // => false
-     * console.log(el.nodeName);
-     * // => 'BODY'
-     * console.log(el.childNodes.length);
-     * // => 20
-     */
+     *      * console.log(el.nodeName);
+     *      * console.log(el.childNodes.length);
+     *      */
     function cloneDeepWith(value, customizer) {
       customizer = typeof customizer == 'function' ? customizer : undefined;
       return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG, customizer);
@@ -11141,11 +10818,9 @@
      * var object = { 'a': 1, 'b': 2 };
      *
      * _.conformsTo(object, { 'b': function(n) { return n > 1; } });
-     * // => true
-     *
+     *      *
      * _.conformsTo(object, { 'b': function(n) { return n > 2; } });
-     * // => false
-     */
+     *      */
     function conformsTo(object, source) {
       return source == null || baseConformsTo(object, source, keys(source));
     }
@@ -11168,20 +10843,15 @@
      * var other = { 'a': 1 };
      *
      * _.eq(object, object);
-     * // => true
-     *
+     *      *
      * _.eq(object, other);
-     * // => false
-     *
+     *      *
      * _.eq('a', 'a');
-     * // => true
-     *
+     *      *
      * _.eq('a', Object('a'));
-     * // => false
-     *
+     *      *
      * _.eq(NaN, NaN);
-     * // => true
-     */
+     *      */
     function eq(value, other) {
       return value === other || (value !== value && other !== other);
     }
@@ -11201,14 +10871,11 @@
      * @example
      *
      * _.gt(3, 1);
-     * // => true
-     *
+     *      *
      * _.gt(3, 3);
-     * // => false
-     *
+     *      *
      * _.gt(1, 3);
-     * // => false
-     */
+     *      */
     var gt = createRelationalOperation(baseGt);
 
     /**
@@ -11226,14 +10893,11 @@
      * @example
      *
      * _.gte(3, 1);
-     * // => true
-     *
+     *      *
      * _.gte(3, 3);
-     * // => true
-     *
+     *      *
      * _.gte(1, 3);
-     * // => false
-     */
+     *      */
     var gte = createRelationalOperation(function(value, other) {
       return value >= other;
     });
@@ -11251,11 +10915,9 @@
      * @example
      *
      * _.isArguments(function() { return arguments; }());
-     * // => true
-     *
+     *      *
      * _.isArguments([1, 2, 3]);
-     * // => false
-     */
+     *      */
     var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
       return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
         !propertyIsEnumerable.call(value, 'callee');
@@ -11273,17 +10935,13 @@
      * @example
      *
      * _.isArray([1, 2, 3]);
-     * // => true
-     *
+     *      *
      * _.isArray(document.body.children);
-     * // => false
-     *
+     *      *
      * _.isArray('abc');
-     * // => false
-     *
+     *      *
      * _.isArray(_.noop);
-     * // => false
-     */
+     *      */
     var isArray = Array.isArray;
 
     /**
@@ -11298,11 +10956,9 @@
      * @example
      *
      * _.isArrayBuffer(new ArrayBuffer(2));
-     * // => true
-     *
+     *      *
      * _.isArrayBuffer(new Array(2));
-     * // => false
-     */
+     *      */
     var isArrayBuffer = nodeIsArrayBuffer ? baseUnary(nodeIsArrayBuffer) : baseIsArrayBuffer;
 
     /**
@@ -11319,17 +10975,13 @@
      * @example
      *
      * _.isArrayLike([1, 2, 3]);
-     * // => true
-     *
+     *      *
      * _.isArrayLike(document.body.children);
-     * // => true
-     *
+     *      *
      * _.isArrayLike('abc');
-     * // => true
-     *
+     *      *
      * _.isArrayLike(_.noop);
-     * // => false
-     */
+     *      */
     function isArrayLike(value) {
       return value != null && isLength(value.length) && !isFunction(value);
     }
@@ -11348,17 +11000,13 @@
      * @example
      *
      * _.isArrayLikeObject([1, 2, 3]);
-     * // => true
-     *
+     *      *
      * _.isArrayLikeObject(document.body.children);
-     * // => true
-     *
+     *      *
      * _.isArrayLikeObject('abc');
-     * // => false
-     *
+     *      *
      * _.isArrayLikeObject(_.noop);
-     * // => false
-     */
+     *      */
     function isArrayLikeObject(value) {
       return isObjectLike(value) && isArrayLike(value);
     }
@@ -11375,11 +11023,9 @@
      * @example
      *
      * _.isBoolean(false);
-     * // => true
-     *
+     *      *
      * _.isBoolean(null);
-     * // => false
-     */
+     *      */
     function isBoolean(value) {
       return value === true || value === false ||
         (isObjectLike(value) && baseGetTag(value) == boolTag);
@@ -11397,11 +11043,9 @@
      * @example
      *
      * _.isBuffer(new Buffer(2));
-     * // => true
-     *
+     *      *
      * _.isBuffer(new Uint8Array(2));
-     * // => false
-     */
+     *      */
     var isBuffer = nativeIsBuffer || stubFalse;
 
     /**
@@ -11416,11 +11060,9 @@
      * @example
      *
      * _.isDate(new Date);
-     * // => true
-     *
+     *      *
      * _.isDate('Mon April 23 2012');
-     * // => false
-     */
+     *      */
     var isDate = nodeIsDate ? baseUnary(nodeIsDate) : baseIsDate;
 
     /**
@@ -11435,11 +11077,9 @@
      * @example
      *
      * _.isElement(document.body);
-     * // => true
-     *
+     *      *
      * _.isElement('<body>');
-     * // => false
-     */
+     *      */
     function isElement(value) {
       return isObjectLike(value) && value.nodeType === 1 && !isPlainObject(value);
     }
@@ -11463,20 +11103,15 @@
      * @example
      *
      * _.isEmpty(null);
-     * // => true
-     *
+     *      *
      * _.isEmpty(true);
-     * // => true
-     *
+     *      *
      * _.isEmpty(1);
-     * // => true
-     *
+     *      *
      * _.isEmpty([1, 2, 3]);
-     * // => false
-     *
+     *      *
      * _.isEmpty({ 'a': 1 });
-     * // => false
-     */
+     *      */
     function isEmpty(value) {
       if (value == null) {
         return true;
@@ -11524,11 +11159,9 @@
      * var other = { 'a': 1 };
      *
      * _.isEqual(object, other);
-     * // => true
-     *
+     *      *
      * object === other;
-     * // => false
-     */
+     *      */
     function isEqual(value, other) {
       return baseIsEqual(value, other);
     }
@@ -11563,8 +11196,7 @@
      * var other = ['hi', 'goodbye'];
      *
      * _.isEqualWith(array, other, customizer);
-     * // => true
-     */
+     *      */
     function isEqualWith(value, other, customizer) {
       customizer = typeof customizer == 'function' ? customizer : undefined;
       var result = customizer ? customizer(value, other) : undefined;
@@ -11584,11 +11216,9 @@
      * @example
      *
      * _.isError(new Error);
-     * // => true
-     *
+     *      *
      * _.isError(Error);
-     * // => false
-     */
+     *      */
     function isError(value) {
       if (!isObjectLike(value)) {
         return false;
@@ -11613,17 +11243,13 @@
      * @example
      *
      * _.isFinite(3);
-     * // => true
-     *
+     *      *
      * _.isFinite(Number.MIN_VALUE);
-     * // => true
-     *
+     *      *
      * _.isFinite(Infinity);
-     * // => false
-     *
+     *      *
      * _.isFinite('3');
-     * // => false
-     */
+     *      */
     function isFinite(value) {
       return typeof value == 'number' && nativeIsFinite(value);
     }
@@ -11640,11 +11266,9 @@
      * @example
      *
      * _.isFunction(_);
-     * // => true
-     *
+     *      *
      * _.isFunction(/abc/);
-     * // => false
-     */
+     *      */
     function isFunction(value) {
       if (!isObject(value)) {
         return false;
@@ -11670,17 +11294,13 @@
      * @example
      *
      * _.isInteger(3);
-     * // => true
-     *
+     *      *
      * _.isInteger(Number.MIN_VALUE);
-     * // => false
-     *
+     *      *
      * _.isInteger(Infinity);
-     * // => false
-     *
+     *      *
      * _.isInteger('3');
-     * // => false
-     */
+     *      */
     function isInteger(value) {
       return typeof value == 'number' && value == toInteger(value);
     }
@@ -11700,17 +11320,13 @@
      * @example
      *
      * _.isLength(3);
-     * // => true
-     *
+     *      *
      * _.isLength(Number.MIN_VALUE);
-     * // => false
-     *
+     *      *
      * _.isLength(Infinity);
-     * // => false
-     *
+     *      *
      * _.isLength('3');
-     * // => false
-     */
+     *      */
     function isLength(value) {
       return typeof value == 'number' &&
         value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
@@ -11730,17 +11346,13 @@
      * @example
      *
      * _.isObject({});
-     * // => true
-     *
+     *      *
      * _.isObject([1, 2, 3]);
-     * // => true
-     *
+     *      *
      * _.isObject(_.noop);
-     * // => true
-     *
+     *      *
      * _.isObject(null);
-     * // => false
-     */
+     *      */
     function isObject(value) {
       var type = typeof value;
       return value != null && (type == 'object' || type == 'function');
@@ -11759,17 +11371,13 @@
      * @example
      *
      * _.isObjectLike({});
-     * // => true
-     *
+     *      *
      * _.isObjectLike([1, 2, 3]);
-     * // => true
-     *
+     *      *
      * _.isObjectLike(_.noop);
-     * // => false
-     *
+     *      *
      * _.isObjectLike(null);
-     * // => false
-     */
+     *      */
     function isObjectLike(value) {
       return value != null && typeof value == 'object';
     }
@@ -11786,11 +11394,9 @@
      * @example
      *
      * _.isMap(new Map);
-     * // => true
-     *
+     *      *
      * _.isMap(new WeakMap);
-     * // => false
-     */
+     *      */
     var isMap = nodeIsMap ? baseUnary(nodeIsMap) : baseIsMap;
 
     /**
@@ -11816,11 +11422,9 @@
      * var object = { 'a': 1, 'b': 2 };
      *
      * _.isMatch(object, { 'b': 2 });
-     * // => true
-     *
+     *      *
      * _.isMatch(object, { 'b': 1 });
-     * // => false
-     */
+     *      */
     function isMatch(object, source) {
       return object === source || baseIsMatch(object, source, getMatchData(source));
     }
@@ -11855,8 +11459,7 @@
      * var source = { 'greeting': 'hi' };
      *
      * _.isMatchWith(object, source, customizer);
-     * // => true
-     */
+     *      */
     function isMatchWith(object, source, customizer) {
       customizer = typeof customizer == 'function' ? customizer : undefined;
       return baseIsMatch(object, source, getMatchData(source), customizer);
@@ -11879,17 +11482,13 @@
      * @example
      *
      * _.isNaN(NaN);
-     * // => true
-     *
+     *      *
      * _.isNaN(new Number(NaN));
-     * // => true
-     *
+     *      *
      * isNaN(undefined);
-     * // => true
-     *
+     *      *
      * _.isNaN(undefined);
-     * // => false
-     */
+     *      */
     function isNaN(value) {
       
       
@@ -11918,11 +11517,9 @@
      * @example
      *
      * _.isNative(Array.prototype.push);
-     * // => true
-     *
+     *      *
      * _.isNative(_);
-     * // => false
-     */
+     *      */
     function isNative(value) {
       if (isMaskable(value)) {
         throw new Error(CORE_ERROR_TEXT);
@@ -11942,11 +11539,9 @@
      * @example
      *
      * _.isNull(null);
-     * // => true
-     *
+     *      *
      * _.isNull(void 0);
-     * // => false
-     */
+     *      */
     function isNull(value) {
       return value === null;
     }
@@ -11963,14 +11558,11 @@
      * @example
      *
      * _.isNil(null);
-     * // => true
-     *
+     *      *
      * _.isNil(void 0);
-     * // => true
-     *
+     *      *
      * _.isNil(NaN);
-     * // => false
-     */
+     *      */
     function isNil(value) {
       return value == null;
     }
@@ -11990,17 +11582,13 @@
      * @example
      *
      * _.isNumber(3);
-     * // => true
-     *
+     *      *
      * _.isNumber(Number.MIN_VALUE);
-     * // => true
-     *
+     *      *
      * _.isNumber(Infinity);
-     * // => true
-     *
+     *      *
      * _.isNumber('3');
-     * // => false
-     */
+     *      */
     function isNumber(value) {
       return typeof value == 'number' ||
         (isObjectLike(value) && baseGetTag(value) == numberTag);
@@ -12023,17 +11611,13 @@
      * }
      *
      * _.isPlainObject(new Foo);
-     * // => false
-     *
+     *      *
      * _.isPlainObject([1, 2, 3]);
-     * // => false
-     *
+     *      *
      * _.isPlainObject({ 'x': 0, 'y': 0 });
-     * // => true
-     *
+     *      *
      * _.isPlainObject(Object.create(null));
-     * // => true
-     */
+     *      */
     function isPlainObject(value) {
       if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
         return false;
@@ -12059,11 +11643,9 @@
      * @example
      *
      * _.isRegExp(/abc/);
-     * // => true
-     *
+     *      *
      * _.isRegExp('/abc/');
-     * // => false
-     */
+     *      */
     var isRegExp = nodeIsRegExp ? baseUnary(nodeIsRegExp) : baseIsRegExp;
 
     /**
@@ -12082,17 +11664,13 @@
      * @example
      *
      * _.isSafeInteger(3);
-     * // => true
-     *
+     *      *
      * _.isSafeInteger(Number.MIN_VALUE);
-     * // => false
-     *
+     *      *
      * _.isSafeInteger(Infinity);
-     * // => false
-     *
+     *      *
      * _.isSafeInteger('3');
-     * // => false
-     */
+     *      */
     function isSafeInteger(value) {
       return isInteger(value) && value >= -MAX_SAFE_INTEGER && value <= MAX_SAFE_INTEGER;
     }
@@ -12109,11 +11687,9 @@
      * @example
      *
      * _.isSet(new Set);
-     * // => true
-     *
+     *      *
      * _.isSet(new WeakSet);
-     * // => false
-     */
+     *      */
     var isSet = nodeIsSet ? baseUnary(nodeIsSet) : baseIsSet;
 
     /**
@@ -12128,11 +11704,9 @@
      * @example
      *
      * _.isString('abc');
-     * // => true
-     *
+     *      *
      * _.isString(1);
-     * // => false
-     */
+     *      */
     function isString(value) {
       return typeof value == 'string' ||
         (!isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag);
@@ -12150,11 +11724,9 @@
      * @example
      *
      * _.isSymbol(Symbol.iterator);
-     * // => true
-     *
+     *      *
      * _.isSymbol('abc');
-     * // => false
-     */
+     *      */
     function isSymbol(value) {
       return typeof value == 'symbol' ||
         (isObjectLike(value) && baseGetTag(value) == symbolTag);
@@ -12172,11 +11744,9 @@
      * @example
      *
      * _.isTypedArray(new Uint8Array);
-     * // => true
-     *
+     *      *
      * _.isTypedArray([]);
-     * // => false
-     */
+     *      */
     var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
 
     /**
@@ -12191,11 +11761,9 @@
      * @example
      *
      * _.isUndefined(void 0);
-     * // => true
-     *
+     *      *
      * _.isUndefined(null);
-     * // => false
-     */
+     *      */
     function isUndefined(value) {
       return value === undefined;
     }
@@ -12212,11 +11780,9 @@
      * @example
      *
      * _.isWeakMap(new WeakMap);
-     * // => true
-     *
+     *      *
      * _.isWeakMap(new Map);
-     * // => false
-     */
+     *      */
     function isWeakMap(value) {
       return isObjectLike(value) && getTag(value) == weakMapTag;
     }
@@ -12233,11 +11799,9 @@
      * @example
      *
      * _.isWeakSet(new WeakSet);
-     * // => true
-     *
+     *      *
      * _.isWeakSet(new Set);
-     * // => false
-     */
+     *      */
     function isWeakSet(value) {
       return isObjectLike(value) && baseGetTag(value) == weakSetTag;
     }
@@ -12257,14 +11821,11 @@
      * @example
      *
      * _.lt(1, 3);
-     * // => true
-     *
+     *      *
      * _.lt(3, 3);
-     * // => false
-     *
+     *      *
      * _.lt(3, 1);
-     * // => false
-     */
+     *      */
     var lt = createRelationalOperation(baseLt);
 
     /**
@@ -12282,14 +11843,11 @@
      * @example
      *
      * _.lte(1, 3);
-     * // => true
-     *
+     *      *
      * _.lte(3, 3);
-     * // => true
-     *
+     *      *
      * _.lte(3, 1);
-     * // => false
-     */
+     *      */
     var lte = createRelationalOperation(function(value, other) {
       return value <= other;
     });
@@ -12306,17 +11864,13 @@
      * @example
      *
      * _.toArray({ 'a': 1, 'b': 2 });
-     * // => [1, 2]
-     *
+     *      *
      * _.toArray('abc');
-     * // => ['a', 'b', 'c']
-     *
+     *      *
      * _.toArray(1);
-     * // => []
-     *
+     *      *
      * _.toArray(null);
-     * // => []
-     */
+     *      */
     function toArray(value) {
       if (!value) {
         return [];
@@ -12345,17 +11899,13 @@
      * @example
      *
      * _.toFinite(3.2);
-     * // => 3.2
-     *
+     *      *
      * _.toFinite(Number.MIN_VALUE);
-     * // => 5e-324
-     *
+     *      *
      * _.toFinite(Infinity);
-     * // => 1.7976931348623157e+308
-     *
+     *      *
      * _.toFinite('3.2');
-     * // => 3.2
-     */
+     *      */
     function toFinite(value) {
       if (!value) {
         return value === 0 ? value : 0;
@@ -12383,17 +11933,13 @@
      * @example
      *
      * _.toInteger(3.2);
-     * // => 3
-     *
+     *      *
      * _.toInteger(Number.MIN_VALUE);
-     * // => 0
-     *
+     *      *
      * _.toInteger(Infinity);
-     * // => 1.7976931348623157e+308
-     *
+     *      *
      * _.toInteger('3.2');
-     * // => 3
-     */
+     *      */
     function toInteger(value) {
       var result = toFinite(value),
           remainder = result % 1;
@@ -12417,17 +11963,13 @@
      * @example
      *
      * _.toLength(3.2);
-     * // => 3
-     *
+     *      *
      * _.toLength(Number.MIN_VALUE);
-     * // => 0
-     *
+     *      *
      * _.toLength(Infinity);
-     * // => 4294967295
-     *
+     *      *
      * _.toLength('3.2');
-     * // => 3
-     */
+     *      */
     function toLength(value) {
       return value ? baseClamp(toInteger(value), 0, MAX_ARRAY_LENGTH) : 0;
     }
@@ -12444,17 +11986,13 @@
      * @example
      *
      * _.toNumber(3.2);
-     * // => 3.2
-     *
+     *      *
      * _.toNumber(Number.MIN_VALUE);
-     * // => 5e-324
-     *
+     *      *
      * _.toNumber(Infinity);
-     * // => Infinity
-     *
+     *      *
      * _.toNumber('3.2');
-     * // => 3.2
-     */
+     *      */
     function toNumber(value) {
       if (typeof value == 'number') {
         return value;
@@ -12495,11 +12033,9 @@
      * Foo.prototype.c = 3;
      *
      * _.assign({ 'a': 1 }, new Foo);
-     * // => { 'a': 1, 'b': 2 }
-     *
+     *      *
      * _.assign({ 'a': 1 }, _.toPlainObject(new Foo));
-     * // => { 'a': 1, 'b': 2, 'c': 3 }
-     */
+     *      */
     function toPlainObject(value) {
       return copyObject(value, keysIn(value));
     }
@@ -12517,17 +12053,13 @@
      * @example
      *
      * _.toSafeInteger(3.2);
-     * // => 3
-     *
+     *      *
      * _.toSafeInteger(Number.MIN_VALUE);
-     * // => 0
-     *
+     *      *
      * _.toSafeInteger(Infinity);
-     * // => 9007199254740991
-     *
+     *      *
      * _.toSafeInteger('3.2');
-     * // => 3
-     */
+     *      */
     function toSafeInteger(value) {
       return value
         ? baseClamp(toInteger(value), -MAX_SAFE_INTEGER, MAX_SAFE_INTEGER)
@@ -12547,14 +12079,11 @@
      * @example
      *
      * _.toString(null);
-     * // => ''
-     *
+     *      *
      * _.toString(-0);
-     * // => '-0'
-     *
+     *      *
      * _.toString([1, 2, 3]);
-     * // => '1,2,3'
-     */
+     *      */
     function toString(value) {
       return value == null ? '' : baseToString(value);
     }
@@ -12591,8 +12120,7 @@
      * Bar.prototype.d = 4;
      *
      * _.assign({ 'a': 0 }, new Foo, new Bar);
-     * // => { 'a': 1, 'c': 3 }
-     */
+     *      */
     var assign = createAssigner(function(object, source) {
       if (isPrototype(source) || isArrayLike(source)) {
         copyObject(source, keys(source), object);
@@ -12634,8 +12162,7 @@
      * Bar.prototype.d = 4;
      *
      * _.assignIn({ 'a': 0 }, new Foo, new Bar);
-     * // => { 'a': 1, 'b': 2, 'c': 3, 'd': 4 }
-     */
+     *      */
     var assignIn = createAssigner(function(object, source) {
       copyObject(source, keysIn(source), object);
     });
@@ -12667,8 +12194,7 @@
      * var defaults = _.partialRight(_.assignInWith, customizer);
      *
      * defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
-     * // => { 'a': 1, 'b': 2 }
-     */
+     *      */
     var assignInWith = createAssigner(function(object, source, srcIndex, customizer) {
       copyObject(source, keysIn(source), object, customizer);
     });
@@ -12699,8 +12225,7 @@
      * var defaults = _.partialRight(_.assignWith, customizer);
      *
      * defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
-     * // => { 'a': 1, 'b': 2 }
-     */
+     *      */
     var assignWith = createAssigner(function(object, source, srcIndex, customizer) {
       copyObject(source, keys(source), object, customizer);
     });
@@ -12720,8 +12245,7 @@
      * var object = { 'a': [{ 'b': { 'c': 3 } }, 4] };
      *
      * _.at(object, ['a[0].b.c', 'a[1]']);
-     * // => [3, 4]
-     */
+     *      */
     var at = flatRest(baseAt);
 
     /**
@@ -12753,11 +12277,9 @@
      *
      * var circle = new Circle;
      * circle instanceof Circle;
-     * // => true
-     *
+     *      *
      * circle instanceof Shape;
-     * // => true
-     */
+     *      */
     function create(prototype, properties) {
       var result = baseCreate(prototype);
       return properties == null ? result : baseAssign(result, properties);
@@ -12782,8 +12304,7 @@
      * @example
      *
      * _.defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
-     * // => { 'a': 1, 'b': 2 }
-     */
+     *      */
     var defaults = baseRest(function(object, sources) {
       object = Object(object);
 
@@ -12832,8 +12353,7 @@
      * @example
      *
      * _.defaultsDeep({ 'a': { 'b': 2 } }, { 'a': { 'b': 1, 'c': 3 } });
-     * // => { 'a': { 'b': 2, 'c': 3 } }
-     */
+     *      */
     var defaultsDeep = baseRest(function(args) {
       args.push(undefined, customDefaultsMerge);
       return apply(mergeWith, undefined, args);
@@ -12860,20 +12380,13 @@
      * };
      *
      * _.findKey(users, function(o) { return o.age < 40; });
-     * // => 'barney' (iteration order is not guaranteed)
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.findKey(users, { 'age': 1, 'active': true });
-     * // => 'pebbles'
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.findKey(users, ['active', false]);
-     * // => 'fred'
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.findKey(users, 'active');
-     * // => 'barney'
-     */
+     *      *
+     *      * _.findKey(users, { 'age': 1, 'active': true });
+     *      *
+     *      * _.findKey(users, ['active', false]);
+     *      *
+     *      * _.findKey(users, 'active');
+     *      */
     function findKey(object, predicate) {
       return baseFindKey(object, getIteratee(predicate, 3), baseForOwn);
     }
@@ -12899,20 +12412,13 @@
      * };
      *
      * _.findLastKey(users, function(o) { return o.age < 40; });
-     * // => returns 'pebbles' assuming `_.findKey` returns 'barney'
-     *
-     * // The `_.matches` iteratee shorthand.
-     * _.findLastKey(users, { 'age': 36, 'active': true });
-     * // => 'barney'
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.findLastKey(users, ['active', false]);
-     * // => 'fred'
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.findLastKey(users, 'active');
-     * // => 'pebbles'
-     */
+     *      *
+     *      * _.findLastKey(users, { 'age': 36, 'active': true });
+     *      *
+     *      * _.findLastKey(users, ['active', false]);
+     *      *
+     *      * _.findLastKey(users, 'active');
+     *      */
     function findLastKey(object, predicate) {
       return baseFindKey(object, getIteratee(predicate, 3), baseForOwnRight);
     }
@@ -12943,8 +12449,7 @@
      * _.forIn(new Foo, function(value, key) {
      *   console.log(key);
      * });
-     * // => Logs 'a', 'b', then 'c' (iteration order is not guaranteed).
-     */
+     *      */
     function forIn(object, iteratee) {
       return object == null
         ? object
@@ -12975,8 +12480,7 @@
      * _.forInRight(new Foo, function(value, key) {
      *   console.log(key);
      * });
-     * // => Logs 'c', 'b', then 'a' assuming `_.forIn` logs 'a', 'b', then 'c'.
-     */
+     *      */
     function forInRight(object, iteratee) {
       return object == null
         ? object
@@ -13009,8 +12513,7 @@
      * _.forOwn(new Foo, function(value, key) {
      *   console.log(key);
      * });
-     * // => Logs 'a' then 'b' (iteration order is not guaranteed).
-     */
+     *      */
     function forOwn(object, iteratee) {
       return object && baseForOwn(object, getIteratee(iteratee, 3));
     }
@@ -13039,8 +12542,7 @@
      * _.forOwnRight(new Foo, function(value, key) {
      *   console.log(key);
      * });
-     * // => Logs 'b' then 'a' assuming `_.forOwn` logs 'a' then 'b'.
-     */
+     *      */
     function forOwnRight(object, iteratee) {
       return object && baseForOwnRight(object, getIteratee(iteratee, 3));
     }
@@ -13066,8 +12568,7 @@
      * Foo.prototype.c = _.constant('c');
      *
      * _.functions(new Foo);
-     * // => ['a', 'b']
-     */
+     *      */
     function functions(object) {
       return object == null ? [] : baseFunctions(object, keys(object));
     }
@@ -13093,8 +12594,7 @@
      * Foo.prototype.c = _.constant('c');
      *
      * _.functionsIn(new Foo);
-     * // => ['a', 'b', 'c']
-     */
+     *      */
     function functionsIn(object) {
       return object == null ? [] : baseFunctions(object, keysIn(object));
     }
@@ -13116,14 +12616,11 @@
      * var object = { 'a': [{ 'b': { 'c': 3 } }] };
      *
      * _.get(object, 'a[0].b.c');
-     * // => 3
-     *
+     *      *
      * _.get(object, ['a', '0', 'b', 'c']);
-     * // => 3
-     *
+     *      *
      * _.get(object, 'a.b.c', 'default');
-     * // => 'default'
-     */
+     *      */
     function get(object, path, defaultValue) {
       var result = object == null ? undefined : baseGet(object, path);
       return result === undefined ? defaultValue : result;
@@ -13145,17 +12642,13 @@
      * var other = _.create({ 'a': _.create({ 'b': 2 }) });
      *
      * _.has(object, 'a');
-     * // => true
-     *
+     *      *
      * _.has(object, 'a.b');
-     * // => true
-     *
+     *      *
      * _.has(object, ['a', 'b']);
-     * // => true
-     *
+     *      *
      * _.has(other, 'a');
-     * // => false
-     */
+     *      */
     function has(object, path) {
       return object != null && hasPath(object, path, baseHas);
     }
@@ -13175,17 +12668,13 @@
      * var object = _.create({ 'a': _.create({ 'b': 2 }) });
      *
      * _.hasIn(object, 'a');
-     * // => true
-     *
+     *      *
      * _.hasIn(object, 'a.b');
-     * // => true
-     *
+     *      *
      * _.hasIn(object, ['a', 'b']);
-     * // => true
-     *
+     *      *
      * _.hasIn(object, 'b');
-     * // => false
-     */
+     *      */
     function hasIn(object, path) {
       return object != null && hasPath(object, path, baseHasIn);
     }
@@ -13206,8 +12695,7 @@
      * var object = { 'a': 1, 'b': 2, 'c': 1 };
      *
      * _.invert(object);
-     * // => { '1': 'c', '2': 'b' }
-     */
+     *      */
     var invert = createInverter(function(result, value, key) {
       if (value != null &&
           typeof value.toString != 'function') {
@@ -13236,13 +12724,11 @@
      * var object = { 'a': 1, 'b': 2, 'c': 1 };
      *
      * _.invertBy(object);
-     * // => { '1': ['a', 'c'], '2': ['b'] }
-     *
+     *      *
      * _.invertBy(object, function(value) {
      *   return 'group' + value;
      * });
-     * // => { 'group1': ['a', 'c'], 'group2': ['b'] }
-     */
+     *      */
     var invertBy = createInverter(function(result, value, key) {
       if (value != null &&
           typeof value.toString != 'function') {
@@ -13272,8 +12758,7 @@
      * var object = { 'a': [{ 'b': { 'c': [1, 2, 3, 4] } }] };
      *
      * _.invoke(object, 'a[0].b.c.slice', 1, 3);
-     * // => [2, 3]
-     */
+     *      */
     var invoke = baseRest(baseInvoke);
 
     /**
@@ -13299,11 +12784,9 @@
      * Foo.prototype.c = 3;
      *
      * _.keys(new Foo);
-     * // => ['a', 'b'] (iteration order is not guaranteed)
-     *
+     *      *
      * _.keys('hi');
-     * // => ['0', '1']
-     */
+     *      */
     function keys(object) {
       return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
     }
@@ -13329,8 +12812,7 @@
      * Foo.prototype.c = 3;
      *
      * _.keysIn(new Foo);
-     * // => ['a', 'b', 'c'] (iteration order is not guaranteed)
-     */
+     *      */
     function keysIn(object) {
       return isArrayLike(object) ? arrayLikeKeys(object, true) : baseKeysIn(object);
     }
@@ -13354,8 +12836,7 @@
      * _.mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
      *   return key + value;
      * });
-     * // => { 'a1': 1, 'b2': 2 }
-     */
+     *      */
     function mapKeys(object, iteratee) {
       var result = {};
       iteratee = getIteratee(iteratee, 3);
@@ -13388,12 +12869,9 @@
      * };
      *
      * _.mapValues(users, function(o) { return o.age; });
-     * // => { 'fred': 40, 'pebbles': 1 } (iteration order is not guaranteed)
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.mapValues(users, 'age');
-     * // => { 'fred': 40, 'pebbles': 1 } (iteration order is not guaranteed)
-     */
+     *      *
+     *      * _.mapValues(users, 'age');
+     *      */
     function mapValues(object, iteratee) {
       var result = {};
       iteratee = getIteratee(iteratee, 3);
@@ -13433,8 +12911,7 @@
      * };
      *
      * _.merge(object, other);
-     * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
-     */
+     *      */
     var merge = createAssigner(function(object, source, srcIndex) {
       baseMerge(object, source, srcIndex);
     });
@@ -13468,8 +12945,7 @@
      * var other = { 'a': [3], 'b': [4] };
      *
      * _.mergeWith(object, other, customizer);
-     * // => { 'a': [1, 3], 'b': [2, 4] }
-     */
+     *      */
     var mergeWith = createAssigner(function(object, source, srcIndex, customizer) {
       baseMerge(object, source, srcIndex, customizer);
     });
@@ -13492,8 +12968,7 @@
      * var object = { 'a': 1, 'b': '2', 'c': 3 };
      *
      * _.omit(object, ['a', 'c']);
-     * // => { 'b': '2' }
-     */
+     *      */
     var omit = flatRest(function(object, paths) {
       var result = {};
       if (object == null) {
@@ -13534,8 +13009,7 @@
      * var object = { 'a': 1, 'b': '2', 'c': 3 };
      *
      * _.omitBy(object, _.isNumber);
-     * // => { 'b': '2' }
-     */
+     *      */
     function omitBy(object, predicate) {
       return pickBy(object, negate(getIteratee(predicate)));
     }
@@ -13555,8 +13029,7 @@
      * var object = { 'a': 1, 'b': '2', 'c': 3 };
      *
      * _.pick(object, ['a', 'c']);
-     * // => { 'a': 1, 'c': 3 }
-     */
+     *      */
     var pick = flatRest(function(object, paths) {
       return object == null ? {} : basePick(object, paths);
     });
@@ -13577,8 +13050,7 @@
      * var object = { 'a': 1, 'b': '2', 'c': 3 };
      *
      * _.pickBy(object, _.isNumber);
-     * // => { 'a': 1, 'c': 3 }
-     */
+     *      */
     function pickBy(object, predicate) {
       if (object == null) {
         return {};
@@ -13610,17 +13082,13 @@
      * var object = { 'a': [{ 'b': { 'c1': 3, 'c2': _.constant(4) } }] };
      *
      * _.result(object, 'a[0].b.c1');
-     * // => 3
-     *
+     *      *
      * _.result(object, 'a[0].b.c2');
-     * // => 4
-     *
+     *      *
      * _.result(object, 'a[0].b.c3', 'default');
-     * // => 'default'
-     *
+     *      *
      * _.result(object, 'a[0].b.c3', _.constant('default'));
-     * // => 'default'
-     */
+     *      */
     function result(object, path, defaultValue) {
       path = castPath(path, object);
 
@@ -13665,12 +13133,10 @@
      *
      * _.set(object, 'a[0].b.c', 4);
      * console.log(object.a[0].b.c);
-     * // => 4
-     *
+     *      *
      * _.set(object, ['x', '0', 'y', 'z'], 5);
      * console.log(object.x[0].y.z);
-     * // => 5
-     */
+     *      */
     function set(object, path, value) {
       return object == null ? object : baseSet(object, path, value);
     }
@@ -13697,8 +13163,7 @@
      * var object = {};
      *
      * _.setWith(object, '[0][1]', 'a', Object);
-     * // => { '0': { '1': 'a' } }
-     */
+     *      */
     function setWith(object, path, value, customizer) {
       customizer = typeof customizer == 'function' ? customizer : undefined;
       return object == null ? object : baseSet(object, path, value, customizer);
@@ -13726,8 +13191,7 @@
      * Foo.prototype.c = 3;
      *
      * _.toPairs(new Foo);
-     * // => [['a', 1], ['b', 2]] (iteration order is not guaranteed)
-     */
+     *      */
     var toPairs = createToPairs(keys);
 
     /**
@@ -13752,8 +13216,7 @@
      * Foo.prototype.c = 3;
      *
      * _.toPairsIn(new Foo);
-     * // => [['a', 1], ['b', 2], ['c', 3]] (iteration order is not guaranteed)
-     */
+     *      */
     var toPairsIn = createToPairs(keysIn);
 
     /**
@@ -13779,13 +13242,11 @@
      *   result.push(n *= n);
      *   return n % 2 == 0;
      * }, []);
-     * // => [4, 9]
-     *
+     *      *
      * _.transform({ 'a': 1, 'b': 2, 'c': 1 }, function(result, value, key) {
      *   (result[value] || (result[value] = [])).push(key);
      * }, {});
-     * // => { '1': ['a', 'c'], '2': ['b'] }
-     */
+     *      */
     function transform(object, iteratee, accumulator) {
       var isArr = isArray(object),
           isArrLike = isArr || isBuffer(object) || isTypedArray(object);
@@ -13825,17 +13286,13 @@
      *
      * var object = { 'a': [{ 'b': { 'c': 7 } }] };
      * _.unset(object, 'a[0].b.c');
-     * // => true
-     *
+     *      *
      * console.log(object);
-     * // => { 'a': [{ 'b': {} }] };
-     *
+     *      *
      * _.unset(object, ['a', '0', 'b', 'c']);
-     * // => true
-     *
+     *      *
      * console.log(object);
-     * // => { 'a': [{ 'b': {} }] };
-     */
+     *      */
     function unset(object, path) {
       return object == null ? true : baseUnset(object, path);
     }
@@ -13861,12 +13318,10 @@
      *
      * _.update(object, 'a[0].b.c', function(n) { return n * n; });
      * console.log(object.a[0].b.c);
-     * // => 9
-     *
+     *      *
      * _.update(object, 'x[0].y.z', function(n) { return n ? n + 1 : 0; });
      * console.log(object.x[0].y.z);
-     * // => 0
-     */
+     *      */
     function update(object, path, updater) {
       return object == null ? object : baseUpdate(object, path, castFunction(updater));
     }
@@ -13893,8 +13348,7 @@
      * var object = {};
      *
      * _.updateWith(object, '[0][1]', _.constant('a'), Object);
-     * // => { '0': { '1': 'a' } }
-     */
+     *      */
     function updateWith(object, path, updater, customizer) {
       customizer = typeof customizer == 'function' ? customizer : undefined;
       return object == null ? object : baseUpdate(object, path, castFunction(updater), customizer);
@@ -13921,11 +13375,9 @@
      * Foo.prototype.c = 3;
      *
      * _.values(new Foo);
-     * // => [1, 2] (iteration order is not guaranteed)
-     *
+     *      *
      * _.values('hi');
-     * // => ['h', 'i']
-     */
+     *      */
     function values(object) {
       return object == null ? [] : baseValues(object, keys(object));
     }
@@ -13952,8 +13404,7 @@
      * Foo.prototype.c = 3;
      *
      * _.valuesIn(new Foo);
-     * // => [1, 2, 3] (iteration order is not guaranteed)
-     */
+     *      */
     function valuesIn(object) {
       return object == null ? [] : baseValues(object, keysIn(object));
     }
@@ -13974,11 +13425,9 @@
      * @example
      *
      * _.clamp(-10, -5, 5);
-     * // => -5
-     *
+     *      *
      * _.clamp(10, -5, 5);
-     * // => 5
-     */
+     *      */
     function clamp(number, lower, upper) {
       if (upper === undefined) {
         upper = lower;
@@ -14013,26 +13462,19 @@
      * @example
      *
      * _.inRange(3, 2, 4);
-     * // => true
-     *
+     *      *
      * _.inRange(4, 8);
-     * // => true
-     *
+     *      *
      * _.inRange(4, 2);
-     * // => false
-     *
+     *      *
      * _.inRange(2, 2);
-     * // => false
-     *
+     *      *
      * _.inRange(1.2, 2);
-     * // => true
-     *
+     *      *
      * _.inRange(5.2, 4);
-     * // => false
-     *
+     *      *
      * _.inRange(-3, -2, -6);
-     * // => true
-     */
+     *      */
     function inRange(number, start, end) {
       start = toFinite(start);
       if (end === undefined) {
@@ -14065,17 +13507,13 @@
      * @example
      *
      * _.random(0, 5);
-     * // => an integer between 0 and 5
-     *
+     *      *
      * _.random(5);
-     * // => also an integer between 0 and 5
-     *
+     *      *
      * _.random(5, true);
-     * // => a floating-point number between 0 and 5
-     *
+     *      *
      * _.random(1.2, 5.2);
-     * // => a floating-point number between 1.2 and 5.2
-     */
+     *      */
     function random(lower, upper, floating) {
       if (floating && typeof floating != 'boolean' && isIterateeCall(lower, upper, floating)) {
         upper = floating = undefined;
@@ -14129,14 +13567,11 @@
      * @example
      *
      * _.camelCase('Foo Bar');
-     * // => 'fooBar'
-     *
+     *      *
      * _.camelCase('--foo-bar--');
-     * // => 'fooBar'
-     *
+     *      *
      * _.camelCase('__FOO_BAR__');
-     * // => 'fooBar'
-     */
+     *      */
     var camelCase = createCompounder(function(result, word, index) {
       word = word.toLowerCase();
       return result + (index ? capitalize(word) : word);
@@ -14155,8 +13590,7 @@
      * @example
      *
      * _.capitalize('FRED');
-     * // => 'Fred'
-     */
+     *      */
     function capitalize(string) {
       return upperFirst(toString(string).toLowerCase());
     }
@@ -14177,8 +13611,7 @@
      * @example
      *
      * _.deburr('déjà vu');
-     * // => 'deja vu'
-     */
+     *      */
     function deburr(string) {
       string = toString(string);
       return string && string.replace(reLatin, deburrLetter).replace(reComboMark, '');
@@ -14199,14 +13632,11 @@
      * @example
      *
      * _.endsWith('abc', 'c');
-     * // => true
-     *
+     *      *
      * _.endsWith('abc', 'b');
-     * // => false
-     *
+     *      *
      * _.endsWith('abc', 'b', 2);
-     * // => true
-     */
+     *      */
     function endsWith(string, target, position) {
       string = toString(string);
       target = baseToString(target);
@@ -14247,8 +13677,7 @@
      * @example
      *
      * _.escape('fred, barney, & pebbles');
-     * // => 'fred, barney, &amp; pebbles'
-     */
+     *      */
     function escape(string) {
       string = toString(string);
       return (string && reHasUnescapedHtml.test(string))
@@ -14269,8 +13698,7 @@
      * @example
      *
      * _.escapeRegExp('[lodash](https://lodash.com/)');
-     * // => '\[lodash\]\(https://lodash\.com/\)'
-     */
+     *      */
     function escapeRegExp(string) {
       string = toString(string);
       return (string && reHasRegExpChar.test(string))
@@ -14291,14 +13719,11 @@
      * @example
      *
      * _.kebabCase('Foo Bar');
-     * // => 'foo-bar'
-     *
+     *      *
      * _.kebabCase('fooBar');
-     * // => 'foo-bar'
-     *
+     *      *
      * _.kebabCase('__FOO_BAR__');
-     * // => 'foo-bar'
-     */
+     *      */
     var kebabCase = createCompounder(function(result, word, index) {
       return result + (index ? '-' : '') + word.toLowerCase();
     });
@@ -14315,14 +13740,11 @@
      * @example
      *
      * _.lowerCase('--Foo-Bar--');
-     * // => 'foo bar'
-     *
+     *      *
      * _.lowerCase('fooBar');
-     * // => 'foo bar'
-     *
+     *      *
      * _.lowerCase('__FOO_BAR__');
-     * // => 'foo bar'
-     */
+     *      */
     var lowerCase = createCompounder(function(result, word, index) {
       return result + (index ? ' ' : '') + word.toLowerCase();
     });
@@ -14339,11 +13761,9 @@
      * @example
      *
      * _.lowerFirst('Fred');
-     * // => 'fred'
-     *
+     *      *
      * _.lowerFirst('FRED');
-     * // => 'fRED'
-     */
+     *      */
     var lowerFirst = createCaseFirst('toLowerCase');
 
     /**
@@ -14361,14 +13781,11 @@
      * @example
      *
      * _.pad('abc', 8);
-     * // => '  abc   '
-     *
+     *      *
      * _.pad('abc', 8, '_-');
-     * // => '_-abc_-_'
-     *
+     *      *
      * _.pad('abc', 3);
-     * // => 'abc'
-     */
+     *      */
     function pad(string, length, chars) {
       string = toString(string);
       length = toInteger(length);
@@ -14400,14 +13817,11 @@
      * @example
      *
      * _.padEnd('abc', 6);
-     * // => 'abc   '
-     *
+     *      *
      * _.padEnd('abc', 6, '_-');
-     * // => 'abc_-_'
-     *
+     *      *
      * _.padEnd('abc', 3);
-     * // => 'abc'
-     */
+     *      */
     function padEnd(string, length, chars) {
       string = toString(string);
       length = toInteger(length);
@@ -14433,14 +13847,11 @@
      * @example
      *
      * _.padStart('abc', 6);
-     * // => '   abc'
-     *
+     *      *
      * _.padStart('abc', 6, '_-');
-     * // => '_-_abc'
-     *
+     *      *
      * _.padStart('abc', 3);
-     * // => 'abc'
-     */
+     *      */
     function padStart(string, length, chars) {
       string = toString(string);
       length = toInteger(length);
@@ -14470,11 +13881,9 @@
      * @example
      *
      * _.parseInt('08');
-     * // => 8
-     *
+     *      *
      * _.map(['6', '08', '10'], _.parseInt);
-     * // => [6, 8, 10]
-     */
+     *      */
     function parseInt(string, radix, guard) {
       if (guard || radix == null) {
         radix = 0;
@@ -14498,14 +13907,11 @@
      * @example
      *
      * _.repeat('*', 3);
-     * // => '***'
-     *
+     *      *
      * _.repeat('abc', 2);
-     * // => 'abcabc'
-     *
+     *      *
      * _.repeat('abc', 0);
-     * // => ''
-     */
+     *      */
     function repeat(string, n, guard) {
       if ((guard ? isIterateeCall(string, n, guard) : n === undefined)) {
         n = 1;
@@ -14532,8 +13938,7 @@
      * @example
      *
      * _.replace('Hi Fred', 'Fred', 'Barney');
-     * // => 'Hi Barney'
-     */
+     *      */
     function replace() {
       var args = arguments,
           string = toString(args[0]);
@@ -14554,14 +13959,11 @@
      * @example
      *
      * _.snakeCase('Foo Bar');
-     * // => 'foo_bar'
-     *
+     *      *
      * _.snakeCase('fooBar');
-     * // => 'foo_bar'
-     *
+     *      *
      * _.snakeCase('--FOO-BAR--');
-     * // => 'foo_bar'
-     */
+     *      */
     var snakeCase = createCompounder(function(result, word, index) {
       return result + (index ? '_' : '') + word.toLowerCase();
     });
@@ -14583,8 +13985,7 @@
      * @example
      *
      * _.split('a-b-c', '-', 2);
-     * // => ['a', 'b']
-     */
+     *      */
     function split(string, separator, limit) {
       if (limit && typeof limit != 'number' && isIterateeCall(string, separator, limit)) {
         separator = limit = undefined;
@@ -14619,14 +14020,11 @@
      * @example
      *
      * _.startCase('--foo-bar--');
-     * // => 'Foo Bar'
-     *
+     *      *
      * _.startCase('fooBar');
-     * // => 'Foo Bar'
-     *
+     *      *
      * _.startCase('__FOO_BAR__');
-     * // => 'FOO BAR'
-     */
+     *      */
     var startCase = createCompounder(function(result, word, index) {
       return result + (index ? ' ' : '') + upperFirst(word);
     });
@@ -14646,14 +14044,11 @@
      * @example
      *
      * _.startsWith('abc', 'a');
-     * // => true
-     *
+     *      *
      * _.startsWith('abc', 'b');
-     * // => false
-     *
+     *      *
      * _.startsWith('abc', 'b', 1);
-     * // => true
-     */
+     *      */
     function startsWith(string, target, position) {
       string = toString(string);
       position = position == null
@@ -14703,66 +14098,39 @@
      * @returns {Function} Returns the compiled template function.
      * @example
      *
-     * // Use the "interpolate" delimiter to create a compiled template.
-     * var compiled = _.template('hello <%= user %>!');
+     *      * var compiled = _.template('hello <%= user %>!');
      * compiled({ 'user': 'fred' });
-     * // => 'hello fred!'
-     *
-     * // Use the HTML "escape" delimiter to escape data property values.
-     * var compiled = _.template('<b><%- value %></b>');
+     *      *
+     *      * var compiled = _.template('<b><%- value %></b>');
      * compiled({ 'value': '<script>' });
-     * // => '<b>&lt;script&gt;</b>'
-     *
-     * // Use the "evaluate" delimiter to execute JavaScript and generate HTML.
-     * var compiled = _.template('<% _.forEach(users, function(user) { %><li><%- user %></li><% }); %>');
+     *      *
+     *      * var compiled = _.template('<% _.forEach(users, function(user) { %><li><%- user %></li><% }); %>');
      * compiled({ 'users': ['fred', 'barney'] });
-     * // => '<li>fred</li><li>barney</li>'
-     *
-     * // Use the internal `print` function in "evaluate" delimiters.
-     * var compiled = _.template('<% print("hello " + user); %>!');
+     *      *
+     *      * var compiled = _.template('<% print("hello " + user); %>!');
      * compiled({ 'user': 'barney' });
-     * // => 'hello barney!'
-     *
-     * // Use the ES template literal delimiter as an "interpolate" delimiter.
-     * // Disable support by replacing the "interpolate" delimiter.
-     * var compiled = _.template('hello ${ user }!');
+     *      *
+     *      *      * var compiled = _.template('hello ${ user }!');
      * compiled({ 'user': 'pebbles' });
-     * // => 'hello pebbles!'
-     *
-     * // Use backslashes to treat delimiters as plain text.
-     * var compiled = _.template('<%= "\\<%- value %\\>" %>');
+     *      *
+     *      * var compiled = _.template('<%= "\\<%- value %\\>" %>');
      * compiled({ 'value': 'ignored' });
-     * // => '<%- value %>'
-     *
-     * // Use the `imports` option to import `jQuery` as `jq`.
-     * var text = '<% jq.each(users, function(user) { %><li><%- user %></li><% }); %>';
+     *      *
+     *      * var text = '<% jq.each(users, function(user) { %><li><%- user %></li><% }); %>';
      * var compiled = _.template(text, { 'imports': { 'jq': jQuery } });
      * compiled({ 'users': ['fred', 'barney'] });
-     * // => '<li>fred</li><li>barney</li>'
-     *
-     * // Use the `sourceURL` option to specify a custom sourceURL for the template.
-     * var compiled = _.template('hello <%= user %>!', { 'sourceURL': '/basic/greeting.jst' });
+     *      *
+     *      * var compiled = _.template('hello <%= user %>!', { 'sourceURL': '/basic/greeting.jst' });
      * compiled(data);
-     * // => Find the source of "greeting.jst" under the Sources tab or Resources panel of the web inspector.
-     *
-     * // Use the `variable` option to ensure a with-statement isn't used in the compiled template.
-     * var compiled = _.template('hi <%= data.user %>!', { 'variable': 'data' });
+     *      *
+     *      * var compiled = _.template('hi <%= data.user %>!', { 'variable': 'data' });
      * compiled.source;
-     * // => function(data) {
-     * //   var __t, __p = '';
-     * //   __p += 'hi ' + ((__t = ( data.user )) == null ? '' : __t) + '!';
-     * //   return __p;
-     * // }
-     *
-     * // Use custom template delimiters.
-     * _.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
+     *      *      *      *      *      *
+     *      * _.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
      * var compiled = _.template('hello {{ user }}!');
      * compiled({ 'user': 'mustache' });
-     * // => 'hello mustache!'
-     *
-     * // Use the `source` property to inline compiled templates for meaningful
-     * // line numbers in error messages and stack traces.
-     * fs.writeFileSync(path.join(process.cwd(), 'jst.js'), '\
+     *      *
+     *      *      * fs.writeFileSync(path.join(process.cwd(), 'jst.js'), '\
      *   var JST = {\
      *     "main": ' + _.template(mainText).source + '\
      *   };\
@@ -14889,14 +14257,11 @@
      * @example
      *
      * _.toLower('--Foo-Bar--');
-     * // => '--foo-bar--'
-     *
+     *      *
      * _.toLower('fooBar');
-     * // => 'foobar'
-     *
+     *      *
      * _.toLower('__FOO_BAR__');
-     * // => '__foo_bar__'
-     */
+     *      */
     function toLower(value) {
       return toString(value).toLowerCase();
     }
@@ -14914,14 +14279,11 @@
      * @example
      *
      * _.toUpper('--foo-bar--');
-     * // => '--FOO-BAR--'
-     *
+     *      *
      * _.toUpper('fooBar');
-     * // => 'FOOBAR'
-     *
+     *      *
      * _.toUpper('__foo_bar__');
-     * // => '__FOO_BAR__'
-     */
+     *      */
     function toUpper(value) {
       return toString(value).toUpperCase();
     }
@@ -14940,14 +14302,11 @@
      * @example
      *
      * _.trim('  abc  ');
-     * // => 'abc'
-     *
+     *      *
      * _.trim('-_-abc-_-', '_-');
-     * // => 'abc'
-     *
+     *      *
      * _.map(['  foo  ', '  bar  '], _.trim);
-     * // => ['foo', 'bar']
-     */
+     *      */
     function trim(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
@@ -14978,11 +14337,9 @@
      * @example
      *
      * _.trimEnd('  abc  ');
-     * // => '  abc'
-     *
+     *      *
      * _.trimEnd('-_-abc-_-', '_-');
-     * // => '-_-abc'
-     */
+     *      */
     function trimEnd(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
@@ -15011,11 +14368,9 @@
      * @example
      *
      * _.trimStart('  abc  ');
-     * // => 'abc  '
-     *
+     *      *
      * _.trimStart('-_-abc-_-', '_-');
-     * // => 'abc-_-'
-     */
+     *      */
     function trimStart(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
@@ -15048,25 +14403,21 @@
      * @example
      *
      * _.truncate('hi-diddly-ho there, neighborino');
-     * // => 'hi-diddly-ho there, neighbo...'
-     *
+     *      *
      * _.truncate('hi-diddly-ho there, neighborino', {
      *   'length': 24,
      *   'separator': ' '
      * });
-     * // => 'hi-diddly-ho there,...'
-     *
+     *      *
      * _.truncate('hi-diddly-ho there, neighborino', {
      *   'length': 24,
      *   'separator': /,? +/
      * });
-     * // => 'hi-diddly-ho there...'
-     *
+     *      *
      * _.truncate('hi-diddly-ho there, neighborino', {
      *   'omission': ' [...]'
      * });
-     * // => 'hi-diddly-ho there, neig [...]'
-     */
+     *      */
     function truncate(string, options) {
       var length = DEFAULT_TRUNC_LENGTH,
           omission = DEFAULT_TRUNC_OMISSION;
@@ -15140,8 +14491,7 @@
      * @example
      *
      * _.unescape('fred, barney, &amp; pebbles');
-     * // => 'fred, barney, & pebbles'
-     */
+     *      */
     function unescape(string) {
       string = toString(string);
       return (string && reHasEscapedHtml.test(string))
@@ -15161,14 +14511,11 @@
      * @example
      *
      * _.upperCase('--foo-bar');
-     * // => 'FOO BAR'
-     *
+     *      *
      * _.upperCase('fooBar');
-     * // => 'FOO BAR'
-     *
+     *      *
      * _.upperCase('__foo_bar__');
-     * // => 'FOO BAR'
-     */
+     *      */
     var upperCase = createCompounder(function(result, word, index) {
       return result + (index ? ' ' : '') + word.toUpperCase();
     });
@@ -15185,11 +14532,9 @@
      * @example
      *
      * _.upperFirst('fred');
-     * // => 'Fred'
-     *
+     *      *
      * _.upperFirst('FRED');
-     * // => 'FRED'
-     */
+     *      */
     var upperFirst = createCaseFirst('toUpperCase');
 
     /**
@@ -15206,11 +14551,9 @@
      * @example
      *
      * _.words('fred, barney, & pebbles');
-     * // => ['fred', 'barney', 'pebbles']
-     *
+     *      *
      * _.words('fred, barney, & pebbles', /[^, ]+/g);
-     * // => ['fred', 'barney', '&', 'pebbles']
-     */
+     *      */
     function words(string, pattern, guard) {
       string = toString(string);
       pattern = guard ? undefined : pattern;
@@ -15236,8 +14579,7 @@
      * @returns {*} Returns the `func` result or error object.
      * @example
      *
-     * // Avoid throwing errors for invalid selectors.
-     * var elements = _.attempt(function(selector) {
+     *      * var elements = _.attempt(function(selector) {
      *   return document.querySelectorAll(selector);
      * }, '>_>');
      *
@@ -15277,8 +14619,7 @@
      *
      * _.bindAll(view, ['click']);
      * jQuery(element).on('click', view.click);
-     * // => Logs 'clicked docs' when clicked.
-     */
+     *      */
     var bindAll = flatRest(function(object, methodNames) {
       arrayEach(methodNames, function(key) {
         key = toKey(key);
@@ -15308,14 +14649,11 @@
      * ]);
      *
      * func({ 'a': 1, 'b': 2 });
-     * // => 'matches A'
-     *
+     *      *
      * func({ 'a': 0, 'b': 1 });
-     * // => 'matches B'
-     *
+     *      *
      * func({ 'a': '1', 'b': '2' });
-     * // => 'no match'
-     */
+     *      */
     function cond(pairs) {
       var length = pairs == null ? 0 : pairs.length,
           toIteratee = getIteratee();
@@ -15360,8 +14698,7 @@
      * ];
      *
      * _.filter(objects, _.conforms({ 'b': function(n) { return n > 1; } }));
-     * // => [{ 'a': 1, 'b': 2 }]
-     */
+     *      */
     function conforms(source) {
       return baseConforms(baseClone(source, CLONE_DEEP_FLAG));
     }
@@ -15380,11 +14717,9 @@
      * var objects = _.times(2, _.constant({ 'a': 1 }));
      *
      * console.log(objects);
-     * // => [{ 'a': 1 }, { 'a': 1 }]
-     *
+     *      *
      * console.log(objects[0] === objects[1]);
-     * // => true
-     */
+     *      */
     function constant(value) {
       return function() {
         return value;
@@ -15406,11 +14741,9 @@
      * @example
      *
      * _.defaultTo(1, 10);
-     * // => 1
-     *
+     *      *
      * _.defaultTo(undefined, 10);
-     * // => 10
-     */
+     *      */
     function defaultTo(value, defaultValue) {
       return (value == null || value !== value) ? defaultValue : value;
     }
@@ -15435,8 +14768,7 @@
      *
      * var addSquare = _.flow([_.add, square]);
      * addSquare(1, 2);
-     * // => 9
-     */
+     *      */
     var flow = createFlow();
 
     /**
@@ -15458,8 +14790,7 @@
      *
      * var addSquare = _.flowRight([square, _.add]);
      * addSquare(1, 2);
-     * // => 9
-     */
+     *      */
     var flowRight = createFlow(true);
 
     /**
@@ -15476,8 +14807,7 @@
      * var object = { 'a': 1 };
      *
      * console.log(_.identity(object) === object);
-     * // => true
-     */
+     *      */
     function identity(value) {
       return value;
     }
@@ -15502,28 +14832,20 @@
      *   { 'user': 'fred',   'age': 40, 'active': false }
      * ];
      *
-     * // The `_.matches` iteratee shorthand.
-     * _.filter(users, _.iteratee({ 'user': 'barney', 'active': true }));
-     * // => [{ 'user': 'barney', 'age': 36, 'active': true }]
-     *
-     * // The `_.matchesProperty` iteratee shorthand.
-     * _.filter(users, _.iteratee(['user', 'fred']));
-     * // => [{ 'user': 'fred', 'age': 40 }]
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.map(users, _.iteratee('user'));
-     * // => ['barney', 'fred']
-     *
-     * // Create custom iteratee shorthands.
-     * _.iteratee = _.wrap(_.iteratee, function(iteratee, func) {
+     *      * _.filter(users, _.iteratee({ 'user': 'barney', 'active': true }));
+     *      *
+     *      * _.filter(users, _.iteratee(['user', 'fred']));
+     *      *
+     *      * _.map(users, _.iteratee('user'));
+     *      *
+     *      * _.iteratee = _.wrap(_.iteratee, function(iteratee, func) {
      *   return !_.isRegExp(func) ? iteratee(func) : function(string) {
      *     return func.test(string);
      *   };
      * });
      *
      * _.filter(['abc', 'def'], /ef/);
-     * // => ['def']
-     */
+     *      */
     function iteratee(func) {
       return baseIteratee(typeof func == 'function' ? func : baseClone(func, CLONE_DEEP_FLAG));
     }
@@ -15554,8 +14876,7 @@
      * ];
      *
      * _.filter(objects, _.matches({ 'a': 4, 'c': 6 }));
-     * // => [{ 'a': 4, 'b': 5, 'c': 6 }]
-     */
+     *      */
     function matches(source) {
       return baseMatches(baseClone(source, CLONE_DEEP_FLAG));
     }
@@ -15584,8 +14905,7 @@
      * ];
      *
      * _.find(objects, _.matchesProperty('a', 4));
-     * // => { 'a': 4, 'b': 5, 'c': 6 }
-     */
+     *      */
     function matchesProperty(path, srcValue) {
       return baseMatchesProperty(path, baseClone(srcValue, CLONE_DEEP_FLAG));
     }
@@ -15609,11 +14929,9 @@
      * ];
      *
      * _.map(objects, _.method('a.b'));
-     * // => [2, 1]
-     *
+     *      *
      * _.map(objects, _.method(['a', 'b']));
-     * // => [2, 1]
-     */
+     *      */
     var method = baseRest(function(path, args) {
       return function(object) {
         return baseInvoke(object, path, args);
@@ -15638,11 +14956,9 @@
      *     object = { 'a': array, 'b': array, 'c': array };
      *
      * _.map(['a[2]', 'c[0]'], _.methodOf(object));
-     * // => [2, 0]
-     *
+     *      *
      * _.map([['a', '2'], ['c', '0']], _.methodOf(object));
-     * // => [2, 0]
-     */
+     *      */
     var methodOf = baseRest(function(object, args) {
       return function(path) {
         return baseInvoke(object, path, args);
@@ -15676,15 +14992,12 @@
      *
      * _.mixin({ 'vowels': vowels });
      * _.vowels('fred');
-     * // => ['e']
-     *
+     *      *
      * _('fred').vowels().value();
-     * // => ['e']
-     *
+     *      *
      * _.mixin({ 'vowels': vowels }, { 'chain': false });
      * _('fred').vowels();
-     * // => ['e']
-     */
+     *      */
     function mixin(object, source, options) {
       var props = keys(source),
           methodNames = baseFunctions(source, props);
@@ -15751,8 +15064,7 @@
      * @example
      *
      * _.times(2, _.noop);
-     * // => [undefined, undefined]
-     */
+     *      */
     function noop() {
       
     }
@@ -15771,12 +15083,10 @@
      *
      * var func = _.nthArg(1);
      * func('a', 'b', 'c', 'd');
-     * // => 'b'
-     *
+     *      *
      * var func = _.nthArg(-2);
      * func('a', 'b', 'c', 'd');
-     * // => 'c'
-     */
+     *      */
     function nthArg(n) {
       n = toInteger(n);
       return baseRest(function(args) {
@@ -15800,8 +15110,7 @@
      * var func = _.over([Math.max, Math.min]);
      *
      * func(1, 2, 3, 4);
-     * // => [4, 1]
-     */
+     *      */
     var over = createOver(arrayMap);
 
     /**
@@ -15820,14 +15129,11 @@
      * var func = _.overEvery([Boolean, isFinite]);
      *
      * func('1');
-     * // => true
-     *
+     *      *
      * func(null);
-     * // => false
-     *
+     *      *
      * func(NaN);
-     * // => false
-     */
+     *      */
     var overEvery = createOver(arrayEvery);
 
     /**
@@ -15846,14 +15152,11 @@
      * var func = _.overSome([Boolean, isFinite]);
      *
      * func('1');
-     * // => true
-     *
+     *      *
      * func(null);
-     * // => true
-     *
+     *      *
      * func(NaN);
-     * // => false
-     */
+     *      */
     var overSome = createOver(arraySome);
 
     /**
@@ -15873,11 +15176,9 @@
      * ];
      *
      * _.map(objects, _.property('a.b'));
-     * // => [2, 1]
-     *
+     *      *
      * _.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
-     * // => [1, 2]
-     */
+     *      */
     function property(path) {
       return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
     }
@@ -15898,11 +15199,9 @@
      *     object = { 'a': array, 'b': array, 'c': array };
      *
      * _.map(['a[2]', 'c[0]'], _.propertyOf(object));
-     * // => [2, 0]
-     *
+     *      *
      * _.map([['a', '2'], ['c', '0']], _.propertyOf(object));
-     * // => [2, 0]
-     */
+     *      */
     function propertyOf(object) {
       return function(path) {
         return object == null ? undefined : baseGet(object, path);
@@ -15930,26 +15229,19 @@
      * @example
      *
      * _.range(4);
-     * // => [0, 1, 2, 3]
-     *
+     *      *
      * _.range(-4);
-     * // => [0, -1, -2, -3]
-     *
+     *      *
      * _.range(1, 5);
-     * // => [1, 2, 3, 4]
-     *
+     *      *
      * _.range(0, 20, 5);
-     * // => [0, 5, 10, 15]
-     *
+     *      *
      * _.range(0, -4, -1);
-     * // => [0, -1, -2, -3]
-     *
+     *      *
      * _.range(1, 4, 0);
-     * // => [1, 1, 1]
-     *
+     *      *
      * _.range(0);
-     * // => []
-     */
+     *      */
     var range = createRange();
 
     /**
@@ -15968,26 +15260,19 @@
      * @example
      *
      * _.rangeRight(4);
-     * // => [3, 2, 1, 0]
-     *
+     *      *
      * _.rangeRight(-4);
-     * // => [-3, -2, -1, 0]
-     *
+     *      *
      * _.rangeRight(1, 5);
-     * // => [4, 3, 2, 1]
-     *
+     *      *
      * _.rangeRight(0, 20, 5);
-     * // => [15, 10, 5, 0]
-     *
+     *      *
      * _.rangeRight(0, -4, -1);
-     * // => [-3, -2, -1, 0]
-     *
+     *      *
      * _.rangeRight(1, 4, 0);
-     * // => [1, 1, 1]
-     *
+     *      *
      * _.rangeRight(0);
-     * // => []
-     */
+     *      */
     var rangeRight = createRange(true);
 
     /**
@@ -16003,11 +15288,9 @@
      * var arrays = _.times(2, _.stubArray);
      *
      * console.log(arrays);
-     * // => [[], []]
-     *
+     *      *
      * console.log(arrays[0] === arrays[1]);
-     * // => false
-     */
+     *      */
     function stubArray() {
       return [];
     }
@@ -16023,8 +15306,7 @@
      * @example
      *
      * _.times(2, _.stubFalse);
-     * // => [false, false]
-     */
+     *      */
     function stubFalse() {
       return false;
     }
@@ -16042,11 +15324,9 @@
      * var objects = _.times(2, _.stubObject);
      *
      * console.log(objects);
-     * // => [{}, {}]
-     *
+     *      *
      * console.log(objects[0] === objects[1]);
-     * // => false
-     */
+     *      */
     function stubObject() {
       return {};
     }
@@ -16062,8 +15342,7 @@
      * @example
      *
      * _.times(2, _.stubString);
-     * // => ['', '']
-     */
+     *      */
     function stubString() {
       return '';
     }
@@ -16079,8 +15358,7 @@
      * @example
      *
      * _.times(2, _.stubTrue);
-     * // => [true, true]
-     */
+     *      */
     function stubTrue() {
       return true;
     }
@@ -16099,11 +15377,9 @@
      * @example
      *
      * _.times(3, String);
-     * // => ['0', '1', '2']
-     *
+     *      *
      *  _.times(4, _.constant(0));
-     * // => [0, 0, 0, 0]
-     */
+     *      */
     function times(n, iteratee) {
       n = toInteger(n);
       if (n < 1 || n > MAX_SAFE_INTEGER) {
@@ -16134,11 +15410,9 @@
      * @example
      *
      * _.toPath('a.b.c');
-     * // => ['a', 'b', 'c']
-     *
+     *      *
      * _.toPath('a[0].b.c');
-     * // => ['a', '0', 'b', 'c']
-     */
+     *      */
     function toPath(value) {
       if (isArray(value)) {
         return arrayMap(value, toKey);
@@ -16158,11 +15432,9 @@
      * @example
      *
      * _.uniqueId('contact_');
-     * // => 'contact_104'
-     *
+     *      *
      * _.uniqueId();
-     * // => '105'
-     */
+     *      */
     function uniqueId(prefix) {
       var id = ++idCounter;
       return toString(prefix) + id;
@@ -16183,8 +15455,7 @@
      * @example
      *
      * _.add(6, 4);
-     * // => 10
-     */
+     *      */
     var add = createMathOperation(function(augend, addend) {
       return augend + addend;
     }, 0);
@@ -16202,14 +15473,11 @@
      * @example
      *
      * _.ceil(4.006);
-     * // => 5
-     *
+     *      *
      * _.ceil(6.004, 2);
-     * // => 6.01
-     *
+     *      *
      * _.ceil(6040, -2);
-     * // => 6100
-     */
+     *      */
     var ceil = createRound('ceil');
 
     /**
@@ -16225,8 +15493,7 @@
      * @example
      *
      * _.divide(6, 4);
-     * // => 1.5
-     */
+     *      */
     var divide = createMathOperation(function(dividend, divisor) {
       return dividend / divisor;
     }, 1);
@@ -16244,14 +15511,11 @@
      * @example
      *
      * _.floor(4.006);
-     * // => 4
-     *
+     *      *
      * _.floor(0.046, 2);
-     * // => 0.04
-     *
+     *      *
      * _.floor(4060, -2);
-     * // => 4000
-     */
+     *      */
     var floor = createRound('floor');
 
     /**
@@ -16267,11 +15531,9 @@
      * @example
      *
      * _.max([4, 2, 8, 6]);
-     * // => 8
-     *
+     *      *
      * _.max([]);
-     * // => undefined
-     */
+     *      */
     function max(array) {
       return (array && array.length)
         ? baseExtremum(array, identity, baseGt)
@@ -16295,12 +15557,9 @@
      * var objects = [{ 'n': 1 }, { 'n': 2 }];
      *
      * _.maxBy(objects, function(o) { return o.n; });
-     * // => { 'n': 2 }
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.maxBy(objects, 'n');
-     * // => { 'n': 2 }
-     */
+     *      *
+     *      * _.maxBy(objects, 'n');
+     *      */
     function maxBy(array, iteratee) {
       return (array && array.length)
         ? baseExtremum(array, getIteratee(iteratee, 2), baseGt)
@@ -16319,8 +15578,7 @@
      * @example
      *
      * _.mean([4, 2, 8, 6]);
-     * // => 5
-     */
+     *      */
     function mean(array) {
       return baseMean(array, identity);
     }
@@ -16342,12 +15600,9 @@
      * var objects = [{ 'n': 4 }, { 'n': 2 }, { 'n': 8 }, { 'n': 6 }];
      *
      * _.meanBy(objects, function(o) { return o.n; });
-     * // => 5
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.meanBy(objects, 'n');
-     * // => 5
-     */
+     *      *
+     *      * _.meanBy(objects, 'n');
+     *      */
     function meanBy(array, iteratee) {
       return baseMean(array, getIteratee(iteratee, 2));
     }
@@ -16365,11 +15620,9 @@
      * @example
      *
      * _.min([4, 2, 8, 6]);
-     * // => 2
-     *
+     *      *
      * _.min([]);
-     * // => undefined
-     */
+     *      */
     function min(array) {
       return (array && array.length)
         ? baseExtremum(array, identity, baseLt)
@@ -16393,12 +15646,9 @@
      * var objects = [{ 'n': 1 }, { 'n': 2 }];
      *
      * _.minBy(objects, function(o) { return o.n; });
-     * // => { 'n': 1 }
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.minBy(objects, 'n');
-     * // => { 'n': 1 }
-     */
+     *      *
+     *      * _.minBy(objects, 'n');
+     *      */
     function minBy(array, iteratee) {
       return (array && array.length)
         ? baseExtremum(array, getIteratee(iteratee, 2), baseLt)
@@ -16418,8 +15668,7 @@
      * @example
      *
      * _.multiply(6, 4);
-     * // => 24
-     */
+     *      */
     var multiply = createMathOperation(function(multiplier, multiplicand) {
       return multiplier * multiplicand;
     }, 1);
@@ -16437,14 +15686,11 @@
      * @example
      *
      * _.round(4.006);
-     * // => 4
-     *
+     *      *
      * _.round(4.006, 2);
-     * // => 4.01
-     *
+     *      *
      * _.round(4060, -2);
-     * // => 4100
-     */
+     *      */
     var round = createRound('round');
 
     /**
@@ -16460,8 +15706,7 @@
      * @example
      *
      * _.subtract(6, 4);
-     * // => 2
-     */
+     *      */
     var subtract = createMathOperation(function(minuend, subtrahend) {
       return minuend - subtrahend;
     }, 0);
@@ -16478,8 +15723,7 @@
      * @example
      *
      * _.sum([4, 2, 8, 6]);
-     * // => 20
-     */
+     *      */
     function sum(array) {
       return (array && array.length)
         ? baseSum(array, identity)
@@ -16503,12 +15747,9 @@
      * var objects = [{ 'n': 4 }, { 'n': 2 }, { 'n': 8 }, { 'n': 6 }];
      *
      * _.sumBy(objects, function(o) { return o.n; });
-     * // => 20
-     *
-     * // The `_.property` iteratee shorthand.
-     * _.sumBy(objects, 'n');
-     * // => 20
-     */
+     *      *
+     *      * _.sumBy(objects, 'n');
+     *      */
     function sumBy(array, iteratee) {
       return (array && array.length)
         ? baseSum(array, getIteratee(iteratee, 2))

@@ -1,4 +1,3 @@
-// engine.js
 const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
 
 const canvas = document.getElementById("c");
@@ -569,34 +568,20 @@ var currentEngine = null, mx=0, my=0, cx=0, cy=0, mode=1, blink=0, flash=0, shak
 var leftEngine = null, rightEngine = null, backEngine = null, activePOV = 'center';
 var backZoom = 0.0, backZoomTarget = 0.0;
 
-// ═══════════════════════════════════════════════════════════════
-//  HALLUCINATION ENGINE — layered reality degradation system
-//  Layers: grain → scanline tears → fractal bleed → horror vignette
-//  All layers build with trip intensity across the full session.
-//  Blinks don't gate visibility — they surge/shuffle the character.
-// ═══════════════════════════════════════════════════════════════
 
 var fractalSeed = Math.random() * 100.0;
 var blinkPeakTime = performance.now();
 var hallucinationProg = null;
 var hallucinationQuadBuf = null;
 var hallucinationU = null;
-var _tripAccum = 0.0;   // slowly ratchets up across the session — never goes down
-
+var _tripAccum = 0.0;   
 function initHallucinationOverlay() {
-    // ── FRAGMENT SHADER ──────────────────────────────────────
-    // WebGL1-safe: NO break in loops. Uses step() to skip iterations.
-    // Premultiplied alpha output: blend with gl.ONE, gl.ONE_MINUS_SRC_ALPHA
-    const fragSrc = `
+                const fragSrc = `
 precision highp float;
 uniform vec2  u_resolution;
 uniform float u_time;
-uniform float u_trip;        // current zone trip intensity
-uniform float u_tripAccum;   // session accumulator — only grows
-uniform float u_fractalSeed;
-uniform float u_blinkAge;    // seconds since last blink peak
-
-// ── HASHES ──
+uniform float u_trip;        uniform float u_tripAccum;   uniform float u_fractalSeed;
+uniform float u_blinkAge;    
 float hh(float x){ return fract(sin(x*127.1)*43758.5453); }
 float hh2(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
 float noise(vec2 p){
@@ -605,9 +590,6 @@ float noise(vec2 p){
                mix(hh2(i+vec2(0,1)),hh2(i+vec2(1,1)),u.x),u.y);
 }
 
-// ── BURNING SHIP FRACTAL ──
-// z_{n+1} = (|Re(z)| + i|Im(z)|)^2 + c
-// Produces inverted cityscapes / melting buildings — fits the void city aesthetic
 float burningShip(vec2 c){
     vec2 z = vec2(0.0);
     float escaped = 0.0;
@@ -615,14 +597,11 @@ float burningShip(vec2 c){
     for(int n=0; n<48; n++){
         z = vec2(abs(z.x), abs(z.y));
         z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
-        // WebGL1-safe: no break — accumulate with step
-        float esc = step(4.0, dot(z,z));
-        smooth_i += (1.0 - esc);  // count pre-escape iterations
-    }
+                float esc = step(4.0, dot(z,z));
+        smooth_i += (1.0 - esc);      }
     return smooth_i / 48.0;
 }
 
-// ── JULIA SET ──
 float julia(vec2 z, vec2 c){
     float smooth_i = 0.0;
     for(int n=0; n<40; n++){
@@ -632,10 +611,8 @@ float julia(vec2 z, vec2 c){
     return smooth_i / 40.0;
 }
 
-// ── PALETTE — sickly neon with seed-driven hue ──
 vec3 sickPal(float t, float seed){
-    // Horror palette: shifted toward reds/magentas/acid greens
-    vec3 a = vec3(0.5, 0.4, 0.45);
+        vec3 a = vec3(0.5, 0.4, 0.45);
     vec3 b = vec3(0.5, 0.35, 0.5);
     vec3 c = vec3(1.0, 0.8, 1.0);
     vec3 d = vec3(hh(seed)*0.5, hh(seed+1.0)*0.3 + 0.1, hh(seed+2.0)*0.4 + 0.3);
@@ -650,57 +627,34 @@ void main(){
     float trip = clamp(u_trip, 0.0, 2.0);
     float accum = clamp(u_tripAccum, 0.0, 8.0);
 
-    // Base intensity: always present once trip > 0, grows with accumulator
-    float baseStrength = trip * 0.12 + accum * 0.025;
-    // Blink surge: snaps in at blink, decays over 6 seconds
-    float surge = smoothstep(6.0, 0.0, u_blinkAge) * trip * 0.35;
+        float baseStrength = trip * 0.12 + accum * 0.025;
+        float surge = smoothstep(6.0, 0.0, u_blinkAge) * trip * 0.35;
     float totalStrength = baseStrength + surge;
 
     if(totalStrength < 0.008){ gl_FragColor = vec4(0.0); return; }
 
-    // ════════════════════════════════════════════════════════
-    //  LAYER 1: FILM GRAIN — always on, scales with trip
-    //  Survival horror film stock damage
-    // ════════════════════════════════════════════════════════
-    float grainSeed = floor(t * 24.0); // 24fps grain refresh
-    float grain = hh2(screenUV * u_resolution * 0.5 + grainSeed * 7.3) - 0.5;
-    // Heavier grain in dark areas (shadow noise) — peripheral weighting
-    float grainAmt = totalStrength * 0.12 * (1.0 + r * 0.6);
-    // Occasional heavy grain bursts
-    float grainBurst = step(0.92, hh(grainSeed * 3.1 + u_fractalSeed)) * trip;
+                    float grainSeed = floor(t * 24.0);     float grain = hh2(screenUV * u_resolution * 0.5 + grainSeed * 7.3) - 0.5;
+        float grainAmt = totalStrength * 0.12 * (1.0 + r * 0.6);
+        float grainBurst = step(0.92, hh(grainSeed * 3.1 + u_fractalSeed)) * trip;
     grainAmt += grainBurst * 0.25;
 
-    // ════════════════════════════════════════════════════════
-    //  LAYER 2: VHS SCANLINE CORRUPTION
-    //  Horizontal bands that tear/shift — PT hallway vibes
-    // ════════════════════════════════════════════════════════
-    float scanY = screenUV.y * u_resolution.y;
-    float scanBand = floor(scanY / 3.0); // 3px band height
-    float scanRoll = hh(scanBand * 7.7 + floor(t * 6.0));
-    // Tear probability increases with trip
-    float tearProb = 0.985 - totalStrength * 0.06;
+                    float scanY = screenUV.y * u_resolution.y;
+    float scanBand = floor(scanY / 3.0);     float scanRoll = hh(scanBand * 7.7 + floor(t * 6.0));
+        float tearProb = 0.985 - totalStrength * 0.06;
     float isTear = step(tearProb, scanRoll);
-    // Tear color: dark desaturated band or bright white flash
-    float tearBright = step(0.7, hh(scanBand * 13.3 + floor(t * 12.0)));
+        float tearBright = step(0.7, hh(scanBand * 13.3 + floor(t * 12.0)));
     vec3 tearColor = mix(vec3(0.0, 0.0, 0.02), vec3(0.9, 0.85, 0.95), tearBright);
     float tearAlpha = isTear * totalStrength * 0.5;
 
-    // ════════════════════════════════════════════════════════
-    //  LAYER 3: FRACTAL PERIPHERAL BLEED
-    //  Burning Ship + Julia sets in the outer vision
-    //  Like seeing geometry that shouldn't exist
-    // ════════════════════════════════════════════════════════
-    float periph = smoothstep(0.20, 0.95, r);
+                        float periph = smoothstep(0.20, 0.95, r);
     float fracAlpha = 0.0;
     vec3 fracCol = vec3(0.0);
 
     if(periph * totalStrength > 0.01) {
-        // Seed picks fractal type and region
-        float typeRoll = hh(u_fractalSeed * 3.7);
+                float typeRoll = hh(u_fractalSeed * 3.7);
         float zoom = mix(0.6, 3.0, hh(u_fractalSeed * 1.3));
 
-        // Slow drift — fractal region crawls over time
-        vec2 drift = vec2(
+                vec2 drift = vec2(
             sin(t * 0.03 + u_fractalSeed) * 0.2,
             cos(t * 0.02 + u_fractalSeed * 1.7) * 0.2
         );
@@ -709,47 +663,33 @@ void main(){
         float val = 0.0;
 
         if(typeRoll < 0.4) {
-            // Burning Ship — melting cityscape structures
-            vec2 region = vec2(-1.76, -0.028) + vec2(hh(u_fractalSeed*5.1)-0.5, hh(u_fractalSeed*7.3)-0.5) * 0.3;
+                        vec2 region = vec2(-1.76, -0.028) + vec2(hh(u_fractalSeed*5.1)-0.5, hh(u_fractalSeed*7.3)-0.5) * 0.3;
             val = burningShip(sampleUV * 0.5 + region);
         } else if(typeRoll < 0.7) {
-            // Julia set — organic/alien tendrils
-            vec2 jc = vec2(
+                        vec2 jc = vec2(
                 -0.8 + sin(t * 0.015 + u_fractalSeed) * 0.15,
                  0.156 + cos(t * 0.012 + u_fractalSeed * 2.0) * 0.1
             );
             val = julia(sampleUV * 0.8, jc);
         } else {
-            // Burning Ship zoomed into the "mast" — tower structures
-            vec2 region = vec2(-1.755, -0.022);
+                        vec2 region = vec2(-1.755, -0.022);
             float deepZoom = mix(2.0, 8.0, hh(u_fractalSeed * 9.1));
             val = burningShip(sampleUV * 0.15 / deepZoom + region);
         }
 
-        // Animate color cycling — slow, nauseous
-        val = fract(val * 3.5 + t * 0.04 * (0.3 + hh(u_fractalSeed * 9.0)));
+                val = fract(val * 3.5 + t * 0.04 * (0.3 + hh(u_fractalSeed * 9.0)));
         fracCol = sickPal(val, u_fractalSeed * 11.3);
-        // Kill deep interior (val near 1.0 = never escaped = boring)
-        fracCol *= smoothstep(0.0, 0.12, val) * smoothstep(1.0, 0.7, val);
+                fracCol *= smoothstep(0.0, 0.12, val) * smoothstep(1.0, 0.7, val);
 
         float fracPulse = 0.6 + 0.4 * sin(t * (0.8 + hh(u_fractalSeed*4.0)) + u_fractalSeed);
         fracAlpha = periph * totalStrength * 0.22 * fracPulse;
     }
 
-    // ════════════════════════════════════════════════════════
-    //  LAYER 4: HORROR VIGNETTE — dark red peripheral creep
-    //  The edges of vision darken and pulse, like blood pressure
-    // ════════════════════════════════════════════════════════
-    float vignPulse = 0.5 + 0.5 * sin(t * 0.7 + sin(t * 0.3) * 2.0);
+                    float vignPulse = 0.5 + 0.5 * sin(t * 0.7 + sin(t * 0.3) * 2.0);
     float vignStrength = smoothstep(0.35, 1.1, r) * totalStrength * 0.28 * vignPulse;
-    // Asymmetric — heavier at bottom (gravity, blood pooling)
-    vignStrength *= 1.0 + max(0.0, -uv.y) * 0.8;
+        vignStrength *= 1.0 + max(0.0, -uv.y) * 0.8;
 
-    // ════════════════════════════════════════════════════════
-    //  LAYER 5: DATAMOSH BLOCKS — random rectangles of wrong color
-    //  Like frame buffer corruption / Enter the Void blink cuts
-    // ════════════════════════════════════════════════════════
-    float moshAlpha = 0.0;
+                    float moshAlpha = 0.0;
     vec3 moshCol = vec3(0.0);
     float moshTrigger = step(0.96, hh(floor(t * 8.0) * 13.7 + u_fractalSeed));
     if(moshTrigger > 0.5 && totalStrength > 0.15) {
@@ -757,70 +697,44 @@ void main(){
         vec2 blockID = floor(gl_FragCoord.xy / blockSize);
         float blockRnd = hh2(blockID + floor(t * 4.0));
         float isCorrupt = step(0.88, blockRnd);
-        // Corrupt blocks show a shifted solid color
-        vec3 corruptCol = sickPal(blockRnd * 3.0 + t * 0.1, u_fractalSeed * 7.0);
-        // Sometimes invert, sometimes desaturate
-        float invertRoll = hh(blockRnd * 17.0);
+                vec3 corruptCol = sickPal(blockRnd * 3.0 + t * 0.1, u_fractalSeed * 7.0);
+                float invertRoll = hh(blockRnd * 17.0);
         if(invertRoll > 0.6) corruptCol = 1.0 - corruptCol;
         else if(invertRoll > 0.3) corruptCol = vec3(dot(corruptCol, vec3(0.299, 0.587, 0.114)));
         moshAlpha = isCorrupt * totalStrength * 0.4;
         moshCol = corruptCol;
     }
 
-    // ════════════════════════════════════════════════════════
-    //  LAYER 6: AFTERIMAGE GHOST — faint echo of fractal from
-    //  previous blink, still fading. Creates persistence of vision.
-    // ════════════════════════════════════════════════════════
-    float ghostAge = u_blinkAge + 4.0; // offset to previous cycle
-    float ghostAlpha = 0.0;
+                    float ghostAge = u_blinkAge + 4.0;     float ghostAlpha = 0.0;
     vec3 ghostCol = vec3(0.0);
     if(ghostAge < 10.0 && accum > 0.5) {
         float ghostEnv = smoothstep(10.0, 4.0, ghostAge) * 0.08 * accum;
-        float ghostSeed = u_fractalSeed + 50.0; // different region
-        vec2 ghostUV = uv / 1.5 + vec2(sin(t*0.02)*0.3, cos(t*0.015)*0.3);
+        float ghostSeed = u_fractalSeed + 50.0;         vec2 ghostUV = uv / 1.5 + vec2(sin(t*0.02)*0.3, cos(t*0.015)*0.3);
         float gVal = burningShip(ghostUV * 0.4 + vec2(-1.76, -0.03));
         gVal = fract(gVal * 2.0 + t * 0.02);
         ghostCol = sickPal(gVal, ghostSeed * 7.0) * smoothstep(0.0, 0.15, gVal);
         ghostAlpha = smoothstep(0.3, 0.8, r) * ghostEnv;
     }
 
-    // ════════════════════════════════════════════════════════
-    //  COMPOSITE — premultiplied alpha
-    //  Grain: additive noise
-    //  Tears: replace bands
-    //  Fractals: additive glow in periphery
-    //  Vignette: darken edges
-    //  Mosh: color replacement blocks
-    //  Ghost: faint additive persistence
-    // ════════════════════════════════════════════════════════
-
+                                    
     vec3 outRGB = vec3(0.0);
     float outA = 0.0;
 
-    // Grain — additive, very subtle
-    outRGB += vec3(grain * grainAmt);
+        outRGB += vec3(grain * grainAmt);
 
-    // Fractal glow — additive peripheral
-    outRGB += fracCol * fracAlpha;
-    outA = max(outA, fracAlpha * 0.5); // slight background darken behind fractals
-
-    // Tears — opaque bands
-    outRGB = mix(outRGB, tearColor * tearAlpha, tearAlpha);
+        outRGB += fracCol * fracAlpha;
+    outA = max(outA, fracAlpha * 0.5); 
+        outRGB = mix(outRGB, tearColor * tearAlpha, tearAlpha);
     outA = max(outA, tearAlpha);
 
-    // Horror vignette — darkening
-    outA = max(outA, vignStrength);
-    outRGB = mix(outRGB, vec3(0.03, 0.0, 0.0), vignStrength); // dark red-black
-
-    // Mosh blocks
-    outRGB = mix(outRGB, moshCol * moshAlpha, moshAlpha);
+        outA = max(outA, vignStrength);
+    outRGB = mix(outRGB, vec3(0.03, 0.0, 0.0), vignStrength); 
+        outRGB = mix(outRGB, moshCol * moshAlpha, moshAlpha);
     outA = max(outA, moshAlpha);
 
-    // Ghost afterimage
-    outRGB += ghostCol * ghostAlpha;
+        outRGB += ghostCol * ghostAlpha;
 
-    // Premultiplied output
-    gl_FragColor = vec4(outRGB, outA);
+        gl_FragColor = vec4(outRGB, outA);
 }`;
 
     const vert = compile(gl.VERTEX_SHADER, GLSL.vert);
@@ -859,16 +773,13 @@ function drawHallucinationOverlay(now, tripOverride, seedOverride, ageOverride) 
     const trip     = (tripOverride !== undefined) ? tripOverride : tripIntensity;
     const seed     = (seedOverride !== undefined) ? seedOverride : fractalSeed;
 
-    // Accumulator: ratchets up across the session, never decreases
-    _tripAccum += trip * 0.00008;
+        _tripAccum += trip * 0.00008;
 
-    // No early return — base layer is always active when trip > 0
-    if (trip < 0.02 && _tripAccum < 0.1) return;
+        if (trip < 0.02 && _tripAccum < 0.1) return;
 
     gl.useProgram(hallucinationProg);
     gl.enable(gl.BLEND);
-    // Premultiplied alpha: output.rgb already contains color*alpha
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
     gl.uniform2f(hallucinationU.res, canvas.width, canvas.height);
     gl.uniform1f(hallucinationU.time, now * 0.001);

@@ -202,8 +202,7 @@ function toggleConky() {
     const tickers = document.querySelectorAll('.ticker-wrap');
     const hw = document.getElementById('hollywood-box');
 
-    // ── Arm black hole escape on any conky click while in z3b void ──
-    if (window.currentZone3 && window.currentZone3.isAltRoute && 
+        if (window.currentZone3 && window.currentZone3.isAltRoute && 
         window.currentZone3.centerPhase === 'void' && 
         window.currentZone3.bhEscapePhase === 'none') {
         window.currentZone3.bhEscapeArmed = true;

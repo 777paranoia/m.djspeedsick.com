@@ -707,11 +707,9 @@ class Zone3Engine {
         this.z3RedStart = performance.now();
         this.z3RedDone = false;
 
-        // ── Black hole escape sequence (z3b void + conky toggle) ──
-        this.bhEscapeArmed = false;
+                this.bhEscapeArmed = false;
         this.bhEscapeBlinkCount = 0;
-        this.bhEscapePhase = 'none';  // none → rising → sucking → warp → black → falling
-        this.bhEscapeStart = 0;
+        this.bhEscapePhase = 'none';          this.bhEscapeStart = 0;
 
         this._initAudio();
     }
@@ -780,8 +778,7 @@ class Zone3Engine {
                     }
                 } catch(_) {}
 
-                // ── BH escape audio override ──
-                if (this.bhEscapePhase === 'rising') {
+                                if (this.bhEscapePhase === 'rising') {
                     const ep = Math.min((now - this.bhEscapeStart) / 3000.0, 1.0);
                     if (wet)  wet.gain.setTargetAtTime(0.34 + ep * 0.15, t, 0.3);
                     if (filt) filt.frequency.setTargetAtTime(180.0 - ep * 80.0, t, 0.3);
@@ -805,8 +802,7 @@ class Zone3Engine {
                     if (dry) dry.gain.setTargetAtTime(0.0, t, 0.3);
                     if (this._humGain) this._humGain.gain.setTargetAtTime(0.0, t, 0.2);
                 } else {
-                    // Normal void audio
-                    if (wet)  wet.gain.setTargetAtTime(0.34 + ai * 0.18, t, 0.45);
+                                        if (wet)  wet.gain.setTargetAtTime(0.34 + ai * 0.18, t, 0.45);
                     if (dry)  dry.gain.setTargetAtTime(0.22 + ai * 0.08, t, 0.45);
                     if (filt) filt.frequency.setTargetAtTime(180.0 + ai * 260.0 + Math.sin(now * 0.0017) * 25.0, t, 0.35);
                     if (this._humGain) this._humGain.gain.setTargetAtTime(0.020 + ai * 0.028, t, 0.35);
@@ -1126,8 +1122,7 @@ class Zone3Engine {
             this.zoom += (this.zoomTarget - this.zoom) * Math.min(1.0, 0.08 * timeScale);
         } else if (this.centerPhase === 'void' && this.isAltRoute) {
 
-            // ── BLACK HOLE ESCAPE SEQUENCE ──
-            if (this.bhEscapePhase !== 'none') {
+                        if (this.bhEscapePhase !== 'none') {
                 const escElapsed = now - this.bhEscapeStart;
 
                 if (this.bhEscapePhase === 'rising') {
@@ -1185,8 +1180,7 @@ class Zone3Engine {
                 this.z3IsOOB = 1.0;
 
             } else {
-                // ── Normal z3b void walking ──
-            const walkAmt = isWalking ? (1.20 * timeScale) : 0.0;
+                            const walkAmt = isWalking ? (1.20 * timeScale) : 0.0;
             if (walkAmt > 0.0) {
                 this.bhCamPos.z -= 18.0 * (timeScale / 60.0);
                 this.bhCamPos.z = Math.max(this.bhCamPos.z, -3050.0);
@@ -1239,10 +1233,8 @@ class Zone3Engine {
         if (typeof this.cx === 'undefined') { this.cx = currentMx; this.cy = currentMy; }
 
         if (this.centerPhase !== 'falling') {
-            // Freeze mouse during late escape phases
-            if (this.bhEscapePhase === 'warp' || this.bhEscapePhase === 'black') {
-                // Lock camera - no mouse input
-            } else {
+                        if (this.bhEscapePhase === 'warp' || this.bhEscapePhase === 'black') {
+                            } else {
             this.cx += (currentMx - this.cx) * Math.min(1.0, 0.12 * timeScale);
             this.cy += (currentMy - this.cy) * Math.min(1.0, 0.12 * timeScale);
             }
@@ -1276,8 +1268,7 @@ class Zone3Engine {
                     this.z3ModeStart = now;
                     this.z3BlinkPeakTime = now;
 
-                    // ── BH escape blink counting ──
-                    if (this.bhEscapeArmed && this.bhEscapePhase === 'none' &&
+                                        if (this.bhEscapeArmed && this.bhEscapePhase === 'none' &&
                         this.isAltRoute && this.centerPhase === 'void') {
                         this.bhEscapeBlinkCount++;
                         if (this.bhEscapeBlinkCount >= 2) {
@@ -1304,8 +1295,7 @@ class Zone3Engine {
         if (this.centerPhase === 'void' && this.isAltRoute) {
             stateBoost = 1.0 + Math.max(0, Math.min(2.0, (-this.bhCamPos.z - 260.0) / 1500.0)) * 2.0;
         }
-        // BH escape escalation
-        if (this.bhEscapePhase === 'rising') stateBoost = 2.0;
+                if (this.bhEscapePhase === 'rising') stateBoost = 2.0;
         else if (this.bhEscapePhase === 'sucking') stateBoost = 3.5;
         else if (this.bhEscapePhase === 'warp') stateBoost = 5.0;
         if (this.fractalActive > 0.5) stateBoost += 0.5;
@@ -1365,8 +1355,7 @@ class Zone3Engine {
                 const redPulse = Math.max(0.0, Math.min(0.25, voidAge * 0.03));
                 if (redPulse > 0.001) this._drawOverlay(0.16, 0.0, 0.0, redPulse);
 
-                // ── BH escape visual overlays ──
-                if (this.bhEscapePhase === 'rising') {
+                                if (this.bhEscapePhase === 'rising') {
                     const t = Math.min((now - this.bhEscapeStart) / 3000.0, 1.0);
                     this._drawOverlay(0.0, 0.0, 0.02, t * 0.15);
                 } else if (this.bhEscapePhase === 'sucking') {

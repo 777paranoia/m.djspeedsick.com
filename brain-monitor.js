@@ -2,7 +2,7 @@
 
 var cvs, ctx;
 var running = false;
-var fibers = [];       // each fiber is a full curve with many points
+var fibers = [];       
 var pulses = [];
 var monitorStartTime = 0;
 var readoutLines = [];
@@ -15,7 +15,7 @@ var MAX_PULSES = _bmMobile ? 30 : 60;
 var READOUT_INTERVAL = 2200;
 var POINTS_PER_FIBER = 30;
 
-// ── READOUTS ──
+
 var NORMAL_READOUTS = [
     function(){ return '\u0421\u0435\u0440\u043E\u0442\u043E\u043D\u0438\u043D 5-HT2A: ' + (72+Math.random()*15).toFixed(1) + '%'; },
     function(){ return '\u30CB\u30E5\u30FC\u30ED\u30F3\u540C\u671F: ' + (0.82+Math.random()*0.12).toFixed(2); },
@@ -44,9 +44,9 @@ var TRIP_READOUTS = [
     function(){ return '!! \u0421\u0415\u0420\u041E\u0422\u041E\u041D\u0418\u041D\u041E\u0412\u042B\u0419 \u0428\u0422\u041E\u0420\u041C: \u0424\u0410\u0417\u0410 ' + (Math.floor(Math.random()*4)+1); },
 ];
 
-// ── FIBER GENERATION ──
-// Each fiber is a smooth curve defined by control points, rendered as a polyline.
-// Bundles: multiple fibers with similar but slightly varied paths.
+
+
+
 
 function makeFiber(w, h, bundleAngle, bundleOrigin, bundleSpread, hue, trip) {
     var pts = [];
@@ -58,24 +58,24 @@ function makeFiber(w, h, bundleAngle, bundleOrigin, bundleSpread, hue, trip) {
     var angle = bundleAngle + (Math.random() - 0.5) * 0.5;
     var speed = 3.5 + Math.random() * 4;
 
-    // Brain ellipse center (will be set properly by spawnBundle)
+    
     var bcx = w * 0.48, bcy = h * 0.42, brx = w * 0.38, bry = h * 0.35;
 
-    // Curvature — strong arcing for weaving
+    
     var curveDrift = (Math.random() - 0.5) * 0.06;
 
     for (var i = 0; i < numPts; i++) {
         pts.push({ x: x, y: y });
 
-        // Natural curve
+        
         angle += curveDrift + (Math.random() - 0.5) * 0.1;
 
-        // Pull fiber toward brain center if it's drifting out — creates the contained shape
+        
         var dx = (x - bcx) / brx;
         var dy = (y - bcy) / bry;
         var distFromCenter = Math.sqrt(dx * dx + dy * dy);
         if (distFromCenter > 0.7) {
-            // Curve back toward center
+            
             var pullAngle = Math.atan2(bcy - y, bcx - x);
             var pullStrength = (distFromCenter - 0.7) * 0.08;
             angle += (pullAngle - angle) * pullStrength;
@@ -106,59 +106,59 @@ function spawnBundle(w, h, trip) {
 
     var bundleSize = 6 + Math.floor(Math.random() * 10 + trip * 3);
 
-    // Brain center and dimensions — elliptical boundary
+    
     var brainCX = w * 0.48;
     var brainCY = h * 0.42;
-    var brainRX = w * 0.38;  // horizontal radius
-    var brainRY = h * 0.35;  // vertical radius
+    var brainRX = w * 0.38;  
+    var brainRY = h * 0.35;  
 
-    // Pick a tract type — each has a characteristic shape and color
+    
     var tractType = Math.floor(Math.random() * 6);
     var ox, oy, angle, hue, spread, curveStrength;
 
     if (tractType === 0) {
-        // Corpus callosum — arcs left-to-right across the top (RED)
+        
         ox = brainCX - brainRX * (0.3 + Math.random() * 0.5);
         oy = brainCY - brainRY * (0.2 + Math.random() * 0.4);
-        angle = -0.3 + Math.random() * 0.6; // roughly rightward
-        hue = 350 + Math.random() * 25;      // deep red to magenta
+        angle = -0.3 + Math.random() * 0.6; 
+        hue = 350 + Math.random() * 25;      
         spread = 8 + Math.random() * 12;
         curveStrength = 0.03 + Math.random() * 0.02;
     } else if (tractType === 1) {
-        // Corticospinal — vertical from bottom upward (BLUE/PURPLE)
+        
         ox = brainCX + (Math.random() - 0.5) * brainRX * 0.3;
         oy = brainCY + brainRY * (0.4 + Math.random() * 0.3);
-        angle = -Math.PI/2 + (Math.random() - 0.5) * 0.4; // upward
-        hue = 220 + Math.random() * 60;      // blue to purple
+        angle = -Math.PI/2 + (Math.random() - 0.5) * 0.4; 
+        hue = 220 + Math.random() * 60;      
         spread = 6 + Math.random() * 10;
         curveStrength = 0.01 + Math.random() * 0.02;
     } else if (tractType === 2) {
-        // Arcuate fasciculus — curves front-to-back (GREEN/CYAN)
+        
         ox = brainCX - brainRX * (0.1 + Math.random() * 0.3);
         oy = brainCY + (Math.random() - 0.5) * brainRY * 0.4;
-        angle = 0.3 + Math.random() * 0.8;   // forward-downward arc
-        hue = 100 + Math.random() * 60;       // green to cyan
+        angle = 0.3 + Math.random() * 0.8;   
+        hue = 100 + Math.random() * 60;       
         spread = 10 + Math.random() * 15;
         curveStrength = 0.04 + Math.random() * 0.03;
     } else if (tractType === 3) {
-        // Cingulum — follows cortex curve, top of brain (ORANGE/YELLOW)
+        
         var t = Math.random() * Math.PI;
         ox = brainCX + Math.cos(t) * brainRX * 0.6;
         oy = brainCY - Math.sin(t) * brainRY * 0.6;
-        angle = t + Math.PI/2 + (Math.random() - 0.5) * 0.3; // tangent to curve
-        hue = 30 + Math.random() * 40;        // orange to yellow
+        angle = t + Math.PI/2 + (Math.random() - 0.5) * 0.3; 
+        hue = 30 + Math.random() * 40;        
         spread = 5 + Math.random() * 8;
         curveStrength = 0.05 + Math.random() * 0.02;
     } else if (tractType === 4) {
-        // Uncinate — hooks from frontal down to temporal (MAGENTA/PINK)
+        
         ox = brainCX - brainRX * (0.2 + Math.random() * 0.2);
         oy = brainCY - brainRY * 0.1;
         angle = Math.PI * 0.6 + (Math.random() - 0.5) * 0.4;
-        hue = 300 + Math.random() * 40;       // magenta to pink
+        hue = 300 + Math.random() * 40;       
         spread = 8 + Math.random() * 10;
         curveStrength = 0.06 + Math.random() * 0.03;
     } else {
-        // Radiating corona — fans outward from center (MULTI-COLOR)
+        
         ox = brainCX + (Math.random() - 0.5) * brainRX * 0.2;
         oy = brainCY + (Math.random() - 0.5) * brainRY * 0.2;
         angle = Math.random() * Math.PI * 2;
@@ -167,7 +167,7 @@ function spawnBundle(w, h, trip) {
         curveStrength = 0.02 + Math.random() * 0.04;
     }
 
-    // At high trip, occasional wild neon colors
+    
     if (trip > 0.7 && Math.random() < 0.3) hue = 280 + Math.random() * 80;
 
     for (var i = 0; i < bundleSize; i++) {
@@ -183,10 +183,10 @@ function spawnBundle(w, h, trip) {
 }
 
 function pruneOldFibers() {
-    // Remove oldest fully-grown fibers to make room
+    
     if (fibers.length < MAX_FIBERS * 0.9) return;
     var removeCount = Math.floor(MAX_FIBERS * 0.15);
-    // Sort by age descending, remove oldest
+    
     var aged = [];
     for (var i = 0; i < fibers.length; i++) {
         if (fibers[i].growProgress >= 1) aged.push(i);
@@ -199,47 +199,47 @@ function pruneOldFibers() {
     fibers = fibers.filter(function(f, idx) { return !toRemove[idx]; });
 }
 
-// ── DRAW ──
+
 function drawFibers(t, trip) {
     for (var i = 0; i < fibers.length; i++) {
         var f = fibers[i];
 
-        // Grow animation
+        
         f.growProgress = Math.min(1, f.growProgress + f.growSpeed);
         f.age++;
 
         var visiblePts = Math.max(2, Math.floor(f.points.length * f.growProgress));
 
-        // Sway — entire fiber oscillates gently
+        
         var swayX = Math.sin(t * 0.3 + f.swayPhase) * f.swayAmp;
         var swayY = Math.cos(t * 0.25 + f.swayPhase * 1.3) * f.swayAmp * 0.7;
-        // Trip amplifies sway
+        
         swayX *= (1 + trip * 0.8);
         swayY *= (1 + trip * 0.8);
 
-        // Fire glow
+        
         f.fireTimer = Math.max(0, f.fireTimer - 0.01);
         var fireBright = f.fireTimer;
 
-        // Color
-        var hue = f.hue + Math.sin(t * 0.2 + i * 0.1) * 5; // subtle hue drift
+        
+        var hue = f.hue + Math.sin(t * 0.2 + i * 0.1) * 5; 
         var sat = f.saturation;
         var light = 45 + fireBright * 35;
         var alpha = f.alpha * (0.85 + 0.15 * Math.sin(t * 0.5 + f.swayPhase));
 
-        // Fade in new fibers, fade out old fully-grown ones slightly
+        
         if (f.growProgress < 0.3) alpha *= f.growProgress / 0.3;
 
         ctx.beginPath();
         ctx.moveTo(f.points[0].x + swayX, f.points[0].y + swayY);
 
         for (var p = 1; p < visiblePts; p++) {
-            // Per-point sway increases toward the tip
+            
             var tipFactor = p / f.points.length;
             var ptSwayX = swayX + Math.sin(t * 0.8 + p * 0.3 + f.swayPhase) * tipFactor * 2 * (1 + trip);
             var ptSwayY = swayY + Math.cos(t * 0.6 + p * 0.4 + f.swayPhase) * tipFactor * 1.5 * (1 + trip);
 
-            // Smooth curve through points
+            
             if (p < visiblePts - 1) {
                 var next = f.points[p + 1];
                 var cpx = f.points[p].x + ptSwayX;
@@ -260,7 +260,7 @@ function drawFibers(t, trip) {
         ctx.lineJoin = 'round';
         ctx.stroke();
 
-        // Glow on fired fibers
+        
         if (fireBright > 0.1) {
             ctx.strokeStyle = 'hsla(' + (hue|0) + ',100%,70%,' + (fireBright * 0.3).toFixed(3) + ')';
             ctx.lineWidth = f.thickness + fireBright * 5;
@@ -270,7 +270,7 @@ function drawFibers(t, trip) {
 }
 
 function drawPulses(t, trip) {
-    // Spawn
+    
     if (pulses.length < MAX_PULSES && fibers.length > 0 && Math.random() < 0.04 + trip * 0.06) {
         var fi = Math.floor(Math.random() * fibers.length);
         if (fibers[fi].growProgress > 0.5) {
@@ -296,7 +296,7 @@ function drawPulses(t, trip) {
         var f = fibers[p.fiberIdx];
         if (!f) { pulses.splice(i, 1); continue; }
 
-        // Find position along fiber
+        
         var ptIdx = Math.floor(p.progress * (f.points.length - 1) * f.growProgress);
         ptIdx = Math.min(ptIdx, f.points.length - 1);
         var pt = f.points[ptIdx];
@@ -319,7 +319,7 @@ function drawPulses(t, trip) {
     }
 }
 
-// ── READOUT ──
+
 function updateReadout(now, trip, zone) {
     if (now - lastReadout < READOUT_INTERVAL) return;
     lastReadout = now;
@@ -349,7 +349,7 @@ function updateHeader(trip, zone) {
     if (!el) return;
     var hz = (pulses.length * 3.8).toFixed(0);
     var st, sc;
-    // Cycle language based on time
+    
     var lang = Math.floor(Date.now() / 4000) % 3;
     if (trip < 0.3) {
         sc = '#00cc88';
@@ -367,7 +367,7 @@ function updateHeader(trip, zone) {
     el.innerHTML = '<span style="color:'+sc+';font-weight:bold;">'+st+'</span> Z'+zone+' | '+fibers.length+' | '+hz+' Hz';
 }
 
-// ── GET TRIP STATE ──
+
 function getTripState() {
     var z3 = window.currentZone3;
     if (z3) return { trip: z3.neuralIntensity || z3.z3Trip || 0.5, zone: 3 };
@@ -377,7 +377,7 @@ function getTripState() {
     return { trip: 0.2, zone: 0 };
 }
 
-// ── MAIN LOOP ──
+
 function render() {
     if (!running || !cvs || !ctx) return;
     var now = performance.now();
@@ -387,12 +387,12 @@ function render() {
     var state = getTripState();
     var trip = state.trip;
 
-    // Clear — fully transparent
+    
     ctx.clearRect(0, 0, w, h);
 
-    // Spawn new bundles continuously
+    
     fiberSpawnTimer++;
-    var spawnRate = 8 + Math.floor(20 / (1 + trip)); // faster at high trip
+    var spawnRate = 8 + Math.floor(20 / (1 + trip)); 
     if (fiberSpawnTimer % spawnRate === 0) {
         pruneOldFibers();
         spawnBundle(w, h, trip);
@@ -407,7 +407,7 @@ function render() {
     requestAnimationFrame(render);
 }
 
-// ── INIT ──
+
 window.initBrainMonitor = function() {
     var container = document.getElementById('brain-monitor-wrap');
 
@@ -450,7 +450,7 @@ window.initBrainMonitor = function() {
     ctx = cvs.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    // Seed initial bundles
+    
     fibers = [];
     pulses = [];
     readoutLines = [];
@@ -458,7 +458,7 @@ window.initBrainMonitor = function() {
     fiberSpawnTimer = 0;
     monitorStartTime = performance.now();
 
-    // Spawn bundles immediately — dense from the start
+    
     var _initBundles = _bmMobile ? 6 : 16;
     for (var i = 0; i < _initBundles; i++) {
         spawnBundle(lw, lh, 0.3);
@@ -476,8 +476,8 @@ window.stopBrainMonitor = function() {
     if (el) el.style.display = 'none';
 };
 
-// ── HINT OVERLAY SYSTEM ──
-// h1-h5 images shown in top-right of RSS box while holding brain-scanner
+
+
 (function(){
     var hintEl = null;
     var hintVisible = false;
@@ -488,26 +488,26 @@ window.stopBrainMonitor = function() {
         var z3 = window.currentZone3;
         var z2 = window.currentZone2;
 
-        // h5: the plane (z3 cabin phase)
+        
         if (z3 && z3.centerPhase === 'cabin') return 'files/img/h/h5.png';
 
-        // h4: alternate black-hole route (z3b, or z2 bedroom_2/z3b_turbulence/z3b_red)
+        
         if (z3 && z3.isAltRoute) return 'files/img/h/h4.png';
         if (z2 && (z2.seqState === 'bedroom_2' || z2.seqState === 'z3b_turbulence' || z2.seqState === 'z3b_red'))
             return 'files/img/h/h4.png';
 
-        // h3: after the two-blinks sequence begins (bathroom blood state onward)
+        
         if (z2 && (z2.seqState === 'blood' || z2.seqState === 'hole' || z2.seqState === 'red'))
             return 'files/img/h/h3.png';
 
-        // h2: before bathroom two-blinks (z2 exists, still in initial or bedroom_visited)
+        
         if (z2 && (z2.seqState === 'initial' || z2.seqState === 'bedroom_visited'))
             return 'files/img/h/h2.png';
 
-        // h1: Zone 1 (no z2 or z3 active)
+        
         if (!z2 && !z3) return 'files/img/h/h1.png';
 
-        // z3 normal route (hallway, fall, void, etc) — show h3
+        
         if (z3 && !z3.isAltRoute) return 'files/img/h/h3.png';
 
         return '';
@@ -568,7 +568,7 @@ window.stopBrainMonitor = function() {
         if (!wrap || wrap.__hintBound) return;
         wrap.__hintBound = true;
         wrap.addEventListener('mousedown', function(e){ e.stopPropagation(); showHint(); });
-        wrap.addEventListener('touchstart', function(e){ showHint(); }, {passive: true});
+        wrap.addEventListener('touchstart', function(e){ e.stopPropagation(); showHint(); }, {passive: false});
         window.addEventListener('mouseup', hideHint);
         window.addEventListener('touchend', hideHint);
         window.addEventListener('touchcancel', hideHint);
@@ -579,7 +579,7 @@ window.stopBrainMonitor = function() {
     if (existing && !existing.__hintBound) {
         existing.__hintBound = true;
         existing.addEventListener('mousedown', function(e){ e.stopPropagation(); showHint(); });
-        existing.addEventListener('touchstart', function(e){ showHint(); }, {passive: true});
+        existing.addEventListener('touchstart', function(e){ e.stopPropagation(); showHint(); }, {passive: false});
         window.addEventListener('mouseup', hideHint);
         window.addEventListener('touchend', hideHint);
         window.addEventListener('touchcancel', hideHint);

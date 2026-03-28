@@ -35,19 +35,15 @@ void main() {
     vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
     float trip = clamp(u_trip, 0.0, 2.0);
     
-    // ── LIQUID WARP — scales with trip, not just a tiny fixed amount ──
-    float warpAmp = 0.004 + trip * 0.012;
+        float warpAmp = 0.004 + trip * 0.012;
     float liquidX = sin(uv.y * 12.0 + u_time * 0.4) * warpAmp + cos(uv.x * 10.0 - u_time * 0.3) * warpAmp * 0.75;
     float liquidY = cos(uv.x * 14.0 + u_time * 0.3) * warpAmp + sin(uv.y * 11.0 - u_time * 0.4) * warpAmp * 0.75;
-    // Audio shake amplifies
-    liquidX += sin(u_time * 30.0) * 0.01 * u_shake;
+        liquidX += sin(u_time * 30.0) * 0.01 * u_shake;
     liquidY += cos(u_time * 25.0) * 0.01 * u_shake;
-    // Trip adds a slower, sicker oscillation layer
-    liquidX += sin(uv.y * 3.0 + u_time * 0.15) * trip * 0.008;
+        liquidX += sin(uv.y * 3.0 + u_time * 0.15) * trip * 0.008;
     liquidY += cos(uv.x * 4.0 - u_time * 0.12) * trip * 0.006;
     
-    // ── GLITCH SCANLINE — random horizontal UV tears ──
-    float gTick = floor(u_time * 14.0);
+        float gTick = floor(u_time * 14.0);
     float glitchProb = 0.985 - trip * 0.04;
     if(step(glitchProb, _hh(gTick * 133.77)) > 0.0) {
         float bandY = floor(uv.y * mix(8.0, 25.0, _hh(gTick * 2.1)));
@@ -124,25 +120,20 @@ void main() {
     
     if (wallID == 4 && isCutout) finalCol = vec3(0.0);
     
-    // ── FOG — thicker with trip, more oppressive ──
-    float fogThickness = 0.5 + trip * 0.15;
+        float fogThickness = 0.5 + trip * 0.15;
     float fogFactor = exp(-t * fogThickness);
     vec3 fogColor = vec3(0.02, 0.03, 0.04);
-    // Trip shifts fog toward sickly green-brown
-    fogColor = mix(fogColor, vec3(0.04, 0.03, 0.01), trip * 0.3);
+        fogColor = mix(fogColor, vec3(0.04, 0.03, 0.01), trip * 0.3);
     finalCol = mix(fogColor, finalCol, fogFactor);
     
-    // ── EERIE TINT — desaturate + shift to cold/warm based on trip ──
-    float lum = dot(finalCol, vec3(0.299, 0.587, 0.114));
+        float lum = dot(finalCol, vec3(0.299, 0.587, 0.114));
     vec3 eerieTint = vec3(lum * 0.75, lum * 0.9, lum * 1.1); 
     finalCol = mix(finalCol, eerieTint, 0.4 + trip * 0.15);
     
-    // ── EMERGENCY LIGHT FLICKER — faint red pulse on floor ──
-    float floorGlow = smoothstep(-0.3, -0.8, nPos.y) * (0.4 + 0.6 * sin(u_time * 1.3 + pos.z * 0.4));
+        float floorGlow = smoothstep(-0.3, -0.8, nPos.y) * (0.4 + 0.6 * sin(u_time * 1.3 + pos.z * 0.4));
     finalCol += vec3(0.08, 0.01, 0.005) * floorGlow * (0.3 + trip * 0.4);
     
-    // ── LIGHT FLICKER — random brightness drops ──
-    float flicker = 1.0 - step(0.97, _hh(floor(u_time * 12.0) * 7.3)) * 0.3 * trip;
+        float flicker = 1.0 - step(0.97, _hh(floor(u_time * 12.0) * 7.3)) * 0.3 * trip;
     finalCol *= flicker;
 
     float vignette = smoothstep(1.3, 0.2, length(uv));
@@ -286,7 +277,6 @@ class Zone2RoomMode {
 window.z2SpaceHeld = window.z2SpaceHeld || false;
 window.z2TouchHeld = window.z2TouchHeld || false;
 
-// Shared mobile walk zone — bottom centre of screen, consistent across all zones
 window.__mobileWalkZoneContains = window.__mobileWalkZoneContains || function(x, y) {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -378,11 +368,9 @@ class Zone2Engine {
         this.voidVid.setAttribute("playsinline", "");
         this.voidVid.setAttribute("webkit-playsinline", "");
         this.voidVid.src = "files/mov/bh3.mp4";
-        // Register with global video pool so iOS unlock applies
-        if (window.__ALL_VIDEOS) window.__ALL_VIDEOS.push(this.voidVid);
+                if (window.__ALL_VIDEOS) window.__ALL_VIDEOS.push(this.voidVid);
         this.voidVid.play().catch(() => {});
-        // Fallback: if play was blocked, retry when browser says it can play
-        this.voidVid.addEventListener('canplay', () => {
+                this.voidVid.addEventListener('canplay', () => {
             if (this.voidVid.paused) this.voidVid.play().catch(() => {});
         }, { once: false });
         
@@ -568,14 +556,12 @@ class Zone2Engine {
                     this.seqState = 'bedroom_visited';
                     this.zone3Route = 'z3';
                 } else if (this.seqState === 'bedroom_visited' && this.activePOV === 'left') {
-                    // Option A: back to bathroom → normal z3 plane crash
-                    this.seqState = 'hole';
+                                        this.seqState = 'hole';
                     this.zone3Route = 'z3';
                     if (this.leftRoom) this.leftRoom.tex = this.texBathroomHole;
                     this.mode9_T_hole = performance.now();
                 } else if (this.seqState === 'bedroom_visited' && this.activePOV === 'right') {
-                    // Option B: back to bedroom a second time → black hole route
-                    this.seqState = 'bedroom_2';
+                                        this.seqState = 'bedroom_2';
                     this.zone3Route = 'z3b';
                     this.rightBlinkCount = 0;
                     this.z3bTurbulenceStart = -1;
@@ -674,8 +660,7 @@ class Zone2Engine {
 
         let shake = audioIntensity * 0.1;
 
-        // ── Composite neural intensity — exposed for brain monitor ──
-        var seqBoost = 0;
+                var seqBoost = 0;
         if (this.seqState === 'blood')             seqBoost = 0.4;
         if (this.seqState === 'hole')              seqBoost = 1.2;
         if (this.seqState === 'red')               seqBoost = 1.8;
@@ -683,8 +668,7 @@ class Zone2Engine {
         if (this.seqState === 'bedroom_2')         seqBoost = 0.8;
         if (this.seqState === 'z3b_turbulence')    seqBoost = 1.3;
         if (this.seqState === 'z3b_red')           seqBoost = 1.8;
-        // leftBlinkCount escalation — each bathroom visit ratchets it
-        var visitBoost = Math.min(1.0, this.leftBlinkCount * 0.15);
+                var visitBoost = Math.min(1.0, this.leftBlinkCount * 0.15);
         this.neuralIntensity = this.z2Trip + seqBoost + visitBoost + audioIntensity * 0.3;
 
         const cvs = document.getElementById('c');
@@ -827,16 +811,14 @@ class Zone2Engine {
                     if (elapsedHole >= 4400) {
                         this.seqState = 'red';
                         this.redStartTime = now;
-                        // Kill the plane: freeze holeFBO to black so nothing shows through the hole
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, this.holeFBO.fbo);
+                                                gl.bindFramebuffer(gl.FRAMEBUFFER, this.holeFBO.fbo);
                         gl.clearColor(0,0,0,1);
                         gl.clear(gl.COLOR_BUFFER_BIT);
                         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                     }
                 }
 
-                // Painter layer 1: holeProg already blitted the plane above
-                gl.enable(gl.BLEND);
+                                gl.enable(gl.BLEND);
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
                 this.leftRoom.render(now, this.cx, this.cy, 0.0, this.mirrorFBO.tex, shake, 0.0, audioIntensity, this.z2Trip, this.z2ModeSeed);
                 gl.disable(gl.BLEND);
@@ -885,8 +867,7 @@ class Zone2Engine {
                     drawHallucinationOverlay(now, this.z2Trip, this.z2FractalSeed, (now - this.z2BlinkPeakTime) * 0.001);
             }
 
-            // Blink applied as top-level black overlay — works correctly over the painter composite
-            if (this.rBlink > 0.001) this.drawOverlay(0.0, 0.0, 0.0, this.rBlink);
+                        if (this.rBlink > 0.001) this.drawOverlay(0.0, 0.0, 0.0, this.rBlink);
             
         } else if (this.activePOV === 'right' && this.rightRoom) {
             const altTurbulence = this.seqState === 'z3b_turbulence';
@@ -955,11 +936,9 @@ class Zone2Engine {
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.voidVid);
             }
 
-            // Painter layer 1: video backdrop
-            this._blitTex(this.texVoidVid, cWidth, cHeight);
+                        this._blitTex(this.texVoidVid, cWidth, cHeight);
 
-            // FORWARD-alt swaps in once sequence has progressed past initial
-            const useAltForward = (this.seqState !== 'initial');
+                        const useAltForward = (this.seqState !== 'initial');
             const hallFrontTex = useAltForward ? (this.texFrontAlt || this.texFront) : this.texFront;
 
             gl.enable(gl.BLEND);
@@ -1040,9 +1019,7 @@ class Zone2Engine {
 window.startZone2 = function() {
     window.currentZone2 = new Zone2Engine();
 
-    // voidVid was just added to __ALL_VIDEOS in Zone2Engine constructor.
-    // Unlock now so it plays without needing a walk touch first.
-    if (window.__unlockAllVideos) window.__unlockAllVideos();
+            if (window.__unlockAllVideos) window.__unlockAllVideos();
     
     let fadeOverlay = document.getElementById("zone-fade-overlay");
     if (!fadeOverlay) {
